@@ -1,0 +1,146 @@
+/* Publish sheet (Arts District v3). Calm, centered, on-brand. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(6px);
+  animation: fade 0.2s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.win {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg-elevated, #0a0a0a);
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8);
+  animation: pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes pop { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }
+
+.x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--muted-strong);
+  cursor: pointer;
+}
+.x svg { width: 16px; height: 16px; }
+.x:hover { color: #fff; }
+
+/* cover preview — reuses the tile's design art */
+.cover {
+  position: relative;
+  height: 150px;
+  display: grid;
+  place-items: center;
+  color: var(--mint);
+  background: radial-gradient(135% 110% at 60% 22%, rgba(15, 38, 30, 0.55), rgba(5, 9, 8, 0.5));
+  border-bottom: 1px solid var(--border);
+}
+.art {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0.9;
+}
+.art :global(svg) { width: 84px; height: 84px; }
+.coverName {
+  position: relative;
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 1.5rem;
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
+}
+
+.body { padding: 22px 22px 24px; text-align: center; }
+.title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.lede {
+  margin: 10px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--muted-strong);
+}
+.lede b { color: #fff; font-weight: 600; }
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 18px auto 0;
+  padding: 10px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  width: 100%;
+}
+.track {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  flex: none;
+  transition: background 0.2s ease;
+}
+.track.on { background: var(--mint); }
+.knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.track.on .knob { transform: translateX(16px); }
+.toggleLabel { font-size: 0.88rem; color: var(--muted-strong); }
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 20px;
+  border: none;
+  border-radius: 999px;
+  background: var(--mint);
+  color: var(--mint-ink);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.primary:hover { background: var(--mint-hover); }
+.primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.fine { margin: 12px 0 0; font-size: 0.74rem; color: var(--muted); }
+.error { margin: 14px 0 0; font-size: 0.85rem; color: var(--amber); }

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Vee — minimal mentor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --iris:#a78bfa; --iris-hi:#c4b5fd; --iris-mut:#9a93d6; --mint:#6ee7b7;
+  --bg:#04060a;
+  --ink:#e9efe9; --ink-dim:rgba(233,239,233,.62); --ink-faint:rgba(233,239,233,.34);
+  --rule:rgba(233,239,233,.12); --rule-strong:rgba(233,239,233,.22);
+  --card:rgba(167,139,250,.055); --card-bd:rgba(167,139,250,.22);
+  --amber:#f5b451;
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'Hanken Grotesk','Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --ease:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--sans);
+  height:100dvh; overflow:hidden;
+  display:grid; place-items:center; padding:18px;
+  accent-color:var(--iris);
+}
+/* fixed sky glow + grain, same as the real page */
+body::before{
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(60% 45% at 50% 0%, rgba(167,139,250,.12), transparent 70%),
+    radial-gradient(45% 40% at 88% 8%, rgba(110,231,183,.06), transparent 70%);
+}
+body::after{
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
+  mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+
+.shell{
+  position:relative; z-index:1;
+  width:100%; max-width:460px; height:100%; max-height:820px;
+  display:grid; grid-template-rows:auto auto 1fr auto; gap:16px;
+  padding:6px 2px;
+}
+
+/* ---- 1. presence ---- */
+.presence{display:flex; align-items:center; gap:14px}
+.gem{width:56px; height:56px; flex:none; position:relative; filter:drop-shadow(0 4px 18px rgba(167,139,250,.4))}
+.gem svg{width:100%; height:100%; display:block; animation:bob 6s var(--ease) infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(2deg)}}
+.hello{flex:1; min-width:0}
+.hello h1{font-family:var(--serif); font-style:italic; font-weight:400; font-size:27px; line-height:1.05; letter-spacing:.2px}
+.hello .sub{font-size:13px; color:var(--ink-dim); margin-top:3px; display:flex; align-items:center; gap:7px}
+.dot{width:6px; height:6px; border-radius:999px; background:var(--iris); box-shadow:0 0 8px var(--iris); animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+.menu{margin-left:auto; align-self:flex-start; width:34px; height:34px; flex:none;
+  border:1px solid var(--rule); border-radius:11px; background:transparent; color:var(--ink-dim);
+  font-size:17px; cursor:pointer; transition:all .18s var(--ease)}
+.menu:hover{border-color:var(--card-bd); color:var(--ink); background:var(--card)}
+
+/* ---- 2. noticed card ---- */
+.noticed{
+  border:1px solid var(--card-bd); border-radius:16px; background:var(--card);
+  padding:15px 16px; position:relative; overflow:hidden;
+}
+.noticed::before{content:''; position:absolute; inset:0 auto 0 0; width:2px; background:linear-gradient(var(--iris),var(--mint))}
+.eyebrow{font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--iris-mut); display:flex; align-items:center; gap:7px}
+.eyebrow .spark{color:var(--iris)}
+.noticed .line{font-size:14.5px; line-height:1.45; margin-top:9px; color:var(--ink)}
+.noticed .line b{color:var(--iris-hi); font-weight:600}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:11px}
+.chip{font-family:var(--mono); font-size:10.5px; color:var(--ink-dim); border:1px solid var(--rule);
+  border-radius:999px; padding:4px 9px; white-space:nowrap}
+.chip.pos{color:var(--mint); border-color:rgba(110,231,183,.3)}
+.noticed .act{margin-top:12px; display:inline-flex; align-items:center; gap:7px;
+  font-size:12.5px; color:var(--iris-hi); background:rgba(167,139,250,.1);
+  border:1px solid var(--card-bd); border-radius:999px; padding:7px 13px; cursor:pointer;
+  transition:all .18s var(--ease)}
+.noticed .act:hover{background:rgba(167,139,250,.18)}
+
+/* ---- 3. chat ---- */
+.chat{display:grid; grid-template-rows:1fr auto; min-height:0; gap:10px}
+.log{overflow-y:auto; display:flex; flex-direction:column; gap:9px; padding:2px 1px; scrollbar-width:thin; scrollbar-color:var(--rule) transparent}
+.log::-webkit-scrollbar{width:5px}.log::-webkit-scrollbar-thumb{background:var(--rule); border-radius:9px}
+.intro{font-size:13px; color:var(--ink-dim); line-height:1.5; padding:2px 2px 4px}
+.prompts{display:flex; flex-wrap:wrap; gap:7px}
+.prompts button{font-size:12px; color:var(--ink); background:transparent; border:1px solid var(--rule);
+  border-radius:999px; padding:7px 12px; cursor:pointer; font-family:inherit; transition:all .18s var(--ease)}
+.prompts button:hover{border-color:var(--card-bd); background:var(--card); color:var(--iris-hi)}
+.bub{max-width:86%; font-size:13.5px; line-height:1.5; padding:10px 13px; border-radius:16px}
+.bub.vee{align-self:flex-start; background:var(--card); border:1px solid var(--card-bd); border-bottom-left-radius:5px}
+.bub.vee b{color:var(--iris-hi); font-weight:600}
+.bub.me{align-self:flex-end; background:rgba(233,239,233,.06); border:1px solid var(--rule); border-bottom-right-radius:5px; color:var(--ink)}
+.composer{display:flex; gap:8px; align-items:flex-end}
+.composer textarea{flex:1; resize:none; height:44px; max-height:96px; background:rgba(233,239,233,.04);
+  border:1px solid var(--rule); border-radius:13px; padding:12px 14px; color:var(--ink);
+  font-family:inherit; font-size:13.5px; line-height:1.3; caret-color:var(--iris); outline:none;
+  transition:border-color .18s var(--ease)}
+.composer textarea::placeholder{color:var(--ink-faint)}
+.composer textarea:focus{border-color:rgba(167,139,250,.5)}
+.send{width:44px; height:44px; flex:none; border:0; border-radius:13px; background:var(--iris);
+  color:#160d2e; cursor:pointer; display:grid; place-items:center; transition:transform .18s var(--spring),background .18s}
+.send:hover{background:var(--iris-hi)}.send:active{transform:scale(.92)}
+
+/* ---- 4. slim bar ---- */
+.bar{display:flex; align-items:center; gap:12px; border-top:1px solid var(--rule); padding-top:12px}
+.mood{display:flex; align-items:center; gap:8px}
+.mood .lbl{font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint)}
+.faces{display:flex; gap:6px}
+.face{width:30px; height:30px; border-radius:999px; border:1px solid var(--rule); background:transparent;
+  cursor:pointer; display:grid; place-items:center; color:var(--ink-dim); transition:all .18s var(--spring)}
+.face svg{width:18px; height:18px}
+.face:hover{border-color:var(--card-bd); color:var(--ink); transform:translateY(-1px)}
+.face.on{background:var(--iris); border-color:var(--iris); color:#160d2e}
+.jot{margin-left:auto; display:flex; align-items:center; gap:8px}
+.jot button{font-size:12px; color:var(--ink-dim); background:transparent; border:1px solid var(--rule);
+  border-radius:999px; padding:7px 13px; cursor:pointer; font-family:inherit; white-space:nowrap; transition:all .18s var(--ease)}
+.jot button:hover{border-color:var(--card-bd); color:var(--iris-hi); background:var(--card)}
+.jot input{width:0; opacity:0; padding:0; border:0; background:rgba(233,239,233,.04); border-radius:999px;
+  color:var(--ink); font-family:inherit; font-size:12.5px; outline:none; transition:all .28s var(--ease)}
+.jot.open input{width:150px; opacity:1; padding:7px 13px; border:1px solid var(--rule)}
+.jot input::placeholder{color:var(--ink-faint)}
+
+/* tucked menu popover */
+.pop{position:absolute; top:44px; right:0; z-index:5; width:210px;
+  background:#0a0c12; border:1px solid var(--card-bd); border-radius:14px; padding:6px;
+  box-shadow:0 18px 50px rgba(0,0,0,.6); display:none; flex-direction:column; gap:1px}
+.pop.open{display:flex}
+.pop a{display:flex; align-items:center; gap:10px; padding:9px 11px; border-radius:9px;
+  font-size:13px; color:var(--ink-dim); text-decoration:none; cursor:pointer; transition:all .15s var(--ease)}
+.pop a:hover{background:var(--card); color:var(--ink)}
+.pop a .k{font-family:var(--mono); font-size:9px; color:var(--ink-faint); margin-left:auto; letter-spacing:.1em; text-transform:uppercase}
+.pophead{font-family:var(--mono); font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); padding:8px 11px 5px}
+@media (max-height:680px){ .hello h1{font-size:23px} .gem{width:48px;height:48px} .shell{gap:12px} }
+</style>
+</head>
+<body>
+<main class="shell">
+
+  <!-- 1. presence -->
+  <header class="presence">
+    <div class="gem" aria-hidden="true">
+      <svg viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#c4b5fd"/><stop offset=".55" stop-color="#a78bfa"/><stop offset="1" stop-color="#6d5bd0"/>
+          </linearGradient>
+        </defs>
+        <polygon points="50,6 82,26 82,64 50,94 18,64 18,26" fill="url(#g)" opacity=".92"/>
+        <polygon points="50,6 82,26 50,46 18,26" fill="#fff" opacity=".14"/>
+        <polygon points="50,46 82,26 82,64 50,94 18,64 18,26" fill="#000" opacity=".12"/>
+        <path d="M38 40 L50 62 L62 40" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>
+      </svg>
+    </div>
+    <div class="hello">
+      <h1>Evening, Liam.</h1>
+      <div class="sub"><span class="dot"></span> whenever you are ready. i am here.</div>
+    </div>
+    <button class="menu" id="menuBtn" aria-label="More" title="More">&#8943;</button>
+    <div class="pop" id="pop">
+      <div class="pophead">also here when you want it</div>
+      <a>Training day <span class="k">confirm</span></a>
+      <a>Vent in Claude <span class="k">deep</span></a>
+      <a>The void <span class="k">notes</span></a>
+      <a>What Vee remembers <span class="k">memory</span></a>
+      <a>What Vee should know <span class="k">context</span></a>
+      <a>Live stats <span class="k">ticker</span></a>
+    </div>
+  </header>
+
+  <!-- 2. noticed -->
+  <section class="noticed">
+    <div class="eyebrow"><span class="spark">&#9670;</span> vitality noticed</div>
+    <p class="line">your heavier <b>beer</b> days tend to show up the next morning. recovery averaged <b>60</b> after your bigger days and <b>80</b> after your lighter ones.</p>
+    <div class="chips">
+      <span class="chip">12 paired days</span>
+      <span class="chip">bigger days: recovery 60</span>
+      <span class="chip pos">lighter days: recovery 80</span>
+    </div>
+    <button class="act">&#8594; talk deeper in Claude</button>
+  </section>
+
+  <!-- 3. chat -->
+  <section class="chat">
+    <div class="log" id="log">
+      <p class="intro">i have read your training, fuel, vitals, goals, and everything in the void. ask me anything.</p>
+      <div class="prompts">
+        <button>how is my week looking?</button>
+        <button>what should i focus on today?</button>
+        <button>how is my recovery trending?</button>
+        <button>am i drinking enough water?</button>
+      </div>
+      <div class="bub me">honestly today just feels rough, everything is off</div>
+      <div class="bub vee">rough days count too. one small win resets the tone. <b>a short walk</b> or logging one meal is enough for today.</div>
+    </div>
+    <div class="composer">
+      <textarea id="ta" placeholder="talk to Vee..." rows="1"></textarea>
+      <button class="send" aria-label="Send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- 4. slim bar -->
+  <footer class="bar">
+    <div class="mood">
+      <span class="lbl">mood</span>
+      <div class="faces" id="faces">
+        <button class="face" title="rough"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 15.5c1-1.3 2.1-2 3.5-2s2.5.7 3.5 2"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></button>
+        <button class="face" title="low"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 15c1-.7 2.1-1 3.5-1s2.5.3 3.5 1"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></button>
+        <button class="face" title="okay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5h7"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></button>
+        <button class="face" title="good"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 13.5c1 1.3 2.1 2 3.5 2s2.5-.7 3.5-2"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></button>
+        <button class="face" title="great"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 13c1 1.7 2.4 2.5 4 2.5s3-.8 4-2.5"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></button>
+      </div>
+    </div>
+    <div class="jot" id="jot">
+      <input id="jotIn" placeholder="throw a thought in..." />
+      <button id="jotBtn">&#65291; jot</button>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+// menu popover
+var pop=document.getElementById('pop');
+document.getElementById('menuBtn').onclick=function(e){e.stopPropagation();pop.classList.toggle('open')};
+document.addEventListener('click',function(){pop.classList.remove('open')});
+
+// mood one-tap (single-select)
+document.getElementById('faces').addEventListener('click',function(e){
+  var b=e.target.closest('.face'); if(!b)return;
+  [].forEach.call(this.children,function(c){c.classList.remove('on')});
+  b.classList.add('on');
+});
+
+// jot expand/commit
+var jot=document.getElementById('jot'), jotIn=document.getElementById('jotIn'), jotBtn=document.getElementById('jotBtn');
+jotBtn.onclick=function(){
+  if(!jot.classList.contains('open')){jot.classList.add('open');jotIn.focus();jotBtn.innerHTML='throw it in';return}
+  if(jotIn.value.trim()){jotIn.value='';}
+  jot.classList.remove('open');jotBtn.innerHTML='&#65291; jot';
+};
+
+// prompt chips -> fill composer
+var ta=document.getElementById('ta');
+document.querySelectorAll('.prompts button').forEach(function(b){
+  b.onclick=function(){ta.value=b.textContent;ta.focus()};
+});
+ta.addEventListener('input',function(){this.style.height='44px';this.style.height=Math.min(this.scrollHeight,96)+'px'});
+</script>
+</body>
+</html>

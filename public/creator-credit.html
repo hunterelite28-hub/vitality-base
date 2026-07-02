@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Maker credit and profile</title>
+<style>
+  :root{
+    --bg:#04060a; --fg:#fff;
+    --mint:#6EE7B7; --mint-cool:#A7F3D0; --mint-ink:#042a1c; --mint-glow:rgba(110,231,183,.4);
+    --card:rgba(255,255,255,.022);
+    --border:rgba(255,255,255,.07); --border-strong:rgba(255,255,255,.14);
+    --muted:rgba(255,255,255,.46); --muted-strong:rgba(255,255,255,.7);
+    --serif:'Instrument Serif',Georgia,serif;
+    --sans:'Inter','Hanken Grotesk',system-ui,-apple-system,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --ease:cubic-bezier(.22,1,.36,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;letter-spacing:-.01em;padding:46px 24px 90px;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(70% 26vh at 50% -2%, rgba(110,231,183,.08), transparent 72%)}
+  .wrap{position:relative;z-index:1;max-width:760px;margin:0 auto}
+
+  .up{font-family:var(--mono);font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+  .lead{font-family:var(--serif);font-style:italic;font-weight:400;font-size:2.3rem;line-height:1.12;letter-spacing:-.01em;margin:0 0 14px}
+  .sub{margin:0 0 40px;color:var(--muted-strong);font-size:1.02rem;line-height:1.6;max-width:54ch}
+
+  .eyebrow{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:48px 0 18px}
+
+  /* tiles row */
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:620px){.row{grid-template-columns:1fr}}
+  .card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--card);
+    transition:border-color .4s var(--ease),transform .4s var(--ease)}
+  .card:hover{border-color:rgba(110,231,183,.22);transform:translateY(-2px)}
+  .cover{position:relative;height:172px;overflow:hidden;color:var(--mint);
+    background:radial-gradient(135% 110% at 60% 24%, rgba(15,38,30,.55), rgba(5,9,8,.4))}
+  .ring-svg{position:absolute;inset:0;width:100%;height:100%}
+  .trk{stroke:rgba(255,255,255,.07);fill:none}
+  .prg{fill:none;stroke:currentColor;stroke-linecap:round;filter:drop-shadow(0 0 7px rgba(110,231,183,.45));
+    transform:rotate(-90deg);transform-origin:center;stroke-dasharray:var(--c);stroke-dashoffset:var(--c);animation:fill 1.4s var(--ease) .2s forwards}
+  @keyframes fill{to{stroke-dashoffset:var(--off)}}
+  .state{position:absolute;inset:0;display:grid;place-items:center}
+  .state .b{display:flex;flex-direction:column;align-items:center;line-height:.95}
+  .state .big{font-family:var(--serif);font-style:italic;font-size:2.7rem;color:#fff}
+  .state .u{font-size:.72rem;color:var(--muted-strong);margin-top:8px;letter-spacing:0}
+  .scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg, rgba(4,7,6,.9) 0%, rgba(4,7,6,.35) 30%, transparent 56%)}
+  .ctitle{position:absolute;left:18px;bottom:15px;font-family:var(--serif);font-style:italic;font-size:1.4rem;color:#fff}
+
+  .foot{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .by{display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:var(--muted-strong);cursor:pointer;transition:color .18s var(--ease)}
+  .by:hover{color:#fff}
+  .by:hover .who{color:var(--mint)}
+  .av{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:.78rem;font-weight:600;
+    color:var(--mint);background:rgba(110,231,183,.1);border:1px solid rgba(110,231,183,.3)}
+  .by .who{font-size:.9rem;color:var(--fg);font-weight:500;transition:color .18s var(--ease)}
+  .by .pre{font-size:.9rem;color:var(--muted)}
+  .add{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:10px;background:var(--mint);color:var(--mint-ink);
+    font-weight:600;font-size:.84rem;font-family:inherit;padding:9px 15px;cursor:pointer;flex:none;transition:background .16s}
+  .add:hover{background:var(--mint-cool)}
+  .add svg{width:14px;height:14px}
+  .sig{position:absolute;right:16px;bottom:16px;font-family:var(--serif);font-style:italic;font-size:.95rem;color:rgba(255,255,255,.7)}
+
+  .hint{margin:16px 2px 0;font-size:.86rem;color:var(--muted);line-height:1.55}
+
+  /* ── the profile, calm and social ── */
+  .profile{margin-top:8px}
+  .phead{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .pav{width:80px;height:80px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:1.9rem;font-weight:600;
+    color:var(--mint);background:rgba(110,231,183,.08);border:1px solid rgba(110,231,183,.28)}
+  .pwho{flex:1;min-width:220px}
+  .pname{margin:0;font-size:1.55rem;font-weight:600;letter-spacing:-.02em}
+  .phandle{font-size:.92rem;color:var(--muted);margin-top:3px}
+  .pbio{margin:18px 0 0;font-size:1rem;color:var(--muted-strong);line-height:1.6;max-width:52ch}
+  .plinks{display:flex;gap:11px;flex-wrap:wrap;margin-top:22px}
+  .lk{display:inline-flex;align-items:center;gap:9px;border-radius:12px;font-family:inherit;font-size:.9rem;font-weight:600;
+    padding:11px 18px;text-decoration:none;cursor:pointer;transition:all .18s var(--ease)}
+  .lk svg{width:17px;height:17px}
+  .lk.primary{background:var(--mint);color:var(--mint-ink)}
+  .lk.primary:hover{background:var(--mint-cool)}
+  .lk.ghost{border:1px solid var(--border-strong);color:var(--muted-strong);background:transparent}
+  .lk.ghost:hover{border-color:var(--mint);color:var(--mint)}
+
+  .stats{display:flex;align-items:baseline;gap:26px;flex-wrap:wrap;margin:34px 0 8px;
+    padding-top:26px;border-top:1px solid var(--border)}
+  .st .n{font-size:1.5rem;font-weight:600;letter-spacing:-.02em}
+  .st .n .gd{color:var(--mint)}
+  .st .l{font-size:.84rem;color:var(--muted);margin-top:2px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:16px;margin-top:22px}
+  .mini{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card);transition:border-color .3s var(--ease)}
+  .mini:hover{border-color:rgba(110,231,183,.2)}
+  .mini .mc{position:relative;height:96px;color:var(--mint);background:radial-gradient(135% 110% at 60% 22%, rgba(15,38,30,.5), rgba(5,9,8,.36))}
+  .mini .ms{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--serif);font-style:italic;font-size:1.4rem;color:#fff}
+  .mini .mt{padding:10px 12px 3px;font-size:.95rem;font-weight:500}
+  .mini .mi{padding:0 12px 11px;font-size:.78rem;color:var(--muted)}
+
+  /* cozy entrances */
+  .r1,.r2,.r3,.r4,.r5{opacity:0;transform:translateY(14px);animation:up .7s var(--ease) forwards}
+  .r1{animation-delay:.02s}.r2{animation-delay:.1s}.r3{animation-delay:.2s}.r4{animation-delay:.3s}.r5{animation-delay:.4s}
+  @keyframes up{to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.r1,.r2,.r3,.r4,.r5{animation:none;opacity:1;transform:none}.prg{animation:none;stroke-dashoffset:var(--off)}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="up r1">Maker credit</div>
+    <h1 class="lead r1">The credit travels with the tile.</h1>
+    <p class="sub r1">A tile you make is free for anyone to use, but it always carries your name. Tap the name and you land on the maker's page, where their link lives. Every install quietly sends people back to you.</p>
+
+    <div class="eyebrow r2">On the tile</div>
+    <div class="row r2">
+      <div class="card">
+        <div class="cover">
+          <svg class="ring-svg" viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="68" stroke-width="6"/><circle class="prg" cx="100" cy="100" r="68" stroke-width="6" style="--c:428;--off:40"/></svg>
+          <div class="state"><span class="b"><span class="big">12</span><span class="u">day streak</span></span></div>
+          <div class="scrim"></div><span class="ctitle">Habit</span>
+        </div>
+        <div class="foot">
+          <a class="by"><span class="av">L</span><span class="pre">by&nbsp;</span><span class="who">@lukewise</span></a>
+          <button class="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cover">
+          <svg class="ring-svg" viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="74" stroke-width="7"/><circle class="prg" cx="100" cy="100" r="74" stroke-width="7" style="--c:465;--off:177"/></svg>
+          <div class="state"><span class="b"><span class="big">5</span><span class="u">of 8 glasses</span></span></div>
+          <div class="scrim"></div><span class="ctitle">Water</span>
+          <span class="sig">@liam</span>
+        </div>
+        <div class="foot">
+          <a class="by"><span class="av" style="color:#9cc7ff;background:rgba(120,160,220,.12);border-color:rgba(120,160,220,.3)">M</span><span class="pre">by&nbsp;</span><span class="who">@liam</span></a>
+          <button class="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+        </div>
+      </div>
+    </div>
+    <p class="hint r2">A quiet byline under every tile. The maker can also sign the cover, like the @liam mark on the right. Both tap to the same page.</p>
+
+    <div class="eyebrow r3">Where the name leads</div>
+    <div class="profile r3">
+      <div class="phead">
+        <span class="pav">L</span>
+        <div class="pwho">
+          <h2 class="pname">Luke Wise</h2>
+          <div class="phandle">@lukewise</div>
+        </div>
+      </div>
+      <p class="pbio r4">I build tiles for getting your life in order. A new one every week on the channel.</p>
+      <div class="plinks r4">
+        <a class="lk primary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.6-.46-5.3a2.78 2.78 0 0 0-1.94-1.96C18.88 4.27 12 4.27 12 4.27s-6.88 0-8.6.47A2.78 2.78 0 0 0 1.46 6.7C1 8.4 1 12 1 12s0 3.6.46 5.3a2.78 2.78 0 0 0 1.94 1.96c1.72.47 8.6.47 8.6.47s6.88 0 8.6-.47a2.78 2.78 0 0 0 1.94-1.96C23 15.6 23 12 23 12ZM9.8 15.3V8.7l5.7 3.3Z"/></svg>Watch on YouTube</a>
+        <a class="lk ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>Instagram</a>
+      </div>
+      <div class="stats r5">
+        <div class="st"><div class="n">14</div><div class="l">tiles made</div></div>
+        <div class="st"><div class="n"><span class="gd">3,420</span></div><div class="l">installs</div></div>
+        <div class="st"><div class="n">#4</div><div class="l">most credited</div></div>
+      </div>
+      <div class="grid r5">
+        <div class="mini"><div class="mc"><div class="ms">12</div></div><div class="mt">Habit</div><div class="mi">820 installs</div></div>
+        <div class="mini"><div class="mc"><div class="ms">25:00</div></div><div class="mt">Focus</div><div class="mi">610 installs</div></div>
+        <div class="mini"><div class="mc"><div class="ms">5</div></div><div class="mt">Water</div><div class="mi">1,140 installs</div></div>
+        <div class="mini"><div class="mc"><div class="ms">3</div></div><div class="mt">Reading</div><div class="mi">350 installs</div></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

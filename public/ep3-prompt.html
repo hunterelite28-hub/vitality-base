@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Exercise Library · Free Build Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000; --fg:#fff; --mint:#6EE7B7; --mint-cool:#A7F3D0; --mint-hover:#5dd6a6;
+    --muted:rgba(255,255,255,.5); --muted-strong:rgba(255,255,255,.74); --rule:rgba(255,255,255,.1);
+    --panel:rgba(255,255,255,.02); --bar:rgba(255,255,255,.035);
+    --sans:'Inter',system-ui,sans-serif; --serif:'Instrument Serif',Georgia,serif; --mono:'JetBrains Mono',monospace;
+    --spring:cubic-bezier(.34,1.56,.64,1);
+  }
+  *{box-sizing:border-box}
+  html,body{background:var(--bg);margin:0;min-height:100%}
+  body{font-family:var(--sans);color:var(--fg);-webkit-font-smoothing:antialiased;
+    display:flex;justify-content:center;padding:clamp(40px,10vh,90px) 22px}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(110% 70% at 50% -10%, rgba(110,231,183,.08), transparent 55%);}
+  .wrap{position:relative;width:100%;max-width:620px;animation:rise .6s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);margin:0 0 12px}
+  h1{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(2.4rem,8vw,3.4rem);line-height:1;letter-spacing:-.02em;margin:0}
+  .sub{color:var(--muted-strong);font-size:16px;line-height:1.55;margin:14px 0 0}
+
+  .kit-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .chip{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--mint-cool);
+    border:1px solid rgba(167,243,208,.28);border-radius:999px;padding:6px 11px;background:rgba(110,231,183,.05)}
+
+  .file{margin-top:20px;border:1px solid var(--rule);border-radius:16px;overflow:hidden;background:var(--panel)}
+  .file-bar{display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;background:var(--bar);border-bottom:1px solid var(--rule);cursor:pointer;user-select:none}
+  .fname{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:13px;font-weight:500;color:var(--fg)}
+  .fname svg{width:15px;height:15px;color:var(--mint);flex:none}
+  .fname .n{color:var(--muted);margin-right:2px}
+  .ftag{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);
+    border:1px solid var(--rule);border-radius:6px;padding:3px 7px}
+  .bar-right{display:flex;align-items:center;gap:10px}
+  .chev{width:16px;height:16px;color:var(--muted);transition:transform .3s var(--spring)}
+  .file.open .chev{transform:rotate(90deg)}
+  .file-body{max-height:0;overflow:hidden;padding:0 18px;transition:max-height .38s ease,padding .3s ease}
+  .file.open .file-body{max-height:1400px;padding:18px 18px 4px}
+  .prompt{white-space:pre-wrap;font-size:14.5px;line-height:1.7;color:var(--muted-strong);margin:0}
+  .prompt .first{color:var(--fg)}
+  .file-actions{display:flex;gap:10px;padding:16px 18px 18px}
+
+  .btn{flex:1;border:none;border-radius:12px;font-family:var(--sans);font-weight:600;font-size:15px;
+    padding:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .18s var(--spring),background .2s,border-color .2s}
+  .btn svg{width:16px;height:16px;flex:none}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{background:var(--mint);color:#04140d}
+  .btn.primary:hover{background:var(--mint-hover)}
+  .btn.ghost{background:transparent;color:var(--mint-cool);border:1px solid rgba(167,243,208,.3)}
+  .btn.ghost:hover{background:rgba(167,243,208,.08);border-color:var(--mint-cool)}
+  .btn.wide{width:100%;flex:none;margin-top:20px;padding:16px}
+
+  .foot{margin-top:26px;text-align:center;color:var(--muted);font-size:15px;line-height:1.5}
+  .foot a{color:var(--mint-cool);text-decoration:none;font-weight:500;border-bottom:1px solid rgba(167,243,208,.3)}
+  .foot a:hover{border-color:var(--mint-cool)}
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <p class="eyebrow">Free build kit</p>
+    <h1>Exercise Library</h1>
+    <p class="sub">The whole thing to build yourself and back up to the cloud. Two files. Copy them into Claude in order, or download the kit.</p>
+
+    <div class="kit-meta">
+      <span class="chip">2 files</span>
+      <span class="chip">Build + Supabase backup</span>
+      <span class="chip">about 10 minutes</span>
+    </div>
+
+    <div class="file">
+      <div class="file-bar" data-toggle>
+        <span class="fname"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></svg><span class="n">01</span> build-the-library.txt</span>
+        <span class="bar-right"><span class="ftag">PROMPT</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </div>
+      <div class="file-body">
+        <p class="prompt" data-prompt><span class="first">Build me a single-file exercise library I can open in my browser.</span> One page, and make it look good: pure black background, white and soft grey text, with one mint green as the only accent color. Use a classy serif for the titles, something like Instrument Serif, and a clean sans like Inter for everything else. Rounded cards, lots of breathing room, calm and premium, no other bright colors.
+
+Show every move grouped by the muscle it trains, with a search box at the top. I tap a move to add it, tap again to remove it. If I search for something that is not there, let me add my own by name from the same box. Each move has its own card: a picture, three short steps to do it right, and a couple of cues that matter.
+
+Let me swap one move for another. Opening the swap opens this same library, and when I pick the new move it takes the old one's place and keeps my history, no duplicate. Give me a kg and lb toggle in the corner: store one unit, convert at the edge, and let plus and minus step by a clean plate while the middle stays a number I can type.
+
+Save everything in the browser so it is still there when I come back. Seed it with a few real moves so it feels alive on first open.
+
+Make it feel like an app I would pay for.</p>
+      </div>
+      <div class="file-actions">
+        <button class="btn primary" type="button" data-copy>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span data-copy-text>Copy</span>
+        </button>
+        <button class="btn ghost" type="button" data-download data-filename="01-build-the-library.txt">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+    </div>
+
+    <div class="file">
+      <div class="file-bar" data-toggle>
+        <span class="fname"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></svg><span class="n">02</span> back-up-to-supabase.txt</span>
+        <span class="bar-right"><span class="ftag">PROMPT</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </div>
+      <div class="file-body">
+        <p class="prompt" data-prompt><span class="first">Take the app you just built and back it up to Supabase so my data follows me to any device, not just this one browser.</span> Walk me through it step by step. If I do not have a Supabase account yet, help me make a free one, click by click. Create only the one table this app needs and turn on row level security so only I can see my own data. Show me exactly where to paste my project URL and key. Then wire the app to read and write from Supabase, and keep it working offline on my device if I ever lose connection. Keep it to one table and the fewest steps.</p>
+      </div>
+      <div class="file-actions">
+        <button class="btn primary" type="button" data-copy>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span data-copy-text>Copy</span>
+        </button>
+        <button class="btn ghost" type="button" data-download data-filename="02-back-up-to-supabase.txt">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+    </div>
+
+    <button class="btn primary wide" type="button" data-download-all>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download the whole kit
+    </button>
+
+    <p class="foot">Want it wired up in one command, cloud-synced, the exact code from the video? That is on the <a href="https://www.patreon.com/cw/RowanTBK/shop" target="_blank" rel="noopener">Patreon</a>.</p>
+  </main>
+
+<script>
+  (function(){
+    function textOf(el){ return el.querySelector('[data-prompt]').innerText.trim(); }
+    function download(name, text){
+      var blob = new Blob([text], {type:'text/plain'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(a.href);
+    }
+    document.querySelectorAll('[data-copy]').forEach(function(btn){
+      var file = btn.closest('.file');
+      var txt = btn.querySelector('[data-copy-text]');
+      var original = txt.textContent;
+      var resetT;
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var promptText = textOf(file);
+        function ok(){ txt.textContent = 'Copied'; clearTimeout(resetT); resetT = setTimeout(function(){ txt.textContent = original; }, 1600); }
+        if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(promptText).then(ok).catch(function(){ ok(); }); } else { ok(); }
+      });
+    });
+    document.querySelectorAll('[data-download]').forEach(function(btn){
+      btn.addEventListener('click', function(e){ e.stopPropagation(); download(btn.getAttribute('data-filename'), textOf(btn.closest('.file'))); });
+    });
+    document.querySelectorAll('[data-toggle]').forEach(function(bar){
+      bar.addEventListener('click', function(){ bar.closest('.file').classList.toggle('open'); });
+    });
+    var all = document.querySelector('[data-download-all]');
+    if (all){ all.addEventListener('click', function(){
+      var files = document.querySelectorAll('.file');
+      var parts = [
+        'EXERCISE LIBRARY BUILD KIT',
+        '',
+        '01 BUILD THE LIBRARY',
+        textOf(files[0]),
+        '',
+        '02 BACK IT UP TO SUPABASE',
+        textOf(files[1]),
+        ''
+      ];
+      download('exercise-library-kit.txt', parts.join('\n'));
+    }); }
+  })();
+</script>
+</body>
+</html>

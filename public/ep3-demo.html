@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Workout logger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000; --fg:#fff;
+    --mint:#6EE7B7; --mint-cool:#A7F3D0; --mint-hover:#5dd6a6; --amber:#F59E0B; --rose:#e0767b; --gold:#f1cf7a;
+    --muted:rgba(255,255,255,.5); --muted-strong:rgba(255,255,255,.72);
+    --rule:rgba(255,255,255,.08); --rule-strong:rgba(255,255,255,.16);
+    --card:rgba(255,255,255,.022);
+    --serif:'Instrument Serif',Georgia,serif;
+    --sans:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --ease:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  ::selection{background:rgba(110,231,183,.25);color:#fff}
+  html,body{background:var(--bg);min-height:100%}
+  body{font-family:var(--sans);color:var(--fg);-webkit-font-smoothing:antialiased;letter-spacing:-.006em;
+    padding:34px 18px 90px;display:flex;justify-content:center;overflow-x:hidden}
+
+  /* ── background: light at the top, gradient down to pure black, snowy particles ── */
+  .atmos{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 70% 40% at 50% -4%, rgba(110,231,183,.16), transparent 60%),
+      linear-gradient(180deg, #07140e 0%, #050b08 32%, #020403 64%, #000 100%);}
+  #snow{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.9}
+
+  .wrap{position:relative;z-index:1;width:100%;max-width:620px}
+  .num,.pillValue,.pillInput{font-variant-numeric:tabular-nums}
+
+  /* ── progress rail ── */
+  .top{display:flex;align-items:center;gap:14px;margin-bottom:30px}
+  .track{flex:1;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+  .fill{height:100%;width:0;background:var(--mint);border-radius:2px;transition:width .5s var(--ease)}
+  .count{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--mint-cool);font-style:normal;font-weight:500;font-variant-numeric:tabular-nums}
+  .unit-toggle{display:inline-flex;flex:none;background:var(--card);border:1px solid var(--rule-strong);border-radius:999px;padding:2px}
+  .unit-opt{background:none;border:none;color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:999px;cursor:pointer;transition:color .2s,background .2s}
+  .unit-opt.on{background:var(--mint);color:#04140d}
+  .unit-opt:not(.on):hover{color:var(--muted-strong)}
+
+  /* ── lift card ── */
+  .lift{margin-bottom:30px;opacity:0;transform:translateY(10px);animation:rise .6s var(--ease) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .lift-head{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--rule);padding-bottom:11px}
+  .glyph{flex:none;width:20px;height:20px;color:var(--mint);opacity:.8;display:grid;place-items:center}
+  .glyph svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .lift-name{font-family:var(--serif);font-size:28px;line-height:1;letter-spacing:-.01em;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .info{flex:none;width:18px;height:18px;border:1px solid rgba(110,231,183,.4);color:var(--mint);border-radius:50%;
+    font-family:var(--serif);font-style:italic;font-size:11px;display:grid;place-items:center;cursor:pointer;opacity:.8;transition:opacity .2s,background .2s}
+  .info:hover{opacity:1;background:rgba(110,231,183,.08)}
+  .lift-head .sp{flex:1}
+  .lift-x{flex:none;background:none;border:none;color:var(--muted);cursor:pointer;padding:5px;border-radius:8px;opacity:.5;transition:color .2s,opacity .2s,background .2s}
+  .lift-x:hover{color:var(--rose);opacity:1;background:rgba(224,118,123,.08)}
+  .lift-x svg{width:17px;height:17px;display:block;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+
+  .lift-meta{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 14px}
+  .tierchip{border:1px solid var(--rule-strong);border-radius:6px;padding:4px 8px;letter-spacing:.14em;color:var(--muted-strong)}
+
+  /* ── per-lift action chips ── */
+  .chips{display:flex;align-items:center;gap:9px;margin-bottom:16px}
+  .chip{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(110,231,183,.26);border-radius:999px;
+    background:rgba(110,231,183,.03);color:var(--mint);font-family:var(--serif);font-style:italic;font-size:15px;
+    padding:8px 15px;cursor:pointer;box-shadow:0 0 14px rgba(110,231,183,.06);transition:border-color .2s,background .2s,transform .15s var(--spring)}
+  .chip:hover{border-color:rgba(110,231,183,.5);background:rgba(110,231,183,.07)} .chip:active{transform:scale(.95)}
+  .chip svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  /* ── progressive-overload ★ pill (·· ★ at the end of the chips row) — 1:1 with the app ── */
+  .starPill{position:relative;display:inline-flex;align-items:center;justify-content:center;padding:6px 8px;margin-left:2px;
+    border:none;background:transparent;color:var(--mint);cursor:pointer;overflow:visible;transition:transform .2s var(--ease),color .2s var(--ease)}
+  .starDots{display:inline-flex;align-items:center;gap:3px;margin-right:5px}
+  .starDot{width:3px;height:3px;border-radius:50%;background:var(--mint);opacity:.45;transition:opacity .2s var(--ease),background .2s var(--ease)}
+  .starPillArmed .starDot{background:var(--gold);opacity:.7}
+  .starGlyph{font-family:var(--serif);font-size:1.5rem;line-height:1;color:inherit;filter:drop-shadow(0 0 6px rgba(110,231,183,.45));transition:transform .2s var(--ease)}
+  .starPill:hover .starGlyph{transform:scale(1.1)}
+  .starPill:focus-visible{outline:2px solid var(--mint);outline-offset:3px;border-radius:8px}
+  .starPillArmed{color:var(--gold)}
+  .starPillArmed .starGlyph{filter:drop-shadow(0 0 8px rgba(241,207,122,.55));animation:armedBreathe 2.8s ease-in-out infinite}
+  @keyframes armedBreathe{0%,100%{transform:scale(1);opacity:.95}50%{transform:scale(1.09);opacity:1}}
+  .starPillInert{opacity:.3;cursor:default;color:var(--muted)}
+  .starPillInert .starGlyph{filter:none;animation:none}
+  .starPillInert:hover .starGlyph{transform:none}
+  .starPillDone{opacity:.4;cursor:default;color:var(--mint)}
+  .starPillDone .starGlyph{filter:none;animation:none}
+  .starPillDone .starDot{background:var(--mint);opacity:.35}
+  .starPillDone:hover .starGlyph{transform:none}
+  .starAmt{align-self:center;font-family:var(--serif);font-style:italic;font-size:.95rem;color:var(--gold);margin-left:1px;text-shadow:0 0 9px rgba(241,207,122,.3)}
+
+  /* small steady gold ★ beside the lift name once it's a conquered overload */
+  .conqueredStar{flex:none;width:16px;height:16px;align-self:center;color:var(--gold);filter:drop-shadow(0 0 5px rgba(241,207,122,.4))}
+  .conqueredStar svg{width:16px;height:16px;display:block;fill:currentColor}
+
+  /* ── celebration: the one-time gold flush + star burst when a lift becomes a
+        conquered overload (all sets logged + one beats the previous best). On-card,
+        like the app — no broken full-screen overlay. Drives off .lift.celebrate;
+        .lift.conquered is the quiet persistent state (gold name star + gold ★). ── */
+  .lift{position:relative}
+  .lift.conquered .starGlyph{color:var(--gold)}
+  .lift.celebrate .pillValue{animation:goldNum 1.6s var(--ease)}
+  @keyframes goldNum{0%,100%{color:inherit;text-shadow:none}26%{color:var(--gold);text-shadow:0 0 14px rgba(241,207,122,.55)}}
+  .lift.celebrate .lift-name{animation:goldName 1.5s var(--ease)}
+  @keyframes goldName{0%,100%{color:var(--fg)}26%{color:var(--gold);text-shadow:0 0 18px rgba(241,207,122,.45)}}
+  .lift.celebrate .starPill{animation:starBig 1.15s var(--spring);color:var(--gold);opacity:1}
+  .lift.celebrate .starGlyph{filter:drop-shadow(0 0 10px rgba(241,207,122,.6))}
+  @keyframes starBig{0%{transform:scale(1)}30%{transform:scale(1.55)}100%{transform:scale(1)}}
+  .lift.celebrate .starPill::after{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;box-shadow:0 0 0 0 rgba(241,207,122,.6);animation:starRing 1.15s var(--ease) forwards}
+  @keyframes starRing{0%{box-shadow:0 0 0 0 rgba(241,207,122,.6)}100%{box-shadow:0 0 0 30px rgba(241,207,122,0)}}
+
+  .rows{display:flex;flex-direction:column;gap:9px}
+
+  /* ── the set pill (real Vitality row) ── */
+  .pill{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;border:1px solid var(--rule);
+    background:var(--card);position:relative;overflow:hidden;min-width:0;
+    transition:background .4s var(--ease),border-color .4s var(--ease),color .4s var(--ease)}
+  .pillIdx{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--muted);width:20px;flex:none}
+  .pillValue{font-size:19px;font-weight:500;letter-spacing:-.01em;display:inline-flex;align-items:baseline;white-space:nowrap}
+  .pillInput{background:transparent;border:none;outline:none;color:inherit;font:inherit;font-weight:600;
+    text-align:center;field-sizing:content;width:auto;min-width:1.4ch;padding:0 1px;border-bottom:1px solid transparent;
+    transition:border-color .25s var(--ease),color .25s var(--ease)}
+  .pill:hover .pillInput{border-bottom-color:rgba(110,231,183,.22)}
+  .pillInput:focus{color:var(--mint);border-bottom-color:var(--mint)}
+  .pillUnit{color:var(--muted);font-family:var(--serif);font-style:italic;font-size:.7em;margin-left:3px;letter-spacing:.02em}
+  .pillTimes{color:var(--muted);margin:0 7px;font-weight:400}
+  .pillSpacer{flex:1}
+  .pillGroup{display:inline-flex;align-items:center;gap:9px}
+  .pillHit{background:none;border:none;font-family:var(--serif);font-style:italic;font-size:14px;color:var(--mint);cursor:pointer;white-space:nowrap;padding:2px;transition:color .2s}
+  .pillMiss{background:none;border:none;font-family:var(--serif);font-style:italic;font-size:14px;color:var(--muted);cursor:pointer;padding:2px;transition:color .2s}
+  .pillMiss:hover{color:var(--rose)}
+  .pillStatus{font-family:var(--serif);font-style:italic;font-size:14px;white-space:nowrap}
+  .pillReset{background:none;border:none;color:currentColor;cursor:pointer;opacity:.6;padding:5px;border-radius:50%;display:inline-flex;transition:opacity .2s,background .2s}
+  .pillReset:hover{opacity:1;background:rgba(0,0,0,.12)} .pillReset svg{width:13px;height:13px;display:block}
+  .pillPr{font-family:var(--serif);font-style:italic;color:#a87f12}
+
+  .pill.clean,.pill.over{background:var(--mint);border-color:var(--mint);color:#000}
+  .pill.clean .pillIdx,.pill.over .pillIdx,.pill.clean .pillTimes,.pill.over .pillTimes{color:rgba(0,0,0,.55)}
+  .pill.clean .pillInput,.pill.over .pillInput{color:#000}
+  .pill.clean .pillUnit,.pill.over .pillUnit{color:rgba(0,0,0,.55)}
+  .pill.clean .pillHit,.pill.over .pillHit,.pill.clean .pillStatus,.pill.over .pillStatus{color:#000}
+  .pill.partial{background:rgba(245,158,11,.14);border-color:var(--amber);color:var(--fg)}
+  .pill.partial .pillIdx,.pill.partial .pillStatus,.pill.partial .pillUnit{color:var(--amber)}
+  .pill.failed{background:rgba(224,118,123,.12);border-color:var(--rose);color:var(--fg)}
+  .pill.failed .pillIdx,.pill.failed .pillStatus{color:var(--rose)}
+  .pill.failed .pillValue{text-decoration:line-through;color:var(--muted-strong)}
+
+  /* ── add a lift ── */
+  .add{display:flex;flex-direction:column;align-items:center;gap:9px;margin:34px 0 8px}
+  .add-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--rule-strong);background:none;color:var(--mint);
+    font-size:22px;line-height:1;cursor:pointer;display:grid;place-items:center;transition:border-color .2s,transform .2s var(--spring)}
+  .add-btn:hover{border-color:var(--mint)} .add-btn:active{transform:scale(.92)}
+  .add-cap{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--muted)}
+  .add-form{display:none;gap:9px;width:100%;max-width:360px}
+  .add-form.on{display:flex}
+  .add-input{flex:1;background:var(--card);border:1px solid var(--rule-strong);border-radius:12px;color:var(--fg);
+    font-family:var(--sans);font-size:15px;padding:12px 14px;outline:none;transition:border-color .2s}
+  .add-input:focus{border-color:var(--mint)}
+  .add-go{background:var(--mint);color:#000;border:none;border-radius:12px;font-family:var(--sans);font-weight:600;font-size:14px;padding:0 18px;cursor:pointer}
+
+  /* ── hidden / removed lifts (never lose your data) ── */
+  .hidden-bar{margin-top:30px;border-top:1px solid var(--rule);padding-top:18px}
+  .hidden-bar h4{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .hidden-row{display:flex;align-items:center;gap:10px;padding:10px 0;color:var(--muted-strong)}
+  .hidden-row .hn{flex:1;font-family:var(--serif);font-style:italic;font-size:17px}
+  .hidden-row .keep{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);border-radius:999px;padding:3px 8px}
+  .restore{background:none;border:1px solid var(--rule-strong);color:var(--mint);font-family:var(--serif);font-style:italic;font-size:13px;padding:5px 13px;border-radius:999px;cursor:pointer;transition:border-color .2s}
+  .restore:hover{border-color:var(--mint)}
+
+  .footnote{text-align:center;color:var(--muted);font-size:11.5px;margin-top:26px;opacity:.8}
+
+  /* ── modal (info card + the Episode 1 history graph) ── */
+  .modal{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:22px;
+    background:rgba(0,0,0,.66);opacity:0;pointer-events:none;transition:opacity .25s var(--ease);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+  .modal.on{opacity:1;pointer-events:auto}
+  .sheet{width:100%;max-width:440px;background:#0a0f0c;border:1px solid var(--rule-strong);border-radius:20px;padding:22px;
+    transform:scale(.94) translateY(10px);transition:transform .3s var(--spring)}
+  .modal.on .sheet{transform:none}
+  .sheet-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint);margin-bottom:8px}
+  .sheet-title{font-family:var(--serif);font-size:26px;line-height:1.05;margin-bottom:4px}
+  .sheet-sub{color:var(--muted-strong);font-size:14px;line-height:1.5;margin-bottom:16px}
+  .sheet-close{position:absolute;z-index:10;top:14px;right:14px;width:32px;height:32px;display:grid;place-items:center;background:rgba(255,255,255,.05);border:1px solid var(--rule-strong);border-radius:50%;color:var(--muted-strong);cursor:pointer;font-size:15px;line-height:1;transition:border-color .2s,color .2s}
+  .sheet-close:hover{border-color:var(--mint);color:var(--fg)}
+  .sheet-stats{display:flex;gap:18px;margin-top:8px}
+  .sheet-stat .k{font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+  .sheet-stat .v{font-size:20px;font-weight:600;margin-top:5px} .sheet-stat .v.gold{color:var(--gold)} .sheet-stat .v.up{color:var(--mint-cool)}
+  .chart{width:100%;margin-top:6px}
+  .chart svg{width:100%;height:auto;display:block;overflow:visible}
+  .ch-grid{stroke:var(--rule)} .ch-area{fill:url(#g)} .ch-line{fill:none;stroke:var(--mint);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+  .ch-dot{fill:var(--mint);stroke:#0a0f0c;stroke-width:3} .ch-dot.best{fill:var(--gold)}
+  .ch-lab{fill:var(--muted);font-family:var(--mono);font-size:8px}
+  .ch-cap{text-align:center;font-family:var(--serif);font-style:italic;font-size:14px;color:var(--mint-cool);margin-top:10px}
+
+  /* ════ shared card bits (ported from the real logger cards) ════ */
+  .card-sub{font-family:var(--serif);font-style:italic;font-size:14.5px;line-height:1.5;color:var(--muted-strong);margin:4px 0 4px}
+  .card-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+  .btn-ghost{background:none;border:1px solid var(--rule-strong);color:var(--muted-strong);font-family:var(--sans);font-weight:600;
+    font-size:14px;padding:11px 20px;border-radius:999px;cursor:pointer;transition:border-color .2s,color .2s}
+  .btn-ghost:hover{border-color:var(--mint);color:var(--fg)}
+  .btn-mint{background:var(--mint);border:1px solid var(--mint);color:#04140d;font-family:var(--sans);font-weight:700;
+    font-size:14px;padding:11px 22px;border-radius:999px;cursor:pointer;transition:background .2s,transform .15s var(--spring)}
+  .btn-mint:hover{background:#5dd6a6} .btn-mint:active{transform:scale(.97)}
+
+  /* ════ TUNE: icon + label rows, steppers, weight tap-to-type ════ */
+  .tune{display:flex;flex-direction:column;margin:8px 0 2px}
+  .tune-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 2px;border-top:1px solid var(--rule)}
+  .tune-row:first-child{border-top:none}
+  .tune-left{display:flex;align-items:center;gap:12px;min-width:0}
+  .tune-ico{flex:none;width:17px;height:17px;color:var(--muted)}
+  .tune-ico svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .tune-lab{display:flex;flex-direction:column;gap:3px}
+  .tune-k{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-strong)}
+  .tune-reset{align-self:flex-start;background:none;border:none;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
+    text-transform:lowercase;color:var(--rose);cursor:pointer;padding:0}
+  .tune-ctrl{display:flex;align-items:center;gap:5px}
+  .tune-step{width:30px;height:34px;background:none;border:none;color:rgba(255,255,255,.34);font-size:22px;line-height:1;
+    cursor:pointer;display:grid;place-items:center;transition:color .2s} .tune-step:hover{color:var(--mint)}
+  .tune-val{font-family:var(--serif);font-style:italic;font-size:27px;color:var(--fg);font-variant-numeric:tabular-nums;min-width:1.7ch;text-align:center}
+  .tune-num{font-family:var(--serif);font-style:italic;font-size:27px;color:var(--fg);background:none;border:none;outline:none;
+    text-align:right;width:auto;field-sizing:content;min-width:1.4ch;border-bottom:1.5px solid transparent;padding:0 1px;transition:border-color .25s,color .25s}
+  .tune-num:focus{color:var(--mint);border-bottom-color:var(--mint)}
+  .tune-unit{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:lowercase;color:var(--muted);margin-left:6px}
+
+  /* ════ SWAP: recommendations + library search ════ */
+  .swap-sec{margin-top:18px}
+  .swap-lab{display:block;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .swap-rows{display:flex;flex-direction:column;gap:8px}
+  .swap-row{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;color:var(--fg);
+    background:var(--card);border:1px solid var(--rule-strong);border-radius:12px;padding:13px 15px;cursor:pointer;
+    transition:border-color .2s,background .2s,transform .12s var(--spring)}
+  .swap-row:hover{border-color:var(--mint);background:rgba(110,231,183,.04)} .swap-row:active{transform:scale(.985)}
+  .swap-nm{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .swap-meta{display:inline-flex;align-items:center;gap:9px;flex:none}
+  .swap-wt{font-family:var(--serif);font-style:italic;font-size:19px;color:var(--mint);font-variant-numeric:tabular-nums}
+  .swap-wt span{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-left:3px}
+  .swap-arrow{flex:none;width:14px;height:14px;color:var(--mint)} .swap-arrow svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .swap-search{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--rule-strong);border-radius:12px;padding:0 14px;transition:border-color .2s}
+  .swap-search:focus-within{border-color:var(--mint)}
+  .swap-search-ico{flex:none;width:15px;height:15px;color:var(--muted)} .swap-search-ico svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .swap-input{flex:1;background:none;border:none;outline:none;color:var(--fg);font-family:var(--sans);font-size:15px;padding:13px 0}
+  .swap-input::placeholder{color:var(--muted)}
+  .swap-lib{display:flex;flex-direction:column;max-height:208px;overflow-y:auto;margin-top:4px}
+  .swap-lib .swap-row{border:none;border-bottom:1px solid var(--rule);border-radius:0;background:none;padding:13px 4px}
+  .swap-lib .swap-row:hover{background:rgba(110,231,183,.04)}
+  .swap-empty{text-align:center;font-family:var(--serif);font-style:italic;font-size:14px;color:var(--muted);padding:18px 0 2px}
+  .swap-form{display:flex;gap:9px;margin:6px 0 12px}
+  .swap-input2{flex:1;background:var(--card);border:1px solid var(--rule-strong);border-radius:12px;color:var(--fg);font-family:var(--sans);font-size:15px;padding:13px 14px;outline:none;transition:border-color .2s}
+  .swap-input2:focus{border-color:var(--mint)} .swap-input2::placeholder{color:var(--muted)}
+  .swap-upsell{font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted);text-align:center;line-height:1.45}
+  .ov-empty{text-align:center;font-family:var(--serif);font-style:italic;font-size:14.5px;color:var(--muted);padding:10px 6px 16px;line-height:1.5}
+
+  /* ── history opens the REAL Episode 1 component, on the logger's own atmosphere ── */
+  .ep1-overlay{position:fixed;inset:0;z-index:60;display:none;
+    background:
+      radial-gradient(ellipse 70% 40% at 50% -4%, rgba(110,231,183,.16), transparent 60%),
+      linear-gradient(180deg,#07140e 0%,#050b08 32%,#020403 64%,#000 100%)}
+  .ep1-overlay.on{display:block;animation:ep1in .3s var(--ease)}
+  @keyframes ep1in{from{opacity:0}to{opacity:1}}
+  .ep1-overlay iframe{width:100%;height:100%;border:none;display:block;background:transparent}
+  /* the logger owns the way back, so it works even when the graph is a file:// iframe */
+  .ep1-close{position:fixed;top:16px;left:16px;z-index:2;display:inline-flex;align-items:center;gap:7px;
+    background:rgba(8,14,10,.72);border:1px solid var(--rule-strong);color:var(--mint);
+    font-family:var(--serif);font-style:italic;font-size:15px;padding:9px 16px;border-radius:999px;cursor:pointer;
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:border-color .2s,background .2s}
+  .ep1-close:hover{border-color:var(--mint);background:rgba(8,14,10,.92)}
+  .ep1-close svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ── finish session (closes the loop: today's sets become a saved session) ── */
+  .finish-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;margin:26px 0 4px}
+  .finish{display:inline-flex;align-items:center;gap:9px;background:var(--mint);color:#04140d;border:none;border-radius:999px;
+    font-family:var(--sans);font-weight:700;font-size:15px;letter-spacing:-.01em;padding:14px 26px;cursor:pointer;
+    box-shadow:0 10px 30px -10px rgba(110,231,183,.5);transition:transform .15s var(--spring),box-shadow .2s,opacity .2s}
+  .finish:hover{transform:translateY(-2px);box-shadow:0 14px 36px -10px rgba(110,231,183,.6)} .finish:active{transform:scale(.97)}
+  .finish svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .finish[disabled]{opacity:.4;cursor:default;box-shadow:none;pointer-events:none}
+  .finish-cap{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--muted)}
+
+  /* ════ OVERLOAD CARD: 1:1 port of the app's OverloadModal (opens on the ★) ════ */
+  .po-modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:18px;
+    background:rgba(0,0,0,.6);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);opacity:0;pointer-events:none;transition:opacity .2s var(--ease)}
+  .po-modal.on{opacity:1;pointer-events:auto}
+  .po-card{position:relative;overflow:hidden;width:100%;max-width:380px;border:1px solid var(--rule-strong);border-radius:26px;
+    background:#0a0f0c;padding:22px 22px 18px;box-shadow:0 24px 80px rgba(0,0,0,.6);
+    transform:translateY(10px) scale(.985);opacity:0;transition:transform .32s var(--ease),opacity .32s var(--ease)}
+  .po-modal.on .po-card{transform:none;opacity:1}
+  .po-card::before{content:'';position:absolute;top:-50px;left:50%;transform:translateX(-50%);width:320px;height:180px;
+    pointer-events:none;background:radial-gradient(closest-side,rgba(110,231,183,.13),transparent 72%)}
+  .po-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:relative}
+  .po-head-l{display:flex;align-items:center;gap:10px;min-width:0}
+  .po-head-ico{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;flex-shrink:0;color:rgba(110,231,183,.75)}
+  .po-head-ico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .po-eyebrow{font-family:var(--serif);font-style:italic;color:var(--muted);font-size:14px}
+  .po-title{font-family:var(--serif);font-style:italic;font-size:24px;letter-spacing:-.02em;color:var(--fg);margin:2px 0 0;line-height:1.05;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .po-close{flex:none;width:30px;height:30px;border-radius:9px;border:none;background:transparent;color:var(--muted);cursor:pointer;
+    display:grid;place-items:center;transition:color .2s var(--ease),background .2s var(--ease)}
+  .po-close:hover{color:var(--fg);background:rgba(255,255,255,.06)}
+  .po-close svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}
+  .po-body{text-align:center;padding-top:16px;position:relative}
+  .po-body>.po-show,.po-body>.po-hint,.po-body>.po-confirm,.po-body>.po-remove,.po-body>.po-skip,
+  .po-body>.po-choices,.po-body>.po-stepGroup,.po-body>.po-done{animation:cozyItem .46s var(--spring) backwards}
+  .po-body>.po-show{animation-delay:.11s} .po-body>.po-hint{animation-delay:.18s}
+  .po-body>.po-choices{animation-delay:.25s} .po-body>.po-confirm{animation-delay:.25s}
+  .po-body>.po-stepGroup{animation-delay:.16s} .po-body>.po-remove{animation-delay:.3s}
+  .po-body>.po-skip{animation-delay:.32s} .po-body>.po-done{animation-delay:.11s}
+  @keyframes cozyItem{0%{opacity:0;transform:translateY(11px)}100%{opacity:1;transform:none}}
+  .po-star{position:relative;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;margin:0 auto 9px;
+    color:var(--mint);background:rgba(110,231,183,.12);font-family:var(--serif);font-size:1.25rem;line-height:1;animation:starPop .62s var(--spring)}
+  .po-star::before{content:'';position:absolute;inset:-9px;border-radius:50%;z-index:-1;
+    background:radial-gradient(closest-side,rgba(110,231,183,.3),transparent 72%);animation:haloBreath 3.2s ease-in-out infinite}
+  .po-star.armed{color:var(--gold);background:rgba(241,207,122,.12)}
+  .po-star.armed::before{background:radial-gradient(closest-side,rgba(241,207,122,.32),transparent 72%)}
+  @keyframes starPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.18);opacity:1}100%{transform:scale(1)}}
+  @keyframes haloBreath{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:.95;transform:scale(1.18)}}
+  .po-show{display:flex;flex-direction:column;gap:7px;margin:0 0 16px;padding:15px 13px;border-radius:16px;border:1px solid var(--rule);
+    background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01));box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+  .po-showD{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .po-showV{display:flex;justify-content:center;align-items:baseline;flex-wrap:wrap;gap:16px}
+  .po-stat{font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--muted-strong)}
+  .po-stat b{font-weight:400;font-size:1.5rem;color:var(--fg);margin-right:4px;font-variant-numeric:tabular-nums}
+  .po-hint{font-family:var(--serif);font-style:italic;color:var(--muted-strong);font-size:14px;margin:0 0 15px}
+  .po-confirm{display:block;width:100%;margin:0 0 2px;padding:14px;border:none;border-radius:14px;background:var(--mint);color:#04140d;
+    font-weight:700;font-size:14px;font-family:var(--sans);cursor:pointer;transition:background .2s var(--ease),transform .2s var(--spring),box-shadow .2s var(--ease)}
+  .po-confirm:hover{background:var(--mint-hover);transform:translateY(-2px);box-shadow:0 10px 26px rgba(110,231,183,.22)}
+  .po-confirm:active{transform:translateY(0) scale(.985)}
+  .po-remove{display:block;margin:10px auto 0;background:none;border:none;color:var(--gold);font-family:var(--serif);font-style:italic;font-size:14px;cursor:pointer;opacity:.85}
+  .po-remove:hover{opacity:1}
+  .po-skip{display:block;margin:12px auto 0;background:none;border:none;color:var(--muted);font-family:var(--serif);font-style:italic;font-size:14px;cursor:pointer}
+  .po-skip:hover{color:var(--muted-strong)}
+  .po-armedBody{padding-top:8px}
+  .po-armedAmt{font-family:var(--serif);font-style:italic;font-size:2.4rem;color:var(--gold);text-shadow:0 0 22px rgba(241,207,122,.3);margin:4px 0 2px}
+  .po-armedLbl{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--muted);margin-bottom:18px}
+  .po-choices{display:flex;gap:9px;margin-bottom:2px}
+  .po-choice{flex:1;cursor:pointer;border:1px solid rgba(110,231,183,.28);border-radius:14px;padding:14px 8px;color:var(--fg);
+    font-family:var(--serif);font-style:italic;font-size:16px;background:linear-gradient(180deg,rgba(110,231,183,.08),rgba(110,231,183,.03));
+    transition:background .2s var(--ease),border-color .2s var(--ease),transform .2s var(--spring),box-shadow .2s var(--ease)}
+  .po-choice:hover{background:linear-gradient(180deg,rgba(110,231,183,.16),rgba(110,231,183,.06));border-color:rgba(110,231,183,.5);transform:translateY(-2px);box-shadow:0 8px 22px rgba(110,231,183,.13)}
+  .po-choice:active{transform:translateY(0) scale(.98)}
+  .po-stepBody{padding-top:22px}
+  .po-stepGroup{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:18px}
+  .po-stepLbl{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .po-step{display:flex;align-items:center;justify-content:center;gap:18px}
+  .po-adj{width:46px;height:46px;border-radius:50%;border:1px solid rgba(110,231,183,.34);background:rgba(110,231,183,.06);color:var(--mint);
+    font-size:23px;line-height:1;cursor:pointer;display:grid;place-items:center;transition:background .2s var(--ease),color .2s var(--ease),transform .2s var(--spring),box-shadow .2s var(--ease)}
+  .po-adj:hover{background:var(--mint);color:#04140d;box-shadow:0 8px 20px -8px rgba(110,231,183,.55)}
+  .po-adj:active{transform:scale(.9)}
+  .po-val{display:inline-flex;align-items:baseline;gap:5px;font-family:var(--serif);font-style:italic;font-size:2.05rem;color:var(--fg);
+    min-width:118px;justify-content:center;padding:8px 18px;border-radius:16px;background:radial-gradient(130% 130% at 50% 0%,rgba(110,231,183,.1),transparent 72%);box-shadow:inset 0 0 0 1px rgba(110,231,183,.1)}
+  .po-plus{color:var(--mint);font-size:.8em}
+  .po-input{width:3.4ch;min-width:1.6ch;background:transparent;border:none;outline:none;color:var(--fg);font:inherit;text-align:center;
+    -moz-appearance:textfield;appearance:textfield;border-bottom:1px solid transparent;padding:0 1px 1px;transition:border-color .2s var(--ease),color .2s var(--ease)}
+  .po-input:focus{color:var(--mint);border-bottom-color:rgba(110,231,183,.55)}
+  .po-input::-webkit-outer-spin-button,.po-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .po-unit{font-family:var(--serif);font-style:italic;font-size:.5em;color:var(--muted);margin-left:4px}
+  .po-done{padding:22px 0 12px;text-align:center}
+  .po-doneAmt{font-family:var(--serif);font-style:italic;font-size:1.55rem;color:var(--mint);animation:cozyPop .56s var(--spring)}
+  .po-doneSub{font-size:12px;color:var(--muted);margin-top:7px;letter-spacing:.04em;animation:cozyItem .46s var(--spring) backwards .16s}
+  @keyframes cozyPop{0%{opacity:0;transform:scale(.78)}60%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+
+  /* ── finish toast: a calm on-brand confirmation (replaces the old overlay) ── */
+  .finish-cap.saved{color:var(--mint-cool);animation:savedPulse 1.8s var(--ease)}
+  @keyframes savedPulse{0%{opacity:.4;transform:translateY(3px)}18%{opacity:1;transform:none}100%{opacity:1}}
+
+  /* ── FORM reference card: the real Vitality "form" sheet, ported 1:1 ── */
+  .sheet.fr{max-width:460px;max-height:88vh;overflow-y:auto;position:relative}
+  .fr-card{display:flex;flex-direction:column;gap:18px}
+  .fr-rev{opacity:0;animation:frReveal .5s var(--ease) both}
+  @keyframes frReveal{from{opacity:0;transform:translateY(12px);filter:blur(4px)}to{opacity:1;transform:none;filter:blur(0)}}
+  .fr-head{display:flex;flex-direction:column;gap:8px;padding-right:34px}
+  .fr-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mint);font-weight:600}
+  .fr-title{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(2rem,7vw,2.5rem);line-height:1.05;letter-spacing:-.015em}
+  .fr-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .fr-muscle{display:inline-flex;align-items:center;gap:6px;color:var(--mint)}
+  .fr-sep{opacity:.4}
+  .fr-item{color:var(--muted-strong)}
+  .fr-tier{font-family:var(--sans);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;padding:2px 9px;border:1px solid rgba(110,231,183,.4);border-radius:999px;background:rgba(110,231,183,.06);color:var(--mint);cursor:pointer;transition:background .18s var(--ease),border-color .18s var(--ease),color .18s var(--ease);animation:frTierGlow 2.8s ease-in-out infinite}
+  .fr-tier:hover{background:rgba(110,231,183,.14);border-color:var(--mint);color:var(--mint-hover)}
+  @keyframes frTierGlow{0%,100%{box-shadow:0 0 0 0 rgba(110,231,183,0)}50%{box-shadow:0 0 0 4px rgba(110,231,183,.10)}}
+  .fr-gist{font-size:1.125rem;line-height:1.4;color:var(--fg);font-weight:600;letter-spacing:-.01em;max-width:56ch}
+  .fr-images{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:360px}
+  .fr-frame{margin:0;background:var(--card);border:1px solid var(--rule);border-radius:8px;overflow:hidden;position:relative;aspect-ratio:1/1;transition:border-color .18s var(--ease),box-shadow .18s var(--ease)}
+  .fr-frame:hover{border-color:rgba(110,231,183,.4);box-shadow:0 0 24px -4px rgba(110,231,183,.4)}
+  .fr-img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;display:block}
+  .fr-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px;max-width:60ch}
+  .fr-step{display:grid;grid-template-columns:20px 1fr;align-items:center;gap:16px}
+  .fr-num{font-family:var(--serif);font-style:italic;font-size:18px;line-height:1;color:var(--mint);text-align:center}
+  .fr-text{font-size:1.05rem;line-height:1.3;color:var(--fg);font-weight:500}
+  .fr-cues{display:flex;flex-wrap:wrap;gap:8px}
+  .fr-cue{font-size:14px;line-height:1.3;padding:6px 12px;border-radius:999px;border:1px solid rgba(110,231,183,.22);background:rgba(110,231,183,.05);color:var(--muted-strong)}
+  .fr-tierOverlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.66);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:frFade .16s var(--ease)}
+  .fr-tierOverlay[hidden]{display:none}
+  @keyframes frFade{from{opacity:0}to{opacity:1}}
+  .fr-tierCard{position:relative;width:100%;max-width:320px;background:#0a0f0c;border:1px solid var(--rule-strong);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:8px;animation:cozyItem .34s var(--spring)}
+  .fr-tierBanner{display:inline-flex;align-items:center;gap:8px;margin-bottom:2px}
+  .fr-tierDigit{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:1px solid rgba(110,231,183,.4);background:rgba(110,231,183,.08);color:var(--mint);font-size:13px;font-weight:700}
+  .fr-tierBadge{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint);font-weight:600}
+  .fr-tierTitle{font-family:var(--serif);font-style:italic;font-weight:400;font-size:1.6rem;line-height:1.1}
+  .fr-tierBody{font-size:14px;line-height:1.6;color:var(--muted-strong)}
+  .fr-tierClose{position:absolute;top:12px;right:12px;width:26px;height:26px;display:grid;place-items:center;background:transparent;border:none;color:var(--muted-strong);font-size:20px;line-height:1;cursor:pointer;transition:color .18s var(--ease)}
+  .fr-tierClose:hover{color:var(--fg)}
+  @media(prefers-reduced-motion:reduce){.fr-rev,.fr-tier,.fr-tierOverlay,.fr-tierCard{animation:none;opacity:1}}
+
+  /* ════ LIBRARY: the full exercise library page (opens from "add a lift") ════ */
+  .lib-open{display:inline-flex;align-items:center;gap:10px;border:1px solid rgba(110,231,183,.35);background:rgba(110,231,183,.04);
+    color:var(--mint);font-family:var(--serif);font-style:italic;font-size:18px;padding:13px 22px;border-radius:999px;cursor:pointer;
+    box-shadow:0 0 22px rgba(110,231,183,.08);transition:border-color .2s,background .2s,transform .15s var(--spring)}
+  .lib-open:hover{border-color:var(--mint);background:rgba(110,231,183,.09);transform:translateY(-1px)} .lib-open:active{transform:scale(.97)}
+  .lib-open svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .lib-open-n{font-family:var(--mono);font-style:normal;font-size:10px;letter-spacing:.08em;color:var(--mint-cool);border:1px solid rgba(110,231,183,.3);border-radius:999px;padding:2px 8px}
+
+  /* the page itself: darker and more professional. The session view hides while
+     you browse, so the drifting particles + a low mountain ridge become the
+     background, like the real app. */
+  .lib-overlay{position:fixed;inset:0;z-index:39;display:none;overflow-y:auto;padding:30px 18px 96px;
+    background:linear-gradient(180deg, rgba(4,11,8,.52) 0%, rgba(2,6,4,.82) 46%, rgba(0,0,0,.96) 100%)}
+  .lib-overlay.on{display:block;animation:ep1in .3s var(--ease)}
+  body.lib-browsing .wrap{display:none}
+  .lib-mtn{position:fixed;left:0;right:0;bottom:0;width:100%;height:23vh;max-height:210px;pointer-events:none;z-index:0;display:block}
+  .lib-wrap{position:relative;z-index:1;width:100%;max-width:600px;margin:0 auto}
+  .lib-top{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .lib-back{display:inline-flex;align-items:center;gap:7px;background:none;border:1px solid var(--rule-strong);color:var(--mint);
+    font-family:var(--serif);font-style:italic;font-size:15px;padding:8px 15px;border-radius:999px;cursor:pointer;transition:border-color .2s}
+  .lib-back:hover{border-color:var(--mint)}
+  .lib-back svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .lib-sp{flex:1}
+  .lib-count{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--muted);white-space:nowrap}
+  .lib-count b{color:var(--mint-cool);font-style:normal;font-weight:500;font-variant-numeric:tabular-nums}
+  .lib-title{font-family:var(--serif);font-size:34px;line-height:1;letter-spacing:-.01em;margin-bottom:16px}
+  .lib-search{display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.022);border:1px solid var(--rule-strong);border-radius:14px;padding:0 16px;margin-bottom:26px;transition:border-color .2s}
+  .lib-search:focus-within{border-color:var(--mint)}
+  .lib-search svg{flex:none;width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .lib-search input{flex:1;background:none;border:none;outline:none;color:var(--fg);font-family:var(--sans);font-size:15px;padding:14px 0}
+  .lib-search input::placeholder{color:var(--muted)}
+  .lib-sec{margin-bottom:30px}
+  .lib-sec-h{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding:0 4px}
+  .lib-sec-h b{color:var(--muted-strong);font-weight:500}
+  .lib-sec-n{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--mint);border:1px solid rgba(110,231,183,.28);border-radius:999px;padding:2px 9px;opacity:.9;font-variant-numeric:tabular-nums}
+  .lib-row{display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid rgba(255,255,255,.05);min-width:0}
+  .lib-row:last-child{border-bottom:none}
+  .lib-check{flex:none;width:22px;height:22px;border-radius:7px;border:1.5px solid var(--rule-strong);background:none;cursor:pointer;display:grid;place-items:center;padding:0;transition:border-color .18s,background .18s,transform .12s var(--spring)}
+  .lib-check:hover{border-color:var(--mint)} .lib-check:active{transform:scale(.9)}
+  .lib-check svg{width:12px;height:12px;fill:none;stroke:#04140d;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s}
+  .lib-check.on{background:var(--mint);border-color:var(--mint)} .lib-check.on svg{opacity:1}
+  .lib-gly{flex:none;width:18px;height:18px;color:var(--mint);opacity:.72;display:grid;place-items:center}
+  .lib-gly svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .lib-main{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
+  .lib-nm{font-family:var(--sans);font-size:16px;font-weight:500;letter-spacing:-.01em;color:var(--fg);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lib-rec{flex:none;font-family:var(--mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--mint);border:1px solid rgba(110,231,183,.3);border-radius:999px;padding:3px 7px;opacity:.85}
+  .lib-i{flex:none;width:22px;height:22px;border:1px solid rgba(110,231,183,.45);background:none;color:var(--mint);border-radius:50%;font-family:var(--serif);font-style:italic;font-size:12.5px;display:grid;place-items:center;cursor:pointer;opacity:.92;transition:opacity .2s,background .2s,border-color .2s}
+  .lib-i:hover{opacity:1;background:rgba(110,231,183,.1);border-color:var(--mint)}
+  .lib-empty{text-align:center;font-family:var(--serif);font-style:italic;font-size:15px;color:var(--muted);padding:44px 0}
+  .lib-sub{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--muted-strong);margin:-8px 0 20px;line-height:1.4}
+  .lib-row.pick{cursor:pointer;border-radius:10px}
+  .lib-row.pick:hover{background:rgba(110,231,183,.04)}
+  .lib-pick{flex:none;width:22px;height:22px;display:grid;place-items:center;color:var(--mint);opacity:.75}
+  .lib-pick svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .lib-create{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:rgba(110,231,183,.05);border:1px dashed rgba(110,231,183,.4);color:var(--mint);
+    font-family:var(--serif);font-style:italic;font-size:16px;padding:14px 16px;border-radius:12px;cursor:pointer;margin-bottom:20px;transition:background .2s,border-color .2s}
+  .lib-create:hover{background:rgba(110,231,183,.1);border-color:var(--mint)}
+  .lib-create svg{flex:none;width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ── bottom actions: add a lift (opens the library) + reorder ── */
+  .actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:32px 0 6px}
+  .act-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--rule-strong);background:none;color:var(--mint);
+    font-family:var(--serif);font-style:italic;font-size:16px;padding:11px 20px;border-radius:999px;cursor:pointer;transition:border-color .2s,background .2s,transform .12s var(--spring)}
+  .act-btn:hover{border-color:var(--mint);background:rgba(110,231,183,.05)} .act-btn:active{transform:scale(.96)}
+  .act-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .act-btn.on{background:var(--mint);border-color:var(--mint);color:#04140d}
+
+  /* ── reorder: a simple arrow modal, matched to the app (no drag, cannot jam) ── */
+  .sheet.ro{max-width:460px}
+  .ro-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .ro-eyebrow{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--muted)}
+  .ro-title{font-family:var(--serif);font-size:26px;line-height:1.1;margin-top:2px}
+  .ro-done{flex:none;background:var(--mint);color:#04140d;border:none;border-radius:999px;font-family:var(--sans);font-weight:700;font-size:14px;padding:9px 22px;cursor:pointer;transition:transform .15s var(--spring),background .2s}
+  .ro-done:hover{background:var(--mint-hover)} .ro-done:active{transform:scale(.96)}
+  .ro-sub{font-family:var(--sans);font-size:14px;color:var(--muted-strong);margin:8px 0 18px;line-height:1.4}
+  .ro-list{display:flex;flex-direction:column;gap:10px}
+  .ro-row{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:13px 14px;transition:background .3s var(--ease)}
+  .ro-row.moved{background:rgba(110,231,183,.09)}
+  .ro-n{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--muted);width:16px;flex:none;text-align:center;font-variant-numeric:tabular-nums}
+  .ro-nm{flex:1;min-width:0;font-family:var(--serif);font-style:italic;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ro-arrows{display:inline-flex;gap:8px;flex:none}
+  .ro-arrow{width:42px;height:36px;border:1px solid var(--rule-strong);background:none;color:var(--mint);border-radius:10px;cursor:pointer;display:grid;place-items:center;transition:border-color .2s,background .2s,transform .1s var(--spring)}
+  .ro-arrow:hover:not([disabled]){border-color:var(--mint);background:rgba(110,231,183,.06)} .ro-arrow:active:not([disabled]){transform:scale(.9)}
+  .ro-arrow[disabled]{opacity:.25;cursor:default}
+  .ro-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ── session complete: the celebration (Vitality is a character, it celebrates) ── */
+  .cele{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;padding:26px;
+    background:
+      radial-gradient(ellipse 66% 42% at 50% 33%, rgba(241,207,122,.11), transparent 60%),
+      radial-gradient(ellipse 92% 62% at 50% 42%, rgba(110,231,183,.10), transparent 64%),
+      rgba(1,4,3,.95);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);opacity:0;transition:opacity .35s var(--ease)}
+  .cele.on{display:flex;opacity:1}
+  .cele-card{position:relative;width:100%;max-width:440px;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .cele-eyebrow,.cele-title,.cele-sub,.cele-stats,.cele-prs,.cele-done{animation:celeUp .62s var(--spring) backwards}
+  .cele-eyebrow{animation-delay:.14s} .cele-title{animation-delay:.21s} .cele-sub{animation-delay:.29s}
+  .cele-stats{animation-delay:.37s} .cele-prs{animation-delay:.45s} .cele-done{animation-delay:.55s}
+  @keyframes celeUp{0%{opacity:0;transform:translateY(15px)}100%{opacity:1;transform:none}}
+  .cele-star{position:relative;width:74px;height:74px;margin:0 auto 24px;filter:drop-shadow(0 8px 22px rgba(241,207,122,.4));animation:celeStar .82s var(--spring)}
+  .cele-star svg{position:relative;z-index:1;width:74px;height:74px;display:block}
+  .cele-star::before{content:'';position:absolute;inset:-26px;border-radius:50%;z-index:0;
+    background:radial-gradient(closest-side, rgba(241,207,122,.36), transparent 72%);animation:celeHalo 3s ease-in-out infinite}
+  .cele-star::after{content:'';position:absolute;inset:-6px;border-radius:50%;pointer-events:none;box-shadow:0 0 0 0 rgba(241,207,122,.5);animation:celeRing 1.1s var(--ease) .15s forwards}
+  @keyframes celeStar{0%{transform:scale(.3) rotate(-16deg);opacity:0}62%{transform:scale(1.14) rotate(4deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+  @keyframes celeHalo{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.12)}}
+  @keyframes celeRing{0%{box-shadow:0 0 0 0 rgba(241,207,122,.5)}100%{box-shadow:0 0 0 52px rgba(241,207,122,0)}}
+  .cele-spark{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--gold);opacity:0;z-index:0;animation:celeSpark 1.5s var(--ease) forwards}
+  @keyframes celeSpark{0%{opacity:0;transform:translate(0,0) scale(.2)}28%{opacity:1;transform:translate(var(--dx),var(--dy)) scale(1)}100%{opacity:0;transform:translate(calc(var(--dx)*1.5),calc(var(--dy)*1.5)) scale(.3)}}
+  .cele-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--mint);margin-bottom:14px}
+  .cele-title{font-family:var(--serif);font-size:46px;line-height:1.02;letter-spacing:-.015em;margin-bottom:12px}
+  .cele-sub{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--muted-strong);line-height:1.5}
+  .cele-stats{display:inline-flex;align-items:center;gap:24px;margin:22px 0 2px}
+  .cele-stat{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .cele-statN{font-family:var(--serif);font-size:36px;line-height:1;color:var(--mint-cool);font-variant-numeric:tabular-nums}
+  .cele-statK{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .cele-statDiv{width:1px;height:36px;background:var(--rule-strong)}
+  .cele-prs{display:flex;flex-direction:column;align-items:center;gap:9px;margin:24px 0 2px}
+  .cele-pr{display:inline-flex;align-items:center;gap:8px;font-family:var(--serif);font-style:italic;font-size:15px;color:var(--gold);
+    border:1px solid rgba(241,207,122,.36);background:rgba(241,207,122,.06);border-radius:999px;padding:8px 17px}
+  .cele-pr svg{width:14px;height:14px;fill:currentColor;stroke:none}
+  .cele-done{margin-top:30px;background:var(--mint);color:#04140d;border:none;border-radius:999px;
+    font-family:var(--sans);font-weight:700;font-size:16px;padding:16px 46px;cursor:pointer;
+    box-shadow:0 14px 38px -12px rgba(110,231,183,.6);transition:transform .15s var(--spring),box-shadow .2s}
+  .cele-done:hover{transform:translateY(-2px);box-shadow:0 18px 44px -12px rgba(110,231,183,.7)} .cele-done:active{transform:scale(.97)}
+</style>
+</head>
+<body>
+<canvas id="snow"></canvas>
+<div class="atmos"></div>
+<div class="wrap">
+  <div class="top">
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <div class="count" id="count"></div>
+    <div class="unit-toggle" id="unitToggle">
+      <button class="unit-opt" data-u="kg" type="button">kg</button>
+      <button class="unit-opt" data-u="lb" type="button">lb</button>
+    </div>
+  </div>
+
+  <div id="list"></div>
+
+  <div class="finish-wrap" id="finishWrap">
+    <button class="finish" id="finishBtn"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg> Finish session</button>
+    <div class="finish-cap" id="finishCap"></div>
+  </div>
+
+  <div class="actions" id="actions">
+    <button class="act-btn" id="libOpen"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg> Add a lift</button>
+    <button class="act-btn" id="reorderBtn"><svg viewBox="0 0 24 24"><path d="M8 5l-3 3 3 3M5 8h9M16 13l3 3-3 3M19 16h-9"/></svg> <span class="act-lbl">Reorder lifts</span></button>
+  </div>
+
+  <div id="hidden"></div>
+
+  <p class="footnote">Saved on this device. Log a set, close the tab, it is still here.</p>
+</div>
+
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<div class="ep1-overlay" id="ep1Overlay"><button class="ep1-close" id="ep1Close" aria-label="Back to session"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg> session</button><iframe id="ep1Frame" title="Progressive overload"></iframe></div>
+<div class="po-modal" id="poModal"><div class="po-card" id="poCard"></div></div>
+<div class="lib-overlay" id="libOverlay"></div>
+<div class="cele" id="cele"><div class="cele-card" id="celeCard"></div></div>
+
+<script>
+  // ====================================================================
+  //  A WORKOUT LOGGER, ONE FILE. Lifts, sets, and a row that grades
+  //  itself the moment you log it. Tap "history" and Episode 1's
+  //  progressive-overload graph opens, drawn from these same sets.
+  //  Everything saves on its own. (The shape works for anything.)
+  // ====================================================================
+
+  const GLYPH = {
+    chest:'<path d="M3 9c2.5-2.4 6-2.4 9 .2c3-2.6 6.5-2.6 9-.2"/><path d="M12 9.2c0 4-3.2 6-9 5.6M12 9.2c0 4 3.2 6 9 5.6"/>',
+    shoulders:'<path d="M4 16a8 8 0 0 1 16 0"/><circle cx="12" cy="8" r="2.2"/>',
+    arms:'<path d="M8 4v7a4 4 0 0 0 8 0V4"/><path d="M6 4h4M14 4h4"/>',
+    back:'<path d="M12 4v15"/><path d="M12 7c-2.6 0-5 1.7-7 5M12 7c2.6 0 5 1.7 7 5"/>',
+    legs:'<path d="M9 4l-1 8-2 8M15 4l1 8 2 8"/><path d="M8 4h8"/>',
+    core:'<path d="M7.5 5h9M7.5 10h9M7.5 15h9M12 5v13"/>',
+  };
+  const SVG = inner => '<svg viewBox="0 0 24 24">' + inner + '</svg>';
+  const ICON = {
+    swap:'<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+    history:'<path d="M4 18l5-6 3 3 6-8"/><path d="M16 7h3v3"/>',
+    tune:'<path d="M4 8h10M18 8h2M4 16h4M12 16h8"/><circle cx="16" cy="8" r="2"/><circle cx="10" cy="16" r="2"/>',
+    star:'<path d="M12 2l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 18.5 6.1 20.8l1.2-6.6L2.5 9.6l6.6-.9z"/>',
+    weight:'<path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10"/>',
+    sets:'<path d="M12 3 20 7 12 11 4 7Z"/><path d="M4 12 12 16 20 12"/><path d="M4 17 12 21 20 17"/>',
+    reps:'<path d="M17 3l3 3-3 3"/><path d="M20 6H9a5 5 0 0 0-5 5"/><path d="M7 21l-3-3 3-3"/><path d="M4 18h11a5 5 0 0 0 5-5"/>',
+    rest:'<circle cx="12" cy="13" r="8"/><path d="M12 13V9M12 13l3 2M9 3h6"/>',
+    eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    arrow:'<path d="M4 12h14M13 7l5 5-5 5"/>',
+    search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  };
+
+  // @episode-start:save-local
+  // ONE store, never one-per-feature. The lifts live in memory as LIFTS, and
+  // these five functions are the only doorway to disk. Everything goes through
+  // them: logging a set, swap, tune, star, even Episode 1's overload graph.
+  // You read with getLift, write with updateLift or addLift, and saveLog puts
+  // it on disk. A new need is a new FIELD on a lift (we added rest for the tune
+  // card), never a second store. Point saveLog/loadLog at Supabase instead of
+  // localStorage and every feature syncs across devices, untouched (sync.sql).
+  const STORE = 'vitality.logger.v3';
+  let LIFTS = [];
+  function loadLog(){
+    // an empty saved list (left over from testing) falls through and re-seeds, so
+    // the demo never opens to a blank screen on camera.
+    try { const raw = localStorage.getItem(STORE); if (raw){ const a = JSON.parse(raw); if (Array.isArray(a) && a.length) return (LIFTS = a); } } catch(e){}
+    LIFTS = SEED.map(s => ({ rest:150, ...s, id: uid(), hidden:false, sets: blankSets(s.targetSets) }));
+    saveLog();
+    return LIFTS;
+  }
+  function saveLog(){ try { localStorage.setItem(STORE, JSON.stringify(LIFTS)); } catch(e){} }
+  function getLift(id){ return LIFTS.find(l => l.id === id); }
+  function updateLift(id, patch){
+    const lift = getLift(id); if (!lift) return;
+    Object.assign(lift, typeof patch === 'function' ? patch(lift) : patch);
+    saveLog();
+  }
+  function addLift(fields){
+    LIFTS.push({ id: uid(), hidden:false, rest:150, history:[], ...fields });
+    saveLog();
+  }
+  // @episode-end:save-local
+
+  const uid = () => 'l' + Math.random().toString(36).slice(2,9);
+  const blankSets = n => Array.from({length:n}, () => ({ weight:null, reps:null, done:false, failed:false }));
+  // a few past sessions so "history" has a real line to draw (top-set weight)
+  const hist = (base, step, reps) => Array.from({length:6}, (_,i) => ({ w: base + i*step, r: reps }));
+
+  // demo seed. No exercise library — these are just starting examples; the
+  // user adds their own by typing a name.
+  const SEED = [
+    { name:'Barbell bench',         tier:1, muscle:'chest',     targetSets:4, targetReps:5,  weight:85,   history:hist(72.5,2.5,5) },
+    { name:'Incline DB press',      tier:2, muscle:'chest',     targetSets:3, targetReps:9,  weight:32.5, perHand:true, history:hist(26,1.5,9) },
+    { name:'Standing barbell OHP',  tier:1, muscle:'shoulders', targetSets:3, targetReps:6,  weight:52.5, history:hist(45,1.5,6) },
+    { name:'Tricep rope pushdown',  tier:3, muscle:'arms',      targetSets:3, targetReps:10, weight:32.5, history:hist(25,1.5,10) },
+    { name:'Overhead cable tri ext',tier:3, muscle:'arms',      targetSets:2, targetReps:12, weight:25,   history:hist(17.5,1.5,12) },
+    { name:'DB lateral raise',      tier:3, muscle:'shoulders', targetSets:3, targetReps:12, weight:14,   perHand:true, history:hist(9,1,12) },
+  ];
+
+  // @episode-start:library-data
+  // THE REAL VITALITY "TRAIN" LIBRARY — 57 lifts pulled straight from the app
+  // (splitData.ts + exerciseReferences.ts). Every one carries its own official
+  // info card: muscles, tier, equipment, a one-line gist, coach steps, cue pills
+  // and two form photos. This is what turns "add a lift" into a real library
+  // instead of a blank name box. Photos load from our live prod assets so this
+  // stays one portable file. A lift added from here is a full lift, saved through
+  // the same STORE as everything else — point that at Supabase and the library
+  // syncs across devices, untouched.
+  const LIB = [
+  {key:"bench_bb",name:"Barbell bench",group:"chest",muscles:"Chest · Front delts · Triceps",tier:1,equip:"barbell",img:"bench_bb",rec:true,gist:"The barbell chest builder.",steps:["Unrack over your chest","Lower slow to your neck","Press up and squeeze"],cues:["Lower slower than you press","Squeeze chest at lockout","Wrists stacked over elbows. Tuck the elbows slightly, drive into the bar, hold the arch."]},
+  {key:"incl_bb_bench",name:"Incline barbell bench",group:"chest",muscles:"Chest · Front delts · Triceps",tier:1,equip:"barbell",img:"incl_bb_bench",rec:true,gist:"Incline barbell upper-chest press.",steps:["Unrack over upper chest","Lower slow to upper chest","Press up and squeeze"],cues:["Lower slower than you press","Squeeze chest at lockout","30° incline max. Any higher and it becomes shoulder press. Touch upper chest."]},
+  {key:"flat_db_press",name:"Flat DB press",group:"chest",muscles:"Chest · Front delts · Triceps",tier:2,equip:"dumbbell",img:null,rec:true,gist:"Flat dumbbell chest press.",steps:["Dumbbells at your chest, palms forward","Press up over your chest","Lower slow to a stretch"],cues:["Wrists stacked over elbows","Lower slower than you press"]},
+  {key:"incl_db_press",name:"Incline DB press",group:"chest",muscles:"Chest · Front delts · Triceps",tier:2,equip:"dumbbell",img:"incl_db_press",rec:true,gist:"Incline dumbbell upper-chest press.",steps:["Dumbbells at shoulder width, palms forward","Press up with your chest","Lower slow"],cues:["Lower slower than you press","Stay in full control","30° incline. Lower DBs to upper chest. Squeeze pecs at top."]},
+  {key:"machine_chest",name:"Machine chest press",group:"chest",muscles:"Chest · Front delts · Triceps",tier:2,equip:"machine",img:"machine_chest",rec:false,gist:"Machine chest press.",steps:["Upper arms parallel, palms down","Press the handles out","Return slow"],cues:["Hold the squeeze a beat","Back flat on the pad"]},
+  {key:"dips_weighted",name:"Weighted dips",group:"chest",muscles:"Chest · Triceps · Front delts",tier:1,equip:"body only",img:"dips_weighted",rec:true,gist:"Weighted triceps dip.",steps:["Hang at arm's length","Lower to 90 degrees","Press back up"],cues:["Torso upright","Elbows close to body","Lean forward 15° for chest bias. Lower until shoulders below elbows. Strict, no kipping."]},
+  {key:"close_grip",name:"Close-grip bench",group:"arms",muscles:"Triceps · Chest · Front delts",tier:2,equip:"barbell",img:"close_grip",rec:false,gist:"Close-grip triceps bench.",steps:["Unrack, shoulder-width grip","Lower slow to mid chest","Press up with triceps"],cues:["Elbows close to your torso","Lower slower than you press","Hands shoulder-width. Elbows tucked. All triceps, no flare."]},
+  {key:"cable_fly",name:"Cable chest fly",group:"chest",muscles:"Chest",tier:3,equip:"cable",img:null,rec:true,gist:"Cable fly for the chest.",steps:["Handles high, soft bend in the elbows","Bring your hands together out front","Return wide with control"],cues:["Lock the elbow angle","Squeeze the chest in the middle"]},
+  {key:"pec_deck",name:"Pec deck",group:"chest",muscles:"Chest",tier:3,equip:"machine",img:"pec_deck",rec:false,gist:"Machine chest fly.",steps:["Back flat, grip handles","Push together, squeeze chest","Return for a stretch"],cues:["Upper arms parallel to floor","Squeeze in the middle"]},
+  {key:"standing_ohp",name:"Standing barbell OHP",group:"shoulders",muscles:"Front delts · Triceps · Side delts",tier:1,equip:"barbell",img:"standing_ohp",rec:true,gist:"Standing barbell shoulder press.",steps:["Bar on upper back, stand tall","Press overhead to lockout","Lower under control"],cues:["Keep your back straight","Full lockout overhead","Bar over mid-foot. Squeeze glutes, brace abs. Press straight, head through at lockout."]},
+  {key:"seated_db_ohp",name:"Seated DB shoulder press",group:"shoulders",muscles:"Front delts · Triceps · Side delts",tier:2,equip:"dumbbell",img:"seated_db_ohp",rec:true,gist:"Seated dumbbell shoulder press.",steps:["Dumbbells at shoulders, palms forward","Press up till they meet","Lower slow"],cues:["Use thighs to get them up","Press straight overhead","Back flat against pad. DBs at ear level start. Press up and slightly in."]},
+  {key:"machine_ohp",name:"Machine shoulder press",group:"shoulders",muscles:"Front delts · Triceps · Side delts",tier:2,equip:"machine",img:"machine_ohp",rec:false,gist:"Smith machine shoulder press.",steps:["Sit, bar lined up with your nose","Lower to chin level","Press back up"],cues:["Feet planted","Press straight overhead"]},
+  {key:"push_press",name:"Push press",group:"shoulders",muscles:"Front delts · Triceps · Quads",tier:1,equip:"barbell",img:"push_press",rec:false,gist:"Leg-driven overhead press.",steps:["Bar racked at shoulders","Dip, then drive up","Press overhead to lockout"],cues:["Start the drive with legs","Lock out over your head","Quarter-dip with the legs, drive through the floor, finish with the arms."]},
+  {key:"db_lat_raise",name:"DB lateral raise",group:"shoulders",muscles:"Side delts",tier:3,equip:"dumbbell",img:null,rec:true,gist:"Dumbbell side-delt raise.",steps:["Dumbbells at your sides, soft elbows","Raise out to shoulder height","Lower slow"],cues:["Lead with your elbows","Stay tall, no swinging"]},
+  {key:"cable_lat_raise",name:"Cable lateral raise",group:"shoulders",muscles:"Side delts",tier:3,equip:"cable",img:"cable_lat_raise",rec:true,gist:"Seated cable side-delt raise.",steps:["Sit between pulleys, cross grip","Bend forward over thighs","Raise arms out to sides"],cues:["Arms perpendicular to torso","Fixed slight elbow bend","Cable from far side, behind body. Sweep across body and up."]},
+  {key:"rear_delt_fly",name:"Rear delt cable fly",group:"shoulders",muscles:"Rear delts",tier:3,equip:"cable",img:"rear_delt_fly",rec:true,gist:"Cable rear-delt fly.",steps:["Cross grip, pulleys high","Pull arms back and out","Return slow"],cues:["Keep arms straight","Motion from the shoulders"]},
+  {key:"reverse_pec",name:"Reverse pec deck",group:"shoulders",muscles:"Rear delts",tier:3,equip:"machine",img:"reverse_pec",rec:true,gist:"Machine rear-delt fly.",steps:["Handles at shoulder level","Pull out and back","Return slow"],cues:["Motion at the shoulders","Slight bend in arms"]},
+  {key:"tri_pushdown",name:"Tricep rope pushdown",group:"arms",muscles:"Triceps",tier:3,equip:"cable",img:"tri_pushdown",rec:true,gist:"Rope triceps pushdown.",steps:["Rope at high pulley, elbows in","Push down to your thighs","Return slow"],cues:["Upper arms by your sides","Only the forearms move"]},
+  {key:"oh_tri_ext",name:"Overhead cable tri ext",group:"arms",muscles:"Triceps",tier:3,equip:"cable",img:"oh_tri_ext",rec:true,gist:"Overhead cable triceps extension.",steps:["Rope overhead, elbows in","Lower behind your head","Extend back up"],cues:["Upper arms stay still","Full stretch at the bottom"]},
+  {key:"skullcrushers",name:"Skullcrushers",group:"arms",muscles:"Triceps",tier:3,equip:"e-z curl bar",img:"skullcrushers",rec:false,gist:"EZ-bar triceps extension.",steps:["Lie down, arms vertical","Lower bar to your forehead","Extend back up"],cues:["Upper arms stay still","Move only at the elbows","Lower behind the head, not at the forehead. Keeps tension on the long head."]},
+  {key:"pullup_weighted",name:"Weighted pull-ups",group:"back",muscles:"Lats · Biceps · Mid back",tier:1,equip:"other",img:"pullup_weighted",rec:true,gist:"Weighted lat builder.",steps:["Weight on belt, overhand grip","Pull chin above the bar","Lower to a full hang"],cues:["Drive blades down and back","Full lat stretch at bottom","Dead hang start. Drive elbows down and back. Chin clears the bar, full lockout below."]},
+  {key:"pullup",name:"Pull-ups",group:"back",muscles:"Lats · Biceps · Mid back",tier:1,equip:"other",img:"pullup",rec:false,gist:"Bodyweight lat builder.",steps:["Grip overhand, shoulder width","Pull chin above the bar","Lower to a full hang"],cues:["Drive blades down and back","Full lat stretch at bottom","Dead hang. Strict. AMRAP, but leave one in the tank."]},
+  {key:"bb_row",name:"Barbell row",group:"back",muscles:"Mid back · Lats · Biceps · Rear delts",tier:1,equip:"barbell",img:null,rec:true,gist:"Bent-over barbell back row.",steps:["Hinge to about 45°, back flat","Pull the bar to your lower chest","Lower slow, keep it close"],cues:["Lead with your elbows","Squeeze your back at the top"]},
+  {key:"pendlay_row",name:"Pendlay row",group:"back",muscles:"Mid back · Lats · Biceps · Rear delts",tier:1,equip:"barbell",img:"pendlay_row",rec:false,gist:"Bent-over barbell back row.",steps:["Bend to near parallel, grip overhand","Row the bar to you","Lower slow"],cues:["Back straight, head up","Keep the torso still","Bar resets on the floor every rep. Explosive pull to the sternum."]},
+  {key:"t_bar_row",name:"T-bar row",group:"back",muscles:"Mid back · Lats · Biceps",tier:1,equip:"machine",img:"t_bar_row",rec:false,gist:"Lying T-bar back row.",steps:["Face down on the pad","Pull weight up, squeeze back","Lower slow"],cues:["Upper arms close to torso","Stay on the pad"]},
+  {key:"seated_cable_row",name:"Seated cable row",group:"back",muscles:"Mid back · Lats · Biceps",tier:2,equip:"cable",img:null,rec:true,gist:"Seated cable back row.",steps:["Chest up, grab the handle","Pull it to your stomach","Return with control"],cues:["Drive your elbows back","Squeeze your shoulder blades"]},
+  {key:"chest_supp_row",name:"Chest-supported DB row",group:"back",muscles:"Mid back · Lats · Biceps · Rear delts",tier:2,equip:"dumbbell",img:"chest_supp_row",rec:true,gist:"Chest-supported upper-back row.",steps:["Lean into an incline bench","Row dumbbells to your sides","Pause, then lower"],cues:["Neutral grip","Squeeze blades at the top","Bench at 30°, lay flat. Drive elbows up + back. Squeeze, no bounce."]},
+  {key:"single_arm_row",name:"Single-arm DB row",group:"back",muscles:"Lats · Mid back · Biceps",tier:2,equip:"dumbbell",img:"single_arm_row",rec:false,gist:"One-arm dumbbell back row.",steps:["Knee and hand on bench","Row dumbbell to your chest","Lower slow, then switch"],cues:["Drive with your back","Upper arm close, torso still","Brace the working side with the opposite hand. Pull to the hip, not the chest."]},
+  {key:"lat_pulldown",name:"Lat pulldown",group:"back",muscles:"Lats · Biceps · Mid back",tier:2,equip:"cable",img:"lat_pulldown",rec:true,gist:"Lat pulldown.",steps:["Grip handle overhand","Pull elbow to your side","Return slow"],cues:["Keep tension on the lats","Drive the elbow down","Slight lean back, drive elbows down and back. Stop at upper chest."]},
+  {key:"face_pull",name:"Cable face pull",group:"shoulders",muscles:"Rear delts · Mid back",tier:3,equip:"cable",img:"face_pull",rec:true,gist:"Cable rear-delt pull.",steps:["Face a high pulley","Pull to your face, hands apart","Return slow"],cues:["Upper arms parallel to floor","Rope high, pull to ears. External rotation at end. High reps, light weight."]},
+  {key:"bb_curl",name:"Barbell curl",group:"arms",muscles:"Biceps",tier:2,equip:"barbell",img:"bb_curl",rec:true,gist:"The barbell biceps builder.",steps:["Bar at shoulder width, palms up","Curl up, elbows pinned","Lower slow to the start"],cues:["Upper arms stay still","Only the forearms move","Elbows at sides. No swinging. Squeeze biceps hard at top."]},
+  {key:"hammer_curl",name:"Hammer curl",group:"arms",muscles:"Biceps",tier:3,equip:"dumbbell",img:"hammer_curl",rec:true,gist:"Neutral-grip arm builder.",steps:["Dumbbells at sides, palms in","Curl one up and squeeze","Lower, then switch arms"],cues:["Upper arms stay still","Only the forearms move","Neutral grip throughout. Hits brachialis. Don’t swing."]},
+  {key:"cable_curl",name:"Cable curl",group:"arms",muscles:"Biceps",tier:3,equip:"cable",img:"cable_curl",rec:true,gist:"Cable preacher biceps curl.",steps:["Arms on the pad, bar extended","Curl up to your shoulders","Lower slow"],cues:["Squeeze at the top","Upper arms stay on pad"]},
+  {key:"incl_db_curl",name:"Incline DB curl",group:"arms",muscles:"Biceps",tier:3,equip:"dumbbell",img:"incl_db_curl",rec:false,gist:"Incline dumbbell biceps curl.",steps:["Lie back, arms hanging, palms forward","Curl up to shoulders","Lower slow"],cues:["Upper arms stay still","Only the forearms move","Bench at 45°, let arms hang straight. Full stretch on the long head."]},
+  {key:"preacher_curl",name:"Preacher curl",group:"arms",muscles:"Biceps",tier:3,equip:"barbell",img:"preacher_curl",rec:false,gist:"Preacher biceps curl.",steps:["Arms on the pad, bar up","Lower to a full stretch","Curl up and squeeze"],cues:["Upper arms stay on pad","Squeeze a beat at the top","Pads in the armpits, elbows fixed. Slow eccentric, no relaxing at the bottom."]},
+  {key:"back_squat",name:"Barbell back squat",group:"legs",muscles:"Quads · Glutes · Hamstrings",tier:1,equip:"barbell",img:"back_squat",rec:true,gist:"The barbell leg builder.",steps:["Bar on your upper back","Sit down and back, chest up","Drive through your heels"],cues:["Knees track over your toes","Chest up, back flat","Bar on traps or rear delts. Knees track over toes. Hip + knee bend together."]},
+  {key:"front_squat",name:"Front squat",group:"legs",muscles:"Quads · Glutes · Core",tier:1,equip:"barbell",img:"front_squat",rec:false,gist:"Front-loaded quad squat.",steps:["Bar on front delts, elbows high","Drop below parallel","Drive up through midfoot"],cues:["Elbows high, chest up","Knees track over toes","Elbows up, chest up. Bar racked on shoulders. Knees track over toes."]},
+  {key:"hack_squat",name:"Hack squat",group:"legs",muscles:"Quads · Glutes",tier:2,equip:"machine",img:"hack_squat",rec:false,gist:"Machine quad squat.",steps:["Back on pad, feet on platform","Drop below parallel","Push through your heels"],cues:["Head up, back on pad","Knees track over toes"]},
+  {key:"leg_press",name:"Leg press",group:"legs",muscles:"Quads · Glutes",tier:2,equip:"machine",img:"leg_press",rec:true,gist:"Machine quad press.",steps:["Feet shoulder width on platform","Lower to 90 degrees","Push through your heels"],cues:["Don't lock your knees","Lock the pins when done","Feet shoulder-width. Don’t lock knees at top. Full ROM, no lower back lift."]},
+  {key:"rdl",name:"Romanian deadlift",group:"legs",muscles:"Hamstrings · Glutes · Mid back",tier:1,equip:"barbell",img:"rdl",rec:true,gist:"Romanian hamstring builder.",steps:["Grip bar, shins vertical","Hinge hips back, bar close","Drive hips to stand"],cues:["Back and arms straight","Chest up, move steady","Hinge at hips, soft knees. Bar against legs. Stretch hamstrings, drive hips through."]},
+  {key:"conv_dl",name:"Conventional deadlift",group:"legs",muscles:"Hamstrings · Glutes · Mid back · Lats",tier:1,equip:"barbell",img:"conv_dl",rec:false,gist:"The barbell pull builder.",steps:["Grip the bar, back flat","Drive up and stand tall","Hinge it back down"],cues:["Back straight throughout","Push the floor away","Bar over mid-foot. Hips back, chest proud. Drive the floor away, lock out with hips."]},
+  {key:"bulgarian_ss",name:"Bulgarian split squat",group:"legs",muscles:"Quads · Glutes · Hamstrings",tier:2,equip:"other",img:"bulgarian_ss",rec:true,gist:"Rear-foot-up quad builder.",steps:["Rear foot in the strap","Drop into the front knee","Drive back up"],cues:["Weight on your front heel","Chest up throughout"]},
+  {key:"db_split_squat",name:"DB split squat",group:"legs",muscles:"Quads · Glutes",tier:2,equip:"dumbbell",img:null,rec:true,gist:"Dumbbell split squat.",steps:["Stagger your stance, dumbbells at your sides","Drop the back knee straight down","Drive up through the front heel"],cues:["Weight on your front heel","Chest tall throughout"]},
+  {key:"walking_lunge",name:"Walking lunge",group:"legs",muscles:"Quads · Glutes · Hamstrings",tier:2,equip:"barbell",img:"walking_lunge",rec:false,gist:"Walking barbell quad lunge.",steps:["Bar on upper back","Step forward, drop the knee","Drive up and step through"],cues:["Posture upright","Front knee over front foot","Long stride. Drive through the front heel. Chest stays tall."]},
+  {key:"leg_ext",name:"Leg extension",group:"legs",muscles:"Quads",tier:3,equip:"machine",img:"leg_ext",rec:true,gist:"Single-leg quad extension.",steps:["Pad on lower shin","Extend one leg fully","Return without resting"],cues:["Keep tension on the quad","Pause at the top"]},
+  {key:"seated_leg_curl",name:"Seated leg curl",group:"legs",muscles:"Hamstrings",tier:3,equip:"machine",img:"seated_leg_curl",rec:true,gist:"Machine hamstring curl.",steps:["Legs over the lever, pad on thighs","Curl down by bending knees","Return slow"],cues:["Keep your torso still","Hold the bottom a beat"]},
+  {key:"lying_leg_curl",name:"Lying leg curl",group:"legs",muscles:"Hamstrings",tier:3,equip:"exercise ball",img:"lying_leg_curl",rec:false,gist:"Ball hamstring curl.",steps:["Heels on ball, hips up","Curl ball toward you","Return slow"],cues:["Keep your hips lifted","Squeeze hams at the top","Hips pinned to the pad. Squeeze the hamstrings at the top."]},
+  {key:"hip_thrust",name:"Barbell hip thrust",group:"legs",muscles:"Glutes · Hamstrings",tier:2,equip:"barbell",img:"hip_thrust",rec:false,gist:"Barbell glute builder.",steps:["Upper back on bench, bar on hips","Drive hips up through the bar","Lower to the start"],cues:["Squeeze glutes at the top","Weight on blades and feet","Bench at upper back. Drive heels through floor. Squeeze glutes at the top, ribs down."]},
+  {key:"calf_raise",name:"Calf raise",group:"legs",muscles:"Calves",tier:3,equip:"machine",img:"calf_raise",rec:false,gist:"Seated machine calf builder.",steps:["Toes on platform, pad on thighs","Lower heels for a stretch","Press up high"],cues:["Hold the top a second","Full stretch at the bottom","Full stretch at the bottom, full contraction at the top. Slow."]},
+  {key:"cable_crunch",name:"Cable crunch",group:"core",muscles:"Core",tier:3,equip:"cable",img:"cable_crunch",rec:true,gist:"Kneeling cable ab work.",steps:["Kneel, rope by your face","Crunch elbows to thighs","Return slow"],cues:["Constant tension on abs","Don't pull with low back"]},
+  {key:"hang_leg_raise",name:"Hanging leg raise",group:"core",muscles:"Core",tier:3,equip:"body only",img:"hang_leg_raise",rec:true,gist:"Hanging ab raise.",steps:["Hang, legs straight","Raise legs to 90 degrees","Lower slow"],cues:["No swinging","Control the descent","Strict, no swing. Curl the pelvis up, not just the legs."]},
+  {key:"toes_to_bar",name:"Toes-to-bar",group:"core",muscles:"Core",tier:3,equip:"body only",img:"toes_to_bar",rec:false,gist:"Hanging pike ab raise.",steps:["Hang, thighs up to parallel","Pull shins toward the bar","Lower as slow as you can"],cues:["Straighten legs at the top","No swinging"]},
+  {key:"ab_wheel",name:"Ab wheel rollout",group:"core",muscles:"Core",tier:3,equip:"barbell",img:"ab_wheel",rec:false,gist:"Barbell core rollout.",steps:["Pushup position on a light bar","Roll the bar toward your feet","Pause, then roll back out"],cues:["Keep abs tight, back set","Arms perpendicular to the floor","Brace hard, ribs down. Roll out as far as you can keep tension."]},
+  {key:"weighted_situp",name:"Weighted sit-up",group:"core",muscles:"Core",tier:3,equip:"body only",img:"weighted_situp",rec:false,gist:"Weighted sit-up.",steps:["Feet anchored, knees bent","Curl up toward thighs","Lower slow"],cues:["Hold the contraction a beat","Control the way down"]},
+  {key:"decline_situp",name:"Decline sit-up",group:"core",muscles:"Core",tier:3,equip:"body only",img:"decline_situp",rec:false,gist:"Bodyweight sit-up.",steps:["Feet anchored, knees bent","Curl up toward thighs","Lower slow"],cues:["Hold the contraction a beat","Control the way down"]},
+  {key:"russian_twist",name:"Russian twist",group:"core",muscles:"Core",tier:3,equip:"body only",img:"russian_twist",rec:false,gist:"Seated oblique twist.",steps:["Lean back, feet anchored","Twist to one side","Twist to the other"],cues:["Hold each side a beat","Keep your chest lifted"]},
+  {key:"plank",name:"Plank",group:"core",muscles:"Core",tier:3,equip:"body only",img:"plank",rec:false,gist:"Core stability hold.",steps:["Forearms and toes down","Body in a straight line","Hold as long as you can"],cues:["No sagging hips","Raise a limb to progress","Glutes squeezed, ribs down, elbows under shoulders. Time-based."]}
+  ];
+  const libByName = {}, libByKey = {};
+  LIB.forEach(x => { libByName[x.name] = x; libByKey[x.key] = x; });
+  // group -> the filled muscle silhouette the info card draws
+  const GRP2ICON = { chest:'chest', shoulders:'shoulders', arms:'triceps', back:'back', legs:'legs', core:'core' };
+  // sensible starting numbers for a lift added from the library (you tune from there)
+  const tierDefaults = t => t === 1 ? { targetSets:4, targetReps:5, weight:40 }
+                          : t === 2 ? { targetSets:3, targetReps:8, weight:25 }
+                          :           { targetSets:3, targetReps:12, weight:15 };
+  // @episode-end:library-data
+
+  // @episode-start:units
+  // One toggle, kg or lb. Everything is STORED in kg; these are the only doorway
+  // to the screen. wDisp turns a stored kg into the number you see, wKg turns a
+  // number you typed back into kg. Flip the unit and every weight re-renders, so
+  // no stored value ever drifts. Same trick works for lb/oz, miles/km, anything.
+  let UNIT = 'kg';
+  try { const u = localStorage.getItem('vitality.logger.unit'); if (u === 'lb' || u === 'kg') UNIT = u; } catch(e){}
+  const LB = 0.45359237;
+  const wDisp = kg => UNIT === 'lb' ? Math.round(kg / LB * 2) / 2 : Math.round(kg * 100) / 100;   // stored kg -> shown number
+  const wKg   = v  => UNIT === 'lb' ? Math.round(v * LB * 1000) / 1000 : v;                        // typed number -> stored kg
+  const uLabel = perHand => UNIT + (perHand ? '/ea' : '');
+  const nudgeDefault = () => UNIT === 'lb' ? 5 : 2.5;    // the smart overload bump, in the shown unit
+  const nudgeStep = () => UNIT === 'lb' ? 2.5 : 1.25;    // finest plate step, in the shown unit
+  function paintUnitToggle(){ document.querySelectorAll('.unit-opt').forEach(b => b.classList.toggle('on', b.dataset.u === UNIT)); }
+  function setUnit(u){ if (u !== 'kg' && u !== 'lb') return; UNIT = u; try { localStorage.setItem('vitality.logger.unit', u); } catch(e){} paintUnitToggle(); render(); }
+  // @episode-end:units
+
+  loadLog();
+
+  const listEl = document.getElementById('list');
+  const hiddenEl = document.getElementById('hidden');
+
+  // @episode-start:grade
+  // The whole point: grade a set the instant it is logged. Beat the target
+  // (heavier OR more reps) and it turns mint. Hit it exactly, still mint.
+  // Fall short on reps and it is a calm amber, never a failure. A tapped
+  // "miss" is rose. The state is the feedback — words just confirm it.
+  function gradeSet(lift, set){
+    if (set.failed) return 'failed';
+    if (!set.done) return 'empty';
+    const beatWeight = set.weight > lift.weight;
+    const beatReps   = set.reps   > lift.targetReps;
+    const metWeight  = set.weight >= lift.weight;
+    const metReps    = set.reps   >= lift.targetReps;
+    if (metWeight && metReps) return (beatWeight || beatReps) ? 'over' : 'clean';
+    return 'partial';
+  }
+  function statusWord(lift, set, kind){
+    if (kind === 'failed') return 'missed';
+    if (kind === 'over'){ const d = set.reps - lift.targetReps; return d > 0 ? 'done · +' + d : 'done'; }
+    if (kind === 'partial'){ const d = set.reps - lift.targetReps; return d < 0 ? 'partial · ' + d : 'partial'; }
+    return 'done';
+  }
+  // @episode-end:grade
+
+  // @episode-start:progress
+  // One honest number across the visible lifts: how many sets are logged out
+  // of how many you set out to do. A miss still counts as logged — you showed
+  // up for it. Hidden lifts never count.
+  function progress(){
+    let logged = 0, total = 0;
+    LIFTS.filter(l => !l.hidden).forEach(l => {
+      l.sets.forEach(s => { total++; if (s.done || s.failed) logged++; });
+    });
+    return { logged, total };
+  }
+  function paintProgress(){
+    const { logged, total } = progress();
+    document.getElementById('fill').style.width = total ? (logged/total*100) + '%' : '0%';
+    document.getElementById('count').innerHTML = '<b>' + logged + '</b> of ' + total + ' logged';
+  }
+  // @episode-end:progress
+
+  // ── render ──
+  function render(){
+    listEl.innerHTML = '';
+    LIFTS.filter(l => !l.hidden).forEach(lift => listEl.appendChild(liftCard(lift)));
+    renderHidden();
+    paintProgress();
+    paintFinish();
+    syncCelebrations();  // fires the on-card gold burst for any lift that just got conquered
+  }
+
+  function liftCard(lift){
+    const el = document.createElement('div');
+    const conquered = isConquered(lift);
+    el.className = 'lift' + (conquered ? ' conquered' : '') + (celebratingIds.has(lift.id) ? ' celebrate' : '');
+    el.dataset.id = lift.id;
+    const unit = uLabel(lift.perHand);
+    // ★ overload state — matches the app: armed (gold, breathing) before you lift,
+    // inert (dim) once any set is logged, done (calm) once the goal is met.
+    const anyLogged = lift.sets.some(s => s.done || s.failed);
+    const bump = lift.overload || null;
+    const armed = !!bump && ((bump.weightKg || 0) > 0 || (bump.reps || 0) > 0);
+    const goalMet = overloadGoalMet(lift);
+    const starCls = 'starPill' +
+      (armed && !goalMet ? ' starPillArmed' : '') +
+      (goalMet ? ' starPillDone' : '') +
+      (anyLogged && !goalMet ? ' starPillInert' : '');
+    const starAmt = armed && !goalMet ? bumpLabel(bump, lift.perHand) : '';
+    el.innerHTML =
+      '<div class="lift-head">' +
+        '<span class="glyph" aria-hidden="true">' + SVG(GLYPH[lift.muscle] || GLYPH.chest) + '</span>' +
+        '<span class="lift-name">' + esc(lift.name) + '</span>' +
+        '<span class="info" title="About this lift">i</span>' +
+        (conquered ? '<span class="conqueredStar" title="Progressive overload conquered">' + SVG(ICON.star) + '</span>' : '') +
+        '<span class="sp"></span>' +
+        '<button class="lift-x" title="Remove (kept, never deleted)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
+      '</div>' +
+      '<div class="lift-meta"><span class="tierchip">TIER ' + lift.tier + '</span> &middot; <b>' + lift.targetSets + ' &times; ' + lift.targetReps + '</b> &middot; last ' + wDisp(lift.weight) + ' ' + unit + '</div>' +
+      '<div class="chips">' +
+        '<button class="chip" data-act="swap">' + SVG(ICON.swap) + 'swap</button>' +
+        '<button class="chip" data-act="history">' + SVG(ICON.history) + 'history</button>' +
+        '<button class="chip" data-act="tune">' + SVG(ICON.tune) + 'tune</button>' +
+        '<button class="' + starCls + '" data-act="star" aria-label="Progressive overload"' + (anyLogged ? ' disabled' : '') + '>' +
+          '<span class="starDots" aria-hidden><span class="starDot"></span><span class="starDot"></span></span>' +
+          '<span class="starGlyph" aria-hidden>&#9733;</span>' +
+        '</button>' +
+        (starAmt ? '<span class="starAmt">' + esc(starAmt) + '</span>' : '') +
+      '</div>' +
+      '<div class="rows"></div>';
+    const rows = el.querySelector('.rows');
+    lift.sets.forEach((set, i) => rows.appendChild(setRow(lift, set, i, unit)));
+    el.querySelector('.lift-x').onclick = () => hideLift(lift.id);
+    el.querySelector('.info').onclick = () => openInfo(lift);
+    el.querySelector('[data-act="swap"]').onclick = () => openSwap(lift);
+    el.querySelector('[data-act="history"]').onclick = () => openOverload(lift);
+    el.querySelector('[data-act="tune"]').onclick = () => openTune(lift);
+    const starBtn = el.querySelector('[data-act="star"]');
+    starBtn.onclick = () => { if (anyLogged) return; openOverloadCard(lift); };
+    return el;
+  }
+
+  // @episode-start:set-row
+  // One set row. Tap the numbers to edit, "hit it" to log the typed values,
+  // "miss" to fail it, the reset to clear it. It re-grades itself on every
+  // change. The numbers carry over from your last target, so logging is two
+  // taps on a good day.
+  function setRow(lift, set, i, unit){
+    const kind = gradeSet(lift, set);
+    const logged = kind !== 'empty';
+    // Seed unlogged rows from the armed overload bump: +kg lifts the weight,
+    // +reps lifts the target. Once a set is logged it keeps its own numbers.
+    const bump = lift.overload || null;
+    const w = set.weight ?? (lift.weight + (bump ? (bump.weightKg || 0) : 0));
+    const r = set.reps ?? (lift.targetReps + (bump ? (bump.reps || 0) : 0));
+    const roman = ['i','ii','iii','iv','v','vi','vii','viii','ix','x'][i] || (i+1);
+    const row = document.createElement('div');
+    row.className = 'pill ' + kind;
+    row.innerHTML =
+      '<span class="pillIdx">' + roman + '</span>' +
+      '<span class="pillValue">' +
+        '<input class="pillInput" type="text" inputmode="decimal" value="' + wDisp(w) + '" aria-label="weight">' +
+        '<span class="pillUnit">' + unit + '</span>' +
+        '<span class="pillTimes">&times;</span>' +
+        '<input class="pillInput" type="text" inputmode="numeric" value="' + r + '" aria-label="reps">' +
+      '</span>' +
+      '<span class="pillSpacer"></span>' +
+      '<div class="pillGroup"></div>';
+    const [wIn, rIn] = row.querySelectorAll('.pillInput');
+    // cross-browser auto-width: field-sizing covers modern browsers, the size
+    // attribute (text inputs) covers Safari so "32.5" never clips to "32."
+    const fit = el => el.setAttribute('size', Math.max(1, el.value.length));
+    fit(wIn); fit(rIn);
+    wIn.addEventListener('input', () => fit(wIn));
+    rIn.addEventListener('input', () => fit(rIn));
+    const group = row.querySelector('.pillGroup');
+    const commit = () => {
+      const wv = wKg(parseFloat(wIn.value)), rv = Math.round(parseFloat(rIn.value));
+      if (!isFinite(wv) || wv < 0 || wv > 1000) return;
+      if (!isFinite(rv) || rv <= 0 || rv > 100) return;
+      set.weight = wv; set.reps = rv; set.done = true; set.failed = false;
+      saveLog(); render();  // render() fires the on-card gold burst if this lift just got conquered
+    };
+    if (logged){
+      const word = statusWord(lift, set, kind);
+      group.innerHTML = '<span class="pillStatus">' + (kind==='over' ? '<span class="pillPr">&#9733; </span>' : '') + word + '</span>' +
+        '<button class="pillReset" title="Reset this set"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 A4 4 0 1 0 5.5 2.5"/><polyline points="2 2 3.5 5.5 7 4.5"/></svg></button>';
+      group.querySelector('.pillReset').onclick = () => { set.done=false; set.failed=false; set.weight=null; set.reps=null; saveLog(); render(); };
+    } else {
+      group.innerHTML = '<button class="pillHit">hit it &rarr;</button><button class="pillMiss">miss</button>';
+      group.querySelector('.pillHit').onclick = commit;
+      group.querySelector('.pillMiss').onclick = () => { set.failed=true; set.done=false; saveLog(); render(); };
+    }
+    wIn.onkeydown = rIn.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); commit(); } };
+    return row;
+  }
+  // @episode-end:set-row
+
+  // @episode-start:add-lift
+  // Add a lift with nothing but a name. No exercise library to wade through,
+  // no setup. Type "Cable fly", get a card with sets ready to log. It writes
+  // through the same store as everything else (addLift), so the new lift saves
+  // the instant it appears. The same move adds "Rent" or "Pages read" if you
+  // point this at your money or your books instead.
+  function quickAddLift(name){
+    name = name.trim();
+    if (!name) return;
+    // Never lose a lift's data. If this exercise already exists (even one you
+    // removed), bring it back with its full history and graph, don't duplicate.
+    const existing = LIFTS.find(l => l.name.toLowerCase() === name.toLowerCase());
+    if (existing){ existing.hidden = false; saveLog(); render(); return; }
+    // If the typed name is a real library lift, add it as that so it gets the
+    // real info card and shares the exercise's saved identity.
+    const lib = LIB.find(e => e.name.toLowerCase() === name.toLowerCase());
+    if (lib){ addFromLibrary(lib); return; }
+    addLift({ name, tier:3, muscle: guessMuscle(name) || 'chest', targetSets:3, targetReps:8, weight:20, sets: blankSets(3) });
+    render();
+  }
+  // @episode-end:add-lift
+
+  // @episode-start:soft-delete
+  // Remove a lift and it is only HIDDEN, never destroyed. Its history stays
+  // in storage, so a mis-tap can't wipe a month of progress. It drops into a
+  // "kept" list you can restore from with one tap. This is the difference
+  // between a tool you trust and one you are scared to touch.
+  function hideLift(id){
+    const l = LIFTS.find(x => x.id === id);
+    if (l){ l.hidden = true; saveLog(); render(); }
+  }
+  function restoreLift(id){
+    const l = LIFTS.find(x => x.id === id);
+    if (l){ l.hidden = false; saveLog(); render(); }
+  }
+  // @episode-end:soft-delete
+
+  function renderHidden(){
+    const hid = LIFTS.filter(l => l.hidden);
+    if (!hid.length){ hiddenEl.innerHTML = ''; return; }
+    hiddenEl.innerHTML = '<div class="hidden-bar"><h4>' + hid.length + ' removed &middot; nothing lost</h4></div>';
+    const bar = hiddenEl.querySelector('.hidden-bar');
+    hid.forEach(l => {
+      const row = document.createElement('div');
+      row.className = 'hidden-row';
+      row.innerHTML = '<span class="hn">' + esc(l.name) + '</span><span class="keep">history kept</span><button class="restore">restore</button>';
+      row.querySelector('.restore').onclick = () => restoreLift(l.id);
+      bar.appendChild(row);
+    });
+  }
+
+  // @episode-start:reorder
+  // Reorder the session with plain up/down arrows — matched to the app, no drag
+  // to jam or misfire. Each arrow moves a lift among the visible ones and saves
+  // the new order, which is part of your data too. Simple and unbreakable.
+  function openReorder(){ sheet.className = 'sheet ro'; renderReorder(); modal.classList.add('on'); }
+  function renderReorder(movedId){
+    const vis = LIFTS.filter(l => !l.hidden);
+    const rows = vis.map((l, i) =>
+      '<div class="ro-row' + (l.id === movedId ? ' moved' : '') + '" data-id="' + l.id + '">' +
+        '<span class="ro-n">' + (i + 1) + '</span>' +
+        '<span class="ro-nm">' + esc(l.name) + '</span>' +
+        '<span class="ro-arrows">' +
+          '<button class="ro-arrow" data-dir="-1"' + (i === 0 ? ' disabled' : '') + ' aria-label="Move up">' + SVG('<path d="M6 15l6-6 6 6"/>') + '</button>' +
+          '<button class="ro-arrow" data-dir="1"' + (i === vis.length - 1 ? ' disabled' : '') + ' aria-label="Move down">' + SVG('<path d="M6 9l6 6 6-6"/>') + '</button>' +
+        '</span>' +
+      '</div>'
+    ).join('');
+    sheet.innerHTML =
+      '<div class="ro-head"><div><div class="ro-eyebrow">reorder</div><div class="ro-title">Your lifts</div></div>' +
+        '<button class="ro-done" id="roDone">Done</button></div>' +
+      '<div class="ro-sub">Use the arrows to set the order you train in.</div>' +
+      '<div class="ro-list">' + (rows || '<div class="ov-empty">Add a lift first.</div>') + '</div>';
+    sheet.querySelector('#roDone').onclick = closeSheet;
+    sheet.querySelectorAll('.ro-arrow').forEach(b => b.onclick = () => moveLift(b.closest('.ro-row').dataset.id, +b.dataset.dir));
+  }
+  function moveLift(id, dir){
+    const vis = LIFTS.filter(l => !l.hidden);
+    const idx = vis.findIndex(l => l.id === id);
+    const j = idx + dir;
+    if (idx < 0 || j < 0 || j >= vis.length) return;
+    const a = vis[idx], b = vis[j];
+    const ia = LIFTS.indexOf(a), ib = LIFTS.indexOf(b);
+    LIFTS[ia] = b; LIFTS[ib] = a;
+    saveLog(); render();
+    renderReorder(id);   // keep the modal open, briefly highlight the moved lift
+  }
+  // @episode-end:reorder
+
+  // ── modal: info card + the Episode 1 history graph ──
+  const modal = document.getElementById('modal');
+  const sheet = document.getElementById('sheet');
+  function openSheet(html){ sheet.className = 'sheet'; sheet.innerHTML = '<button class="sheet-close" aria-label="Close">&times;</button>' + html; sheet.querySelector('.sheet-close').onclick = closeSheet; modal.classList.add('on'); }
+  function closeSheet(){ modal.classList.remove('on'); }
+  modal.addEventListener('click', e => { if (e.target === modal) closeSheet(); });
+  // only act when a sheet is actually up, and stop the same Escape from also
+  // closing the library beneath it (the info card opens over the library).
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('on')) { closeSheet(); e.stopImmediatePropagation(); } });
+
+  // ── info card: the real Vitality "FORM" reference sheet ──
+  // In the app this is one component reading lib/exerciseReferences.ts (muscles,
+  // tier, equipment, a one-liner, two photos, coach steps, cue pills). A single
+  // file has no database, so the same content lives in FORM below, keyed by name.
+  // Photos point at our own live prod assets so this stays one portable file.
+  // Muscle glyphs are the exact paths from the app's MuscleIcon.
+  const FRGLY = {
+    chest:     { ms:['M48 30 L48 61 C38 60 27 55 19 46 C25 37 36 31 48 30 Z','M52 30 L52 61 C62 60 73 55 81 46 C75 37 64 31 52 30 Z'] },
+    shoulders: { ms:['M28 64 C26 40 40 27 50 27 C60 27 74 40 72 64 C61 69 39 69 28 64 Z'], ln:['M43 29 C39 44 38 56 37 65','M57 29 C61 44 62 56 63 65'] },
+    triceps:   { ms:['M30 76 C25 44 36 24 50 24 C64 24 75 44 70 76 L60 76 C64 48 60 38 50 38 C40 38 36 48 40 76 Z'], ln:['M50 24 L50 38'] },
+    back:      { ms:['M50 26 L74 42 C70 66 60 78 50 82 C40 78 30 66 26 42 Z'], ln:['M50 28 L50 80'] },
+    legs:      { ms:['M38 26 C34 46 34 64 40 82 L48 82 C46 62 46 44 48 26 Z','M52 26 C54 44 54 62 52 82 L60 82 C66 64 66 46 62 26 Z'] },
+    core:      { ms:['M35 28 C35 25 65 25 65 28 L63 78 C63 81 37 81 37 78 Z'], ln:['M50 30 L50 76','M37 44 L63 44','M37 58 L63 58'] },
+  };
+  function muscleSvg(key){
+    const g = FRGLY[key]; if (!g) return '';
+    const ms = g.ms.map(d => '<path d="' + d + '"/>').join('');
+    const ln = (g.ln || []).map(d => '<path d="' + d + '"/>').join('');
+    return '<svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true" style="display:block">'
+      + '<g fill="rgba(110,231,183,0.14)" stroke="#6EE7B7" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">' + ms + '</g>'
+      + (ln ? '<g fill="none" stroke="#6EE7B7" stroke-width="2.55" stroke-linejoin="round" stroke-linecap="round">' + ln + '</g>' : '')
+      + '</svg>';
+  }
+  const FR_ROMAN = ['i','ii','iii','iv','v','vi','vii','viii'];
+  const TIERINFO = {
+    1: { digit:'1', badge:'Tier 1', title:'Heavy compounds', body:'The big lifts your day is built around. Bench, squat, overhead press, deadlift, weighted dips. These move the most strength and size, so they go first.' },
+    2: { digit:'2', badge:'Tier 2', title:'Compounds', body:'Other multi-muscle moves. Dumbbell presses, machine presses, close-grip bench. They round out the day after the main lifts.' },
+    3: { digit:'3', badge:'Tier 3', title:'Isolation', body:'The finishers. Cable fly, lateral raise, bicep curl, tricep pushdown. Quick lifts to hit one muscle directly.' },
+  };
+  // The info card now reads straight from the LIB library above (keyed by name),
+  // so every one of the 57 lifts carries its own official card — not just a
+  // hand-picked few. buildFormCard takes a LIB entry: group -> muscle icon,
+  // plus muscles, tier, equipment, gist, steps, cues and two form photos.
+
+  function buildFormCard(lift, f){
+    const t = TIERINFO[lift.tier] || TIERINFO[3];
+    const at = ms => ' style="animation-delay:' + ms + 'ms"';
+    let html = '<div class="fr-card">';
+    html += '<div class="fr-head fr-rev"' + at(40) + '>';
+    html +=   '<span class="fr-eyebrow">FORM</span>';
+    html +=   '<h2 class="fr-title">' + esc(lift.name) + '</h2>';
+    html +=   '<div class="fr-meta">';
+    if (f.muscles) html += '<span class="fr-muscle">' + muscleSvg(GRP2ICON[f.group] || 'chest') + '<span>' + esc(f.muscles) + '</span></span><span class="fr-sep">·</span>';
+    html +=     '<button class="fr-tier" type="button" title="What does this tier mean?">' + esc(t.badge.toLowerCase()) + '</button>';
+    if (f.equip) html += '<span class="fr-sep">·</span><span class="fr-item">' + esc(f.equip) + '</span>';
+    html +=   '</div>';
+    html += '</div>';
+    if (f.gist) html += '<p class="fr-gist fr-rev"' + at(120) + '>' + esc(f.gist) + '</p>';
+    if (f.img){
+      const base = 'https://vitality-jade.vercel.app/exercise-refs/' + f.img + '/';
+      html += '<div class="fr-images fr-rev"' + at(170) + '>'
+           +  '<figure class="fr-frame"><img class="fr-img" src="' + base + '0.jpg" alt="' + esc(lift.name) + '" loading="lazy"></figure>'
+           +  '<figure class="fr-frame"><img class="fr-img" src="' + base + '1.jpg" alt="' + esc(lift.name) + '" loading="lazy"></figure>'
+           +  '</div>';
+    }
+    let cueStart = 300;
+    if (f.steps && f.steps.length){
+      html += '<ol class="fr-steps">';
+      for (let i = 0; i < f.steps.length; i++) html += '<li class="fr-step fr-rev"' + at(240 + i*90) + '><span class="fr-num">' + (FR_ROMAN[i] || (i+1)) + '</span><span class="fr-text">' + esc(f.steps[i]) + '</span></li>';
+      html += '</ol>';
+      cueStart = 240 + f.steps.length*90 + 60;
+    }
+    if (f.cues && f.cues.length){
+      html += '<div class="fr-cues">';
+      for (let i = 0; i < f.cues.length; i++) html += '<span class="fr-cue fr-rev"' + at(cueStart + i*60) + '>' + esc(f.cues[i]) + '</span>';
+      html += '</div>';
+    }
+    html += '<div class="fr-tierOverlay" hidden>'
+         +  '<div class="fr-tierCard">'
+         +    '<button class="fr-tierClose" type="button" aria-label="Close">&times;</button>'
+         +    '<div class="fr-tierBanner"><span class="fr-tierDigit">' + esc(t.digit) + '</span><span class="fr-tierBadge">' + esc(t.badge) + '</span></div>'
+         +    '<h3 class="fr-tierTitle">' + esc(t.title) + '</h3>'
+         +    '<p class="fr-tierBody">' + esc(t.body) + '</p>'
+         +  '</div>'
+         +  '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function openInfo(lift){
+    const f = libByName[lift.name] || (lift.libKey ? libByKey[lift.libKey] : null);
+    if (!f){ openInfoGeneric(lift); return; }      // custom-typed lifts have no reference
+    openSheet(buildFormCard(lift, f));
+    sheet.classList.add('fr');
+    const tierBtn = sheet.querySelector('.fr-tier');
+    const overlay = sheet.querySelector('.fr-tierOverlay');
+    if (tierBtn && overlay){
+      // Escape closes only the tier popover (not the whole info card) while it is
+      // open. Capture phase + stopImmediatePropagation beats the global handler.
+      function onTierEsc(e){ if (e.key === 'Escape' && !overlay.hidden){ closeTier(); e.stopImmediatePropagation(); e.preventDefault(); } }
+      function closeTier(){ overlay.hidden = true; document.removeEventListener('keydown', onTierEsc, true); }
+      tierBtn.onclick = () => { overlay.hidden = false; document.addEventListener('keydown', onTierEsc, true); };
+      overlay.addEventListener('click', e => { if (e.target === overlay) closeTier(); });
+      const tc = overlay.querySelector('.fr-tierClose');
+      if (tc) tc.onclick = closeTier;
+    }
+  }
+
+  // fallback for lifts the user typed in themselves (no reference content)
+  function openInfoGeneric(lift){
+    const unit = uLabel(lift.perHand), wv = wDisp(lift.weight);
+    openSheet(
+      '<div class="sheet-eyebrow">About this lift</div>' +
+      '<div class="sheet-title">' + esc(lift.name) + '</div>' +
+      '<div class="sheet-sub">Tier ' + lift.tier + ' lift. To beat your best, go heavier than ' + wv + ' ' + unit + ', or hit ' + wv + ' ' + unit + ' for one more rep than ' + lift.targetReps + '.</div>' +
+      '<div class="sheet-stats">' +
+        '<div class="sheet-stat"><div class="k">Target</div><div class="v">' + lift.targetSets + ' &times; ' + lift.targetReps + '</div></div>' +
+        '<div class="sheet-stat"><div class="k">Last</div><div class="v">' + wv + ' ' + unit + '</div></div>' +
+      '</div>');
+  }
+
+  // swap (free standalone): keep it dead simple. Type the new movement and it
+  // starts fresh in this slot, written through updateLift. The smart version
+  // (matched-weight recommendations, a full exercise library) needs a database,
+  // so that is a Vitality feature, not something we fake in a single file.
+  const round05 = n => Math.round(n * 2) / 2;
+  function guessMuscle(name){
+    const n = name.toLowerCase();
+    if (/curl|tricep|pushdown|skull|extension|preacher/.test(n)) return 'arms';
+    if (/ohp|shoulder|lateral|delt|arnold|overhead|face pull/.test(n)) return 'shoulders';
+    if (/press|bench|fly|dip|push-?up|pec/.test(n)) return 'chest';
+    return null;
+  }
+  // Swap now opens the library in "swap mode": pick a replacement from the real
+  // catalog. Your weight carries over and today's sets start fresh in this slot.
+  function openSwap(lift){ openLibrarySwap(lift); }
+
+  // tune: set the targets and the weight to beat, then save. Edits stay in a
+  // draft until you hit save, then one updateLift writes weight, sets, reps and
+  // rest together. Changing the set count reshapes the rows but keeps every set
+  // you already logged, by index.
+  const fmtN = n => (Math.round(n * 10) / 10).toString();
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  function reshapeSets(lift, n){
+    // never discard a set you already logged: if a trailing set beyond n is
+    // done or failed, keep enough rows to preserve it. Unlogged tails still trim.
+    let keep = n;
+    for (let i = lift.sets.length - 1; i >= n; i--){
+      if (lift.sets[i] && (lift.sets[i].done || lift.sets[i].failed)){ keep = i + 1; break; }
+    }
+    const out = [];
+    for (let i = 0; i < keep; i++) out.push(lift.sets[i] || { weight:null, reps:null, done:false, failed:false });
+    return out;
+  }
+  function openTune(lift){
+    const unit = uLabel(lift.perHand);
+    const muscleLabel = { chest:'Chest', shoulders:'Shoulders', arms:'Arms', back:'Back', legs:'Legs', core:'Core' }[lift.muscle] || 'Lift';
+    const DEFAULT_REST = 150;
+    const d = { weight: lift.weight, targetSets: lift.targetSets, targetReps: lift.targetReps, rest: lift.rest ?? DEFAULT_REST };
+    const fmtRest = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    const stepRow = (k, icon, label, val) =>
+      '<div class="tune-row"><span class="tune-left"><span class="tune-ico">' + SVG(icon) + '</span><span class="tune-lab"><span class="tune-k">' + label + '</span></span></span>' +
+      '<span class="tune-ctrl"><button class="tune-step" data-k="' + k + '" data-d="-1" aria-label="decrease">&minus;</button>' +
+      '<span class="tune-val">' + val + '</span>' +
+      '<button class="tune-step" data-k="' + k + '" data-d="1" aria-label="increase">+</button></span></div>';
+    function paint(){
+      openSheet(
+        '<div class="sheet-eyebrow">Tune &middot; ' + muscleLabel + '</div>' +
+        '<div class="sheet-title">' + esc(lift.name) + '</div>' +
+        '<div class="tune">' +
+          '<div class="tune-row"><span class="tune-left"><span class="tune-ico">' + SVG(ICON.weight) + '</span><span class="tune-lab"><span class="tune-k">Weight</span></span></span>' +
+            '<span class="tune-ctrl"><input class="tune-num" id="tWeight" inputmode="decimal" value="' + fmtN(wDisp(d.weight)) + '"><span class="tune-unit">' + unit + '</span></span></div>' +
+          stepRow('sets', ICON.sets, 'Sets', d.targetSets) +
+          stepRow('reps', ICON.reps, 'Reps', d.targetReps) +
+          '<div class="tune-row"><span class="tune-left"><span class="tune-ico">' + SVG(ICON.rest) + '</span><span class="tune-lab"><span class="tune-k">Rest</span>' +
+            (d.rest !== DEFAULT_REST ? '<button class="tune-reset" data-act="rest-reset">reset</button>' : '') + '</span></span>' +
+            '<span class="tune-ctrl"><button class="tune-step" data-k="rest" data-d="-1" aria-label="less rest">&minus;</button>' +
+            '<span class="tune-val">' + fmtRest(d.rest) + '</span>' +
+            '<button class="tune-step" data-k="rest" data-d="1" aria-label="more rest">+</button></span></div>' +
+        '</div>' +
+        '<div class="card-foot"><button class="btn-ghost" data-act="cancel">cancel</button><button class="btn-mint" data-act="save">save</button></div>'
+      );
+      const wIn = sheet.querySelector('#tWeight');
+      const readW = () => { const v = parseFloat(wIn.value); if (isFinite(v)) d.weight = clamp(wKg(v), 0, 1000); };
+      wIn.oninput = readW;
+      sheet.querySelectorAll('.tune-step').forEach(b => b.onclick = () => {
+        readW();
+        const k = b.dataset.k, dir = parseInt(b.dataset.d, 10);
+        if (k === 'sets') d.targetSets = clamp(d.targetSets + dir, 1, 8);
+        else if (k === 'reps') d.targetReps = clamp(d.targetReps + dir, 1, 30);
+        else if (k === 'rest') d.rest = clamp(d.rest + dir * 15, 0, 600);
+        paint();
+      });
+      const rr = sheet.querySelector('[data-act="rest-reset"]'); if (rr) rr.onclick = () => { d.rest = DEFAULT_REST; paint(); };
+      sheet.querySelector('[data-act="cancel"]').onclick = closeSheet;
+      sheet.querySelector('[data-act="save"]').onclick = () => {
+        readW();
+        updateLift(lift.id, l => ({ weight: d.weight, targetSets: d.targetSets, targetReps: d.targetReps, rest: d.rest, sets: reshapeSets(l, d.targetSets) }));
+        render(); closeSheet();
+      };
+    }
+    paint();
+  }
+
+  // history -> opens THE REAL Episode 1 component (the overload graph) full-screen,
+  // fed by THIS lift's logged sets. ep2 writes the lift's sessions into a shared
+  // store key and hands off the name; ep1 reads it and draws its own chart. No
+  // reproduction: the history button is literally ep1, the same file the /logger
+  // command wires into a real app.
+  const pad2 = n => String(n).padStart(2, '0');
+  const ymdKey = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  function offsetDate(days){ const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + days); return ymdKey(d); }
+  // turn a lift's history (+ today's logged sets) into ep1's session shape
+  function liftSessions(lift){
+    const h = lift.history || [];
+    const sessions = h.map((s, i) => ({
+      date: s.date || offsetDate(-((h.length - i) * 4 + 1)),
+      kg: s.w,
+      sets: s.sets || Array.from({ length: Math.max(1, lift.targetSets) }, () => ({ r: s.r }))
+    }));
+    const logged = lift.sets.filter(s => s.done || s.failed);
+    if (logged.length){
+      const top = lift.sets.filter(s => s.done && !s.failed);
+      sessions.push({
+        date: offsetDate(0),
+        kg: top.length ? Math.max(...top.map(s => s.weight)) : lift.weight,
+        sets: logged.map(s => ({ r: s.reps || 0, fail: !!s.failed }))
+      });
+    }
+    return sessions;
+  }
+  const EP1_URL = 'overload.html';  // ep1 sits next to the logger (build copies it in)
+  let ep1Loads = 0;
+  const ep1Overlay = document.getElementById('ep1Overlay');
+  const ep1Frame = document.getElementById('ep1Frame');
+  function openOverload(lift){
+    const store = 'vitality.overload.' + lift.id + '.v3';
+    localStorage.setItem(store, JSON.stringify(liftSessions(lift)));
+    localStorage.setItem('vitality.overload.handoff', JSON.stringify({ name: lift.name, store, unit: UNIT, perHand: lift.perHand }));
+    ep1Frame.src = EP1_URL + '?from=logger&n=' + (++ep1Loads);
+    ep1Overlay.classList.add('on');
+  }
+  function closeEp1(){ ep1Overlay.classList.remove('on'); ep1Frame.src = 'about:blank'; }
+  window.closeEp1 = closeEp1;  // ep1's own close button (inside the frame) calls this
+  document.getElementById('ep1Close').onclick = closeEp1;  // the logger's own back button, works on file://
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && ep1Overlay.classList.contains('on')) closeEp1(); });
+
+  // @episode-start:overload-card
+  // The ★ overload card — 1:1 with the app's OverloadModal. Tap the ★ (before any
+  // set is logged) to plan today's push: "add a rep" (one tap, +1 rep) or "add
+  // 2.5 kg" (a fine stepper you can free-type). Arming writes lift.overload through
+  // the ONE store, which seeds the set rows. Screens: choices · step · armed · done.
+  const poModal = document.getElementById('poModal');
+  const poCard = document.getElementById('poCard');
+  const STEP_DISP = 1.25;     // finest plate step (metric)
+  const DEFAULT_DISP = 2.5;   // the smart default nudge
+  let poLift = null, poTimer = null;
+  function openOverloadCard(lift){
+    if (poTimer){ clearTimeout(poTimer); poTimer = null; }
+    poLift = lift;
+    const b = lift.overload;
+    const isArmed = !!b && ((b.weightKg || 0) > 0 || (b.reps || 0) > 0);
+    poRender(isArmed ? 'armed' : 'choices', nudgeDefault());
+    poModal.classList.add('on');
+  }
+  function closeOverloadCard(){ if (poTimer){ clearTimeout(poTimer); poTimer = null; } poModal.classList.remove('on'); poLift = null; }
+  function poArm(bump){ updateLift(poLift.id, { overload: bump }); render(); }
+  function poClear(){ updateLift(poLift.id, { overload: null }); render(); closeOverloadCard(); }
+  function poApplied(bump){ poArm(bump); poRender('done', 0, bumpLabel(bump, poLift.perHand)); poTimer = setTimeout(closeOverloadCard, 1150); }
+  function poRender(view, weightDisp, doneLabel){
+    const lift = poLift; if (!lift) return;
+    const b = lift.overload;
+    const isArmed = !!b && ((b.weightKg || 0) > 0 || (b.reps || 0) > 0);
+    // "last session" readout — prior session if there is one, else the saved targets
+    const last = (lift.history || [])[(lift.history || []).length - 1] || null;
+    const lastSets = last && last.sets ? last.sets.length : lift.targetSets;
+    const lastReps = last ? (last.r || lift.targetReps) : lift.targetReps;
+    const lastWeight = last ? last.w : lift.weight;
+    const unit = uLabel(lift.perHand);
+    const head =
+      '<div class="po-head"><div class="po-head-l">' +
+        '<span class="po-head-ico" aria-hidden>' + SVG(GLYPH[lift.muscle] || GLYPH.chest) + '</span>' +
+        '<div><div class="po-eyebrow">overload</div><div class="po-title">' + esc(lift.name) + '</div></div>' +
+      '</div><button class="po-close" data-act="close" aria-label="Close"><svg viewBox="0 0 14 14"><path d="M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5"/></svg></button></div>';
+    let body;
+    if (view === 'done'){
+      body = '<div class="po-body"><div class="po-done"><div class="po-doneAmt">' + esc(doneLabel || '') + '</div><div class="po-doneSub">on your sets for today</div></div></div>';
+    } else if (view === 'armed'){
+      body =
+        '<div class="po-body po-armedBody">' +
+          '<div class="po-star armed" aria-hidden>&#9733;</div>' +
+          '<div class="po-armedAmt">' + esc(b ? bumpLabel(b, lift.perHand) : '') + '</div>' +
+          '<div class="po-armedLbl">locked onto this lift</div>' +
+          '<div class="po-choices"><button class="po-choice" data-act="edit">edit</button><button class="po-choice" data-act="clear">clear it</button></div>' +
+          '<button class="po-skip" data-act="close">done</button>' +
+        '</div>';
+    } else if (view === 'step'){
+      body =
+        '<div class="po-body po-stepBody"><div class="po-stepGroup"><span class="po-stepLbl">add weight</span>' +
+          '<div class="po-step"><button class="po-adj" data-act="minus" aria-label="Less weight">&minus;</button>' +
+            '<span class="po-val"><span class="po-plus">+</span><input class="po-input" id="poInput" inputmode="decimal" value="' + fmtN(weightDisp) + '" aria-label="Added weight"><span class="po-unit">' + unit + '</span></span>' +
+            '<button class="po-adj" data-act="plus" aria-label="More weight">+</button></div></div>' +
+          '<button class="po-confirm" data-act="confirm">add it</button>' +
+          '<button class="po-skip" data-act="back">back</button></div>';
+    } else { // choices
+      body =
+        '<div class="po-body"><div class="po-star" aria-hidden>&#9733;</div>' +
+          '<div class="po-show"><span class="po-showD">last session</span><span class="po-showV">' +
+            '<span class="po-stat"><b>' + lastSets + '</b> sets</span>' +
+            '<span class="po-stat"><b>' + lastReps + '</b> reps</span>' +
+            '<span class="po-stat"><b>' + fmtN(wDisp(lastWeight)) + '</b> ' + unit + '</span></span></div>' +
+          '<p class="po-hint">How much do you want to push today?</p>' +
+          '<div class="po-choices"><button class="po-choice" data-act="addrep">add a rep</button><button class="po-choice" data-act="addweight">add ' + nudgeDefault() + ' ' + unit + '</button></div>' +
+          (isArmed ? '<button class="po-remove" data-act="clear">clear it</button>' : '') +
+          '<button class="po-skip" data-act="close">not right now</button></div>';
+    }
+    poCard.innerHTML = head + body;
+    const seed = (b && b.weightKg > 0) ? wDisp(b.weightKg) : nudgeDefault();
+    poCard.querySelectorAll('[data-act]').forEach(node => {
+      const act = node.dataset.act;
+      node.onclick = () => {
+        if (act === 'close') closeOverloadCard();
+        else if (act === 'clear') poClear();
+        else if (act === 'addrep') poApplied({ weightKg: 0, reps: 1 });
+        else if (act === 'addweight' || act === 'edit') poRender('step', seed);
+        else if (act === 'back') poRender('choices', nudgeDefault());
+        else if (act === 'minus' || act === 'plus'){
+          const inp = poCard.querySelector('#poInput');
+          let v = parseFloat(inp.value); if (!isFinite(v)) v = 0;
+          // +/- steps by a clean plate bump: 2.5 kg or 5 lb. Free-type the center input for an exact number.
+          inp.value = fmtN(Math.max(0, Math.round((v + (act === 'plus' ? 1 : -1) * nudgeDefault()) * 100) / 100));
+        } else if (act === 'confirm') confirmStep();
+      };
+    });
+    const inp = poCard.querySelector('#poInput');
+    function confirmStep(){
+      const v = parseFloat(poCard.querySelector('#poInput').value);
+      if (!isFinite(v) || v <= 0) return;
+      poApplied({ weightKg: wKg(v), reps: 0 });
+    }
+    if (inp) inp.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); confirmStep(); } };
+  }
+  poModal.addEventListener('click', e => { if (e.target === poModal) closeOverloadCard(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && poModal.classList.contains('on')) closeOverloadCard(); });
+  // @episode-end:overload-card
+
+  // @episode-start:overload-celebrate
+  // The progressive-overload payoff, ported 1:1 from the app. A lift is CONQUERED
+  // when every set is logged AND at least one done set beats the PREVIOUS best
+  // (history only, never today's own sets) — so the payoff lands on the final set,
+  // not the first. Crossing into conquered flushes the card gold once (the ★ bursts,
+  // the numbers + name glow), then a small steady gold ★ settles beside the name.
+  // Fully reversible: unlog below the overload and the mark clears. No overlay.
+  function prevBestOf(lift){
+    let best = null;
+    (lift.history || []).forEach(s => {
+      const w = s.w || 0, r = s.r || 0;
+      if (!best || w > best.weight || (w === best.weight && r > best.reps)) best = { weight: w, reps: r };
+    });
+    return best;
+  }
+  function beatsPrevBest(lift, set){
+    const best = prevBestOf(lift);
+    if (!best || best.weight <= 0) return false;
+    if (set.weight > best.weight) return true;
+    return set.weight === best.weight && set.reps > best.reps;
+  }
+  function isConquered(lift){
+    const rows = lift.sets || [];
+    if (!rows.length) return false;
+    if (!rows.every(s => s.done || s.failed)) return false;
+    return rows.some(s => s.done && !s.failed && s.weight > 0 && s.reps > 0 && beatsPrevBest(lift, s));
+  }
+  // The armed overload's goal is met once a logged set hits base+bump on both axes.
+  function overloadGoalMet(lift){
+    const b = lift.overload; if (!b) return false;
+    const tW = lift.weight + (b.weightKg || 0);
+    const tR = lift.targetReps + (b.reps || 0);
+    return lift.sets.some(s => s.done && !s.failed && s.weight >= tW && s.reps >= tR);
+  }
+  // "+2.5 kg", "+1 rep", or "+2.5 kg · +2 reps"
+  function bumpLabel(b, perHand){
+    const parts = [];
+    if ((b.weightKg || 0) > 0) parts.push('+' + fmtN(wDisp(b.weightKg)) + ' ' + uLabel(perHand));
+    if ((b.reps || 0) > 0) parts.push('+' + b.reps + ' rep' + (b.reps > 1 ? 's' : ''));
+    return parts.join(' · ') || 'no change';
+  }
+
+  // Fire the one-time gold burst on the TRANSITION into conquered. render() rebuilds
+  // the list each time, so liftCard re-applies the class to lifts still mid-burst;
+  // this only STARTS the burst (+ a 1.6s timer) for lifts newly crossing the line.
+  const celebratingIds = new Set();
+  let celebratedPrev = new Set();
+  // A CLEAN finish = every set hit (done, none missed, none still blank). That is
+  // the moment the on-card gold star bursts, the warm "you nailed it" payoff. A
+  // missed set or a half-logged lift does NOT star — that would cheapen it.
+  // Beating your previous best on top of that also leaves the steady ★ beside the
+  // name (isConquered) — so a real PR still reads differently from a clean session.
+  function isCompleted(lift){
+    const rows = lift.sets || [];
+    return rows.length > 0 && rows.every(s => s.done && !s.failed);
+  }
+  function currentCelebrating(){
+    const s = new Set();
+    LIFTS.filter(l => !l.hidden).forEach(l => { if (isCompleted(l)) s.add(l.id); });
+    return s;
+  }
+  function syncCelebrations(){
+    const now = currentCelebrating();
+    now.forEach(id => {
+      if (!celebratedPrev.has(id) && !celebratingIds.has(id)){
+        celebratingIds.add(id);
+        const card = listEl.querySelector('.lift[data-id="' + id + '"]');
+        if (card) card.classList.add('celebrate');
+        setTimeout(() => {
+          celebratingIds.delete(id);
+          const c = listEl.querySelector('.lift[data-id="' + id + '"]');
+          if (c) c.classList.remove('celebrate');
+        }, 1600);
+      }
+    });
+    celebratedPrev = now;
+  }
+  // @episode-end:overload-celebrate
+
+  // ── finish session: today's logged sets become a saved session, the graph
+  //    grows, and the rows reset for next time. This is the loop made whole. ──
+  function finishSession(){
+    let lifts = 0, totalSets = 0; const prs = [];
+    LIFTS.filter(l => !l.hidden).forEach(lift => {
+      const logged = lift.sets.filter(s => s.done || s.failed);
+      if (!logged.length) return;
+      const top = lift.sets.filter(s => s.done && !s.failed);
+      const kg = top.length ? Math.max(...top.map(s => s.weight)) : lift.weight;
+      const reps = top.length ? Math.max(...top.map(s => s.reps)) : 0;
+      // a new best = a logged set that beat the previous best (history before today)
+      const isPR = lift.sets.some(s => s.done && !s.failed && beatsPrevBest(lift, s));
+      lift.history = (lift.history || []).concat({ w: kg, r: reps, date: offsetDate(0), sets: logged.map(s => ({ r: s.reps || 0, fail: !!s.failed })) });
+      if (top.length) lift.weight = kg;          // last working weight carries forward (you push it up with tune or the ★)
+      lift.overload = null;                       // the push was for this session; next one starts fresh
+      lift.sets = blankSets(lift.targetSets);    // fresh rows for next session
+      lifts++; totalSets += logged.length;
+      if (isPR) prs.push({ name: lift.name, kg, perHand: lift.perHand });
+    });
+    if (!lifts) return;
+    saveLog(); render();                          // the logger behind is already a clean slate
+    showCelebration(lifts, totalSets, prs);
+  }
+  // The payoff screen: submitted, nice work, your numbers, any new bests, then Done.
+  function showCelebration(lifts, totalSets, prs){
+    const cele = document.getElementById('cele');
+    // a gold gradient star with a fan of sparkles bursting out behind it
+    const star = '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="celeGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe9b0"/><stop offset="1" stop-color="#e0a83a"/></linearGradient></defs><path fill="url(#celeGrad)" d="M12 2l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 18.5 6.1 20.8l1.2-6.6L2.5 9.6l6.6-.9z"/></svg>';
+    const sparks = Array.from({ length: 8 }, (_, i) => {
+      const a = (i / 8) * 6.2832, r = 40, dx = Math.cos(a) * r, dy = Math.sin(a) * r;
+      return '<span class="cele-spark" style="--dx:' + dx.toFixed(1) + 'px;--dy:' + dy.toFixed(1) + 'px;animation-delay:' + (0.12 + i * 0.025).toFixed(3) + 's' + (i % 2 ? ';background:var(--mint)' : '') + '"></span>';
+    }).join('');
+    const prLines = prs.map(p => '<div class="cele-pr">' + SVG(ICON.star) + 'New best &middot; ' + esc(p.name) + ' ' + wDisp(p.kg) + ' ' + uLabel(p.perHand) + '</div>').join('');
+    document.getElementById('celeCard').innerHTML =
+      '<div class="cele-star" aria-hidden="true">' + sparks + star + '</div>' +
+      '<div class="cele-eyebrow">Workout submitted</div>' +
+      '<h2 class="cele-title">Nice work.</h2>' +
+      '<p class="cele-sub">Your graph just grew.</p>' +
+      '<div class="cele-stats">' +
+        '<div class="cele-stat"><div class="cele-statN">' + totalSets + '</div><div class="cele-statK">set' + (totalSets > 1 ? 's' : '') + '</div></div>' +
+        '<div class="cele-statDiv"></div>' +
+        '<div class="cele-stat"><div class="cele-statN">' + lifts + '</div><div class="cele-statK">lift' + (lifts > 1 ? 's' : '') + '</div></div>' +
+      '</div>' +
+      (prLines ? '<div class="cele-prs">' + prLines + '</div>' : '') +
+      '<button class="cele-done" id="celeDone">Done</button>';
+    cele.classList.add('on');
+    document.getElementById('celeDone').onclick = () => cele.classList.remove('on');
+  }
+  const finishBtn = document.getElementById('finishBtn');
+  finishBtn.onclick = finishSession;
+  // reflect how much is ready to save (called from render)
+  function paintFinish(){
+    let logged = 0;
+    LIFTS.filter(l => !l.hidden).forEach(l => l.sets.forEach(s => { if (s.done || s.failed) logged++; }));
+    finishBtn.disabled = logged === 0;
+    const cap = document.getElementById('finishCap');
+    cap.classList.remove('saved');
+    cap.textContent = logged
+      ? 'Saves ' + logged + ' logged set' + (logged > 1 ? 's' : '') + ' as today’s session'
+      : 'Log a set to finish your session';
+  }
+
+  function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  // @episode-start:library
+  // THE EXERCISE LIBRARY — the whole Vitality Train catalog on one page. It is
+  // the front door to your lifts: open it to ADD a lift to today, or SWAP one
+  // for another. Search or scroll by muscle group, tap i for a lift's official
+  // form card, tap the check to drop it into today's session. Every add writes
+  // through the SAME store, so a pick saves the instant you make it, and a lift
+  // you removed comes back with its full history — never a duplicate. Type a
+  // name that is not in the catalog and it offers to add it as your own.
+  const libOverlay = document.getElementById('libOverlay');
+  const GROUP_ORDER = [['chest','Chest'],['back','Back'],['shoulders','Shoulders'],['arms','Arms'],['legs','Legs'],['core','Core']];
+  let libMode = 'add';        // 'add' | 'swap'
+  let libSwapTarget = null;   // the lift being swapped, in swap mode
+  function inSession(e){ return LIFTS.some(l => !l.hidden && (l.libKey === e.key || l.name === e.name)); }
+  function addFromLibrary(e){
+    const existing = LIFTS.find(l => l.libKey === e.key || l.name === e.name);
+    if (existing){ if (existing.hidden){ existing.hidden = false; saveLog(); render(); } return; }  // restore, never duplicate
+    const d = tierDefaults(e.tier);
+    addLift({ name:e.name, tier:e.tier, muscle:e.group, libKey:e.key, perHand:e.equip === 'dumbbell',
+      targetSets:d.targetSets, targetReps:d.targetReps, weight:d.weight, history:[], sets:blankSets(d.targetSets) });
+    render();
+  }
+  function removeFromLibrary(e){
+    LIFTS.forEach(l => { if (!l.hidden && (l.libKey === e.key || l.name === e.name)) l.hidden = true; });  // soft: history kept
+    saveLog(); render();
+  }
+  // Swap the current slot for a library pick. It is a FRESH movement: keep the
+  // weight (adjusted per hand) but start its own history, targets and overload
+  // clean, so the graph never shows another lift's data. If that lift is already
+  // in your session, don't duplicate it — retire this slot and keep the one you have.
+  function clearOverloadStore(id){ try { localStorage.removeItem('vitality.overload.' + id + '.v3'); } catch(e){} }
+  function swapForLibrary(entry){
+    if (!libSwapTarget) return;
+    const dup = LIFTS.find(l => !l.hidden && l.id !== libSwapTarget.id && (l.libKey === entry.key || l.name === entry.name));
+    if (dup){ clearOverloadStore(libSwapTarget.id); updateLift(libSwapTarget.id, { hidden: true }); render(); closeLibrary(); return; }
+    const d = tierDefaults(entry.tier);
+    const newPerHand = entry.equip === 'dumbbell';
+    clearOverloadStore(libSwapTarget.id);
+    updateLift(libSwapTarget.id, l => {
+      let weight = l.weight;
+      if (weight != null){
+        if (newPerHand && !l.perHand) weight = round05(weight / 2);
+        else if (!newPerHand && l.perHand) weight = round05(weight * 2);
+      }
+      return { name:entry.name, muscle:entry.group, libKey:entry.key, tier:entry.tier, perHand:newPerHand,
+        weight, targetSets:d.targetSets, targetReps:d.targetReps, history:[], overload:null, sets: blankSets(d.targetSets) };
+    });
+    render(); closeLibrary();
+  }
+  function openLibrary(){ libMode='add'; libSwapTarget=null; buildLibraryShell(); renderLibRows(''); document.body.classList.add('lib-browsing'); libOverlay.classList.add('on'); }
+  function openLibrarySwap(lift){ libMode='swap'; libSwapTarget=lift; buildLibraryShell(); renderLibRows(''); document.body.classList.add('lib-browsing'); libOverlay.classList.add('on'); }
+  function closeLibrary(){ libOverlay.classList.remove('on'); document.body.classList.remove('lib-browsing'); libMode='add'; libSwapTarget=null; }
+  function buildLibraryShell(){
+    const swap = libMode === 'swap';
+    libOverlay.innerHTML =
+      '<svg class="lib-mtn" viewBox="0 0 1200 220" preserveAspectRatio="none" aria-hidden="true">' +
+        '<path d="M0 220V150L150 112L330 150L520 96L720 150L900 112L1080 150L1200 122V220Z" fill="#0b1712" opacity=".5"/>' +
+        '<path d="M0 220V176L180 142L380 180L560 132L760 180L980 142L1200 176V220Z" fill="#060f0a" opacity=".92"/>' +
+      '</svg>' +
+      '<div class="lib-wrap">' +
+        '<div class="lib-top">' +
+          '<button class="lib-back" id="libBack">' + SVG('<path d="M15 5l-7 7 7 7"/>') + (swap ? 'cancel' : 'session') + '</button>' +
+          '<span class="lib-sp"></span>' +
+          '<span class="lib-count" id="libCount"></span>' +
+        '</div>' +
+        '<h1 class="lib-title">' + (swap ? 'Swap' : 'Library') + '</h1>' +
+        (swap ? '<p class="lib-sub">Pick a replacement for ' + esc(libSwapTarget ? libSwapTarget.name : '') + '. Your weight carries over.</p>' : '') +
+        '<div class="lib-search">' + SVG('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>') +
+          '<input id="libSearch" placeholder="Search any exercise..." autocomplete="off"></div>' +
+        '<div id="libList"></div>' +
+      '</div>';
+    document.getElementById('libBack').onclick = closeLibrary;
+    const search = document.getElementById('libSearch');
+    search.oninput = () => renderLibRows(search.value);
+  }
+  function renderLibRows(q){
+    const raw = (q || '').trim();
+    const query = raw.toLowerCase();
+    const swap = libMode === 'swap';
+    document.getElementById('libCount').innerHTML = swap ? '' : '<b>' + LIFTS.filter(l => !l.hidden).length + '</b> in your session';
+    const html = GROUP_ORDER.map(([g, label]) => {
+      const items = LIB.filter(e => e.group === g && (!query || e.name.toLowerCase().includes(query) || e.muscles.toLowerCase().includes(query)));
+      if (!items.length) return '';
+      const rows = items.map(e => {
+        const isIn = !swap && inSession(e);
+        const control = swap
+          ? '<span class="lib-pick">' + SVG('<path d="M4 12h14M13 7l5 5-5 5"/>') + '</span>'
+          : '<button class="lib-check' + (isIn ? ' on' : '') + '" data-act="toggle" aria-label="Add or remove">' + SVG('<path d="M5 12l4 4 10-11"/>') + '</button>';
+        return '<div class="lib-row' + (swap ? ' pick' : '') + '" data-key="' + e.key + '">' +
+          control +
+          '<span class="lib-gly">' + SVG(GLYPH[e.group] || GLYPH.chest) + '</span>' +
+          '<span class="lib-main"><span class="lib-nm">' + esc(e.name) + '</span></span>' +
+          '<button class="lib-i" data-act="info" aria-label="How to do it">i</button>' +
+        '</div>';
+      }).join('');
+      return '<div class="lib-sec"><div class="lib-sec-h"><b>' + label + '</b><span class="lib-sec-n">' + items.length + '</span></div>' + rows + '</div>';
+    }).join('');
+    // "name your own": type something not in the catalog and it offers to use it
+    const exact = LIB.some(e => e.name.toLowerCase() === query);
+    const createRow = (raw && !exact)
+      ? '<button class="lib-create" id="libCreate">' + SVG('<path d="M12 5v14M5 12h14"/>') + (swap ? 'Swap for' : 'Add') + ' &ldquo;' + esc(raw) + '&rdquo; as your own</button>'
+      : '';
+    const list = document.getElementById('libList');
+    list.innerHTML = createRow + html;
+    if (!html && !createRow) list.innerHTML = '<div class="lib-empty">No lifts match that.</div>';
+    const create = document.getElementById('libCreate');
+    if (create) create.onclick = () => {
+      if (swap && libSwapTarget){
+        const dupN = LIFTS.find(l => !l.hidden && l.id !== libSwapTarget.id && l.name.toLowerCase() === raw.toLowerCase());
+        if (dupN){ clearOverloadStore(libSwapTarget.id); updateLift(libSwapTarget.id, { hidden: true }); render(); closeLibrary(); return; }
+        clearOverloadStore(libSwapTarget.id);
+        updateLift(libSwapTarget.id, l => ({ name: raw, muscle: guessMuscle(raw) || 'chest', libKey: null, perHand: l.perHand,
+          history:[], overload:null, sets: blankSets(l.targetSets) }));
+        render(); closeLibrary();
+      }
+      else { quickAddLift(raw); closeLibrary(); }
+    };
+    list.querySelectorAll('.lib-row').forEach(row => {
+      const e = libByKey[row.dataset.key];
+      row.querySelector('[data-act="info"]').onclick = (ev) => { ev.stopPropagation(); openInfo({ name:e.name, tier:e.tier, libKey:e.key }); };
+      if (swap){ row.onclick = () => swapForLibrary(e); }
+      else { row.querySelector('[data-act="toggle"]').onclick = () => { inSession(e) ? removeFromLibrary(e) : addFromLibrary(e); renderLibRows(document.getElementById('libSearch').value); }; }
+    });
+  }
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && libOverlay.classList.contains('on') && !modal.classList.contains('on')) closeLibrary(); });
+  // @episode-end:library
+
+  // ── bottom actions: add a lift (opens the library) + reorder lifts ──
+  document.getElementById('libOpen').onclick = openLibrary;
+  document.getElementById('reorderBtn').onclick = openReorder;
+
+  // ── snowy particles drifting behind everything ──
+  (function snow(){
+    const cv = document.getElementById('snow'); if (!cv) return;
+    const ctx = cv.getContext('2d');
+    let W, H, parts;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const mk = () => ({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.5+0.4, s:Math.random()*0.35+0.08, d:Math.random()*0.3-0.15, o:Math.random()*0.4+0.12 });
+    function size(){ W=cv.width=innerWidth; H=cv.height=innerHeight; parts=Array.from({length: reduce?26:54}, mk); }
+    function frame(){
+      ctx.clearRect(0,0,W,H);
+      for (const p of parts){
+        p.y += p.s; p.x += p.d;
+        if (p.y > H+2){ p.y = -2; p.x = Math.random()*W; }
+        if (p.x < -2) p.x = W; if (p.x > W+2) p.x = 0;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.3);
+        ctx.fillStyle = 'rgba(167,243,208,' + p.o + ')'; ctx.fill();
+      }
+      if (!reduce) requestAnimationFrame(frame);
+    }
+    size(); addEventListener('resize', size); frame();
+  })();
+
+  document.querySelectorAll('.unit-opt').forEach(b => b.onclick = () => setUnit(b.dataset.u));
+  paintUnitToggle();
+  celebratedPrev = currentCelebrating();  // lifts already filled out from saved state shouldn't burst on load
+  render();
+</script>
+</body>
+</html>
