@@ -1,10 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import styles from './settingsSheet.module.css'
-import { createClient } from '@/lib/supabase/client'
 import type { Units } from '@/lib/units'
 import type { OnboardingTask } from '@/lib/onboardingTasks'
 import { isFullySetUp } from '@/lib/onboardingTasks'
@@ -43,24 +41,12 @@ interface SettingsSheetProps {
  * FormReferenceSheet so the whole logger speaks one dialog language.
  */
 export default function SettingsSheet({ units, onUnitsChange, intakeCompleted = false, tasks, userId, onClose }: SettingsSheetProps) {
-  const router = useRouter()
-  const [signingOut, setSigningOut] = useState(false)
   // Two views inside the same modal: 'preferences' is the default landing
   // (units toggle + the existing quick-link rows). 'checklist' swaps the
   // body to the OnboardingChecklist component with a back arrow. We keep
   // the modal mounted across the swap so there's no flash.
   const [view, setView] = useState<'preferences' | 'checklist'>('preferences')
   const showChecklistEntry = !!tasks && !!userId && isFullySetUp(tasks)
-
-  async function handleSignOut() {
-    if (signingOut) return
-    setSigningOut(true)
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    onClose()
-    router.push('/login')
-    router.refresh()
-  }
 
   // Lock body scroll + close on Escape.
   useEffect(() => {
@@ -200,29 +186,6 @@ export default function SettingsSheet({ units, onUnitsChange, intakeCompleted = 
           </div>
           <span className={styles.actionRowArrow} aria-hidden>→</span>
         </Link>
-
-        <button
-          type="button"
-          className={styles.actionRow}
-          onClick={handleSignOut}
-          disabled={signingOut}
-          style={{
-            // <button> doesn't inherit text-align / font from parent;
-            // explicit overrides keep it visually identical to the Link rows.
-            textAlign: 'left',
-            font: 'inherit',
-            cursor: signingOut ? 'progress' : 'pointer',
-            width: '100%',
-          }}
-        >
-          <div className={styles.actionRowLeft}>
-            <span className={styles.actionRowTitle}>
-              <em>{signingOut ? 'Signing out…' : 'Sign out'}</em>
-            </span>
-            <span className={styles.actionRowDesc}>End your session on this device</span>
-          </div>
-          <span className={styles.actionRowArrow} aria-hidden>→</span>
-        </button>
         </>
         )}
       </div>

@@ -372,8 +372,8 @@ export default function CreatorsSection() {
               >
                 Watch us build it <span className={styles.ctaArrow}>→</span>
               </a>
-              <a className={styles.ctaGhost} href="/signup">
-                Start your dashboard
+              <a className={styles.ctaGhost} href="/app">
+                Open your dashboard
               </a>
             </div>
           </div>

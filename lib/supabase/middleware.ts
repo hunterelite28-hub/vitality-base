@@ -41,30 +41,21 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // No login in the base: this is a personal dashboard. When someone enters the
+  // app (or account) without a session, silently create an ANONYMOUS one.
+  // signInAnonymously sets the session cookies via setAll above, which the ssr
+  // pattern forwards to the page render, so they land straight on the dashboard —
+  // no login screen, ever. (Requires "Anonymous sign-ins" enabled in Supabase →
+  // Authentication.) Public pages (/, /u/*) don't spawn a session.
   const { pathname } = request.nextUrl
-  // Auth-only gating — the base has no onboarding. Match the route group
-  // exactly (not a bare startsWith('/app'), which also catches '/apple-icon').
-  const isProtected =
+  const needsUser =
     pathname === '/app' ||
     pathname.startsWith('/app/') ||
     pathname === '/account' ||
     pathname.startsWith('/account/')
-  const isAuthPage = pathname === '/login' || pathname === '/signup'
 
-  if (!user) {
-    if (isProtected) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      return NextResponse.redirect(url)
-    }
-    return supabaseResponse
-  }
-
-  // Signed in and sitting on the login/signup page → send to the dashboard.
-  if (isAuthPage) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/app'
-    return NextResponse.redirect(url)
+  if (!user && needsUser) {
+    await supabase.auth.signInAnonymously()
   }
 
   return supabaseResponse

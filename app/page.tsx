@@ -107,8 +107,7 @@ export default function HomePage() {
       <nav className={styles.chrome}>
         <a className={styles.wordmark} href="/">Vitality</a>
         <div className={styles.nav}>
-          <a href="/pricing">pricing</a>
-          <a className={styles.signIn} href="/login">Sign in</a>
+          <a className={styles.signIn} href="/app">Open</a>
         </div>
       </nav>
 
@@ -140,12 +139,9 @@ export default function HomePage() {
         <p className={styles.sub}>
           A study in restraint. Workouts, supplements, water, wearables. Every metric, held in light.
         </p>
-        <a className={styles.cta} href="/signup">
-          Start your dashboard <span className={styles.arrow}>→</span>
+        <a className={styles.cta} href="/app">
+          Open your dashboard <span className={styles.arrow}>→</span>
         </a>
-        <div>
-          <a className={styles.altSignIn} href="/login">Already a member?<em>Sign in</em></a>
-        </div>
       </div>
 
       </section>

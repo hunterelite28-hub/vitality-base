@@ -13,7 +13,7 @@ export default async function AppLayout({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   // LocalDateSync writes the `vitality_local_date` cookie so the workout logger

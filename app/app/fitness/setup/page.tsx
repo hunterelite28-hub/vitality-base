@@ -31,7 +31,7 @@ export default async function FitnessSetupPage({
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   const [profileRes, settingsRes, prefs] = await Promise.all([

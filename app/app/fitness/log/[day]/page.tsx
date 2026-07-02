@@ -27,7 +27,7 @@ export default async function DayLogPage({ params, searchParams }: DayPageProps)
   const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect('/')
 
   const { data: settings } = await supabase
     .from('training_settings')

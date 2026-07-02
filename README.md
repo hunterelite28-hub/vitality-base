@@ -13,7 +13,9 @@ Fork it, point it at your own free Supabase project, and build from there.
 
 **Working out of the box**
 - **Landing page** — the full editorial hero (WebGL crystal, aurora, the lot).
-- **Auth** — email + password and Google sign-in, via Supabase.
+- **No login** — it's your personal dashboard, so there's no sign-in screen. The site
+  opens straight into the app on a silent, private session, and everything saves to
+  your own Supabase.
 - **Dashboard** — the animated tile grid over a themeable "world" backdrop.
 - **Workout logger** — day tabs, set pills, swap / history / tune, and the gold PR
   celebration. Pick your split in the one-time setup, then log.
@@ -41,12 +43,13 @@ In the Supabase dashboard → **SQL Editor**, run these two files in order (past
 1. [`supabase/migrations/0001_base_schema.sql`](supabase/migrations/0001_base_schema.sql)
 2. [`supabase/migrations/0002_auth_bootstrap.sql`](supabase/migrations/0002_auth_bootstrap.sql)
 
-That creates every table (all row-level-security scoped to the signed-in user) and a
-trigger that gives each new signup a profile row automatically.
+That creates every table (all row-level-security scoped to the current user) and a
+trigger that gives each new session a profile row automatically.
 
-### 3. (Optional) Turn on Google sign-in
-Supabase dashboard → **Authentication → Providers → Google**. Email + password works
-without this.
+### 3. Turn on Anonymous sign-ins (required — this is what replaces login)
+Supabase dashboard → **Authentication → Sign In / Providers → Anonymous sign-ins → enable**.
+The app has no login screen; it silently creates a private anonymous session so visitors
+land straight on the dashboard. Without this toggle, `/app` can't create a session.
 
 ### 4. Deploy to Vercel
 Click the button, connect your fork, and paste the four environment variables when asked
@@ -61,8 +64,8 @@ Click the button, connect your fork, and paste the four environment variables wh
 | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings → API → `service_role` key (server-only) |
 | `NEXT_PUBLIC_APP_URL` | your deployment URL, e.g. `https://your-app.vercel.app` |
 
-> After deploying, add your Vercel URL to Supabase → **Authentication → URL Configuration**
-> (Site URL + Redirect URLs → `https://your-app.vercel.app/auth/callback`).
+> After deploying, set your Vercel URL as the **Site URL** in Supabase →
+> **Authentication → URL Configuration**.
 
 ---
 

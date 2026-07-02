@@ -26,7 +26,7 @@ function isoDaysAgo(days: number): string {
 export default async function ProgressPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect('/')
 
   const sinceWeights = isoDaysAgo(180)
   const sinceWorkouts = isoDaysAgo(90)

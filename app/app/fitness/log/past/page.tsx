@@ -17,7 +17,7 @@ export default async function PastWorkoutPage() {
   const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect('/')
 
   const { data: settings, error } = await supabase
     .from('training_settings')

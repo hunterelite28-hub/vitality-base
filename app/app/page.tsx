@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser()
 
   // Layout guards already redirect anon → /login; belt-and-suspenders here too.
-  if (!user) redirect('/login')
+  if (!user) redirect('/')
 
   // Greeting name + units. A fresh signup is auto-seeded a user_profile row by
   // the handle_new_user trigger, so this normally has a row; guarded regardless.

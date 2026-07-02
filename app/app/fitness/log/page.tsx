@@ -18,7 +18,7 @@ export default async function WorkoutLoggerPage() {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   // Defensive query — explicitly capture the error so we can log it. Without
