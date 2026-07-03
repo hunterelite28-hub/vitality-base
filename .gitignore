@@ -41,8 +41,9 @@ next-env.d.ts
 # logs
 *.log
 
-# claude code local state
-.claude/
+# claude code local state — but SHIP the slash commands that build tiles
+.claude/*
+!.claude/commands/
 
 # personal MCP connection (contains a per-user vitm_ token — never commit)
 .mcp.json
