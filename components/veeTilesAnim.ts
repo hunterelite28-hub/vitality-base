@@ -58,7 +58,7 @@ export function initVeeTiles(
       ringAnim=ringgrp.animate([{opacity:0},{opacity:1,offset:.22},{opacity:.8,offset:.42},{opacity:0}],{duration:1000,easing:'ease-out',fill:'forwards'});
       tintAnims.forEach(a=>{try{a.cancel();}catch(e){}}); tintAnims=[];
       vpaths.forEach(p=>tintAnims.push(p.animate([{stroke:color},{stroke:color,offset:.5},{stroke:MINT}],{duration:1000,easing:'ease-out',fill:'forwards'})));
-      tintAnims.push(vnum.animate([{fill:color},{fill:color,offset:.5},{fill:MINT}],{duration:1000,easing:'ease-out',fill:'forwards'}));
+      if(vnum) tintAnims.push(vnum.animate([{fill:color},{fill:color,offset:.5},{fill:MINT}],{duration:1000,easing:'ease-out',fill:'forwards'}));
     }
     function sendLight(){
       let w; do{ w=Math.floor(Math.random()*feeds.length); }while(w===lastWire&&feeds.length>1); lastWire=w;
