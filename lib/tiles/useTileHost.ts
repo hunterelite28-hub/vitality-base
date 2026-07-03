@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { tileStore } from './tileStore'
+import { syncEnabled, syncSave, syncLoad } from '@/lib/sync'
 
 /**
  * useTileHost is the host side of the Vitality bridge, fixed for MANY tiles.
@@ -58,7 +59,7 @@ export function useTileHost(
   }, [])
 
   useEffect(() => {
-    function onMessage(e: MessageEvent) {
+    async function onMessage(e: MessageEvent) {
       const msg = e.data
       if (!msg || msg.source !== 'vitality-tile') return
       const src = e.source as Window | null
@@ -74,13 +75,22 @@ export function useTileHost(
           src.postMessage({ source: 'vitality-host', type: 'save:error', id: msg.id, reason: 'too_large_or_full' }, '*')
           return
         }
+        // Local-first, then mirror to the owner's Supabase (if configured) so the
+        // same data shows up on their other devices. Fire-and-forget.
+        if (syncEnabled()) void syncSave(tileId, msg.data, new Date().toISOString())
         const count = Array.isArray(msg.data) ? msg.data.length : 0
         activity.current?.({ tileId, type: 'save', count })
         return
       }
 
       if (msg.type === 'load') {
-        const data = tileStore.loadData(userId, tileId)
+        // Prefer the cloud copy when sync is on (so a fresh device — the phone —
+        // gets the real data); fall back to this browser's local copy otherwise.
+        let data = tileStore.loadData(userId, tileId)
+        if (syncEnabled()) {
+          const remote = await syncLoad(tileId)
+          if (remote != null) data = remote as typeof data
+        }
         // reply to the exact sender, never a broadcast. targetOrigin stays '*'
         // because a sealed srcDoc tile has an opaque (null) origin; the sender
         // is already verified via the registered e.source, and the payload is
