@@ -18,6 +18,8 @@ create table if not exists public.tile_data (
 alter table public.tile_data enable row level security;
 
 -- Personal project: let the anon key read and write your own dashboard data.
+grant select, insert, update on public.tile_data to anon, authenticated;
+
 drop policy if exists "tile_data anon select" on public.tile_data;
 drop policy if exists "tile_data anon insert" on public.tile_data;
 drop policy if exists "tile_data anon update" on public.tile_data;
