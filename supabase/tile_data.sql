@@ -7,6 +7,7 @@
 --
 -- This is a single-user personal setup with no login, so the anon key is public
 -- in the browser. Treat this data as not-secret, or add auth later.
+-- Safe to run more than once.
 
 create table if not exists public.tile_data (
   tile_id    text primary key,
@@ -17,6 +18,10 @@ create table if not exists public.tile_data (
 alter table public.tile_data enable row level security;
 
 -- Personal project: let the anon key read and write your own dashboard data.
+drop policy if exists "tile_data anon select" on public.tile_data;
+drop policy if exists "tile_data anon insert" on public.tile_data;
+drop policy if exists "tile_data anon update" on public.tile_data;
+
 create policy "tile_data anon select" on public.tile_data
   for select using (true);
 create policy "tile_data anon insert" on public.tile_data
