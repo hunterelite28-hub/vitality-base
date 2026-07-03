@@ -22,7 +22,7 @@ import styles from './dashboardHeaderGem.module.css'
  *   - particles: 14 mint motes radiating out at evenly-spaced angles
  *   - sparkles:  14 sparkle dots at random perimeter positions, twinkling
  *
- * No ponder / curious — Luke wanted those dropped (no question mark).
+ * No ponder or curious mood: those are dropped (no question mark).
  */
 
 const HeroCrystal = dynamic(() => import('@/components/HeroCrystal'), {
@@ -76,7 +76,7 @@ export default function DashboardHeaderGem({
 
   // Beyond the gem's own autonomous happy hello, rotate through the other
   // moods on a slow timer so the dashboard character feels alive. 'curious'
-  // is excluded (no question mark, per Luke); 'sleepy' is excluded here until
+  // is excluded (no question mark); 'sleepy' is excluded here until
   // the floating-z's sleep effect is wired into the dashboard (it's lab-only
   // for now, and the ~5s droop reads as frozen without the z's).
   useEffect(() => {

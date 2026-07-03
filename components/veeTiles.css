@@ -149,7 +149,7 @@
 .veeTiles .feedgrp{transition:opacity .5s ease}
 .veeTiles .feedgrp.hide{opacity:0}
 /* The score is set in Instrument Serif italic — the same editorial face as the
-   "Good afternoon, Luke" greeting and the tile labels — so the whole dashboard
+   "Good afternoon, <name>" greeting and the tile labels, so the whole dashboard
    reads as one typographic voice (the old Hanken sans looked like a HUD digit).
    Tabular figures keep every digit equal-width so any score sits dead-centre and
    the count-up reveal doesn't jitter sideways. */
