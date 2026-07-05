@@ -130,24 +130,13 @@ function OpenTileOverlay({
 }) {
   const winRef = useRef<Window | null>(null)
   return (
-    <div
-      className="openOverlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label={slot.name}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
+    <div className="openOverlay openFull" role="dialog" aria-modal="true" aria-label={slot.name}>
       <div className="openCard">
         <div className="openTop">
-          <span className="openTitle">{slot.name}</span>
-          <button type="button" className="openClose" aria-label="Close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
+          <button type="button" className="openBack" onClick={onClose}>
+            <span aria-hidden="true">←</span> Dashboard
           </button>
+          <span className="openSlotName">{slot.name}</span>
         </div>
         <div className="openStage">
           <iframe
