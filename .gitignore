@@ -41,8 +41,13 @@ next-env.d.ts
 # logs
 *.log
 
-# claude code local state
-.claude/
+# claude code local state stays local, but the /tile command SHIPS with the
+# base (the README depends on it). Episode drop-ins (train.*, etc.) are paid
+# Patreon deliverables and must never land in this public repo.
+.claude/*
+!.claude/commands/
+.claude/commands/*
+!.claude/commands/tile.md
 
 # personal MCP connection (contains a per-user vitm_ token — never commit)
 .mcp.json
