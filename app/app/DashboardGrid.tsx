@@ -7,7 +7,7 @@ import type { TileSize } from '@/lib/tiles/tileSkin'
 import { initVeeTiles } from '@/components/veeTilesAnim'
 import { useTileHost } from '@/lib/tiles/useTileHost'
 import { withBridge } from '@/lib/tiles/tileBridge'
-import { syncEnabled, syncLoadTiles, syncSaveTile, syncWipe } from '@/lib/sync'
+import { syncEnabled, syncLoadTiles, syncSaveTile } from '@/lib/sync'
 import type { DashboardChrome } from '@/lib/tiles/dashboardChrome'
 
 /**
@@ -23,9 +23,6 @@ import type { DashboardChrome } from '@/lib/tiles/dashboardChrome'
 
 // The fixed slot roster (the seeded order + sizes), minus the Library tile.
 const SLOT_ORDER = DEFAULT_HOME_ORDER.filter((id) => id !== 'library') as string[]
-
-// localStorage marker: set by a wipe so the next load shows the blank canvas.
-const WIPED_KEY = 'vitality:wiped'
 
 type FilledMap = Record<string, string> // slotId -> sealed HTML
 
@@ -369,94 +366,8 @@ function NewTileOverlay({
   )
 }
 
-/* ── the Reset confirm: wipe all tile data + built tiles, then reload ── */
-function WipeOverlay({ onClose }: { onClose: () => void }) {
-  const [wiping, setWiping] = useState(false)
-
-  const wipe = async () => {
-    setWiping(true)
-    try {
-      window.localStorage.clear()
-      // leave one marker so the reload lands on the blank "see the vision" canvas
-      // instead of re-discovering the committed starter tiles.
-      window.localStorage.setItem(WIPED_KEY, '1')
-    } catch {
-      /* ignore */
-    }
-    await syncWipe()
-    window.location.reload()
-  }
-
-  return (
-    <div
-      className="openOverlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Reset dashboard"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget && !wiping) onClose()
-      }}
-    >
-      <div className="openCard" style={{ maxWidth: 460 }}>
-        <div className="openTop">
-          <span className="openTitle">Reset dashboard?</span>
-          <button type="button" className="openClose" aria-label="Close" onClick={onClose} disabled={wiping}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          </button>
-        </div>
-        <div className="openStage" style={{ display: 'block', padding: '22px 24px' }}>
-          <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: 0 }}>
-            This clears <strong style={{ color: 'var(--fg)' }}>all your tile data</strong> and any tiles
-            you&apos;ve built, then reloads the page. This can&apos;t be undone.
-          </p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={wiping}
-              style={{
-                flex: 1,
-                padding: '0.7rem 1rem',
-                borderRadius: 999,
-                background: 'transparent',
-                color: 'var(--fg)',
-                border: '1px solid var(--border)',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={wipe}
-              disabled={wiping}
-              style={{
-                flex: 1,
-                padding: '0.7rem 1rem',
-                borderRadius: 999,
-                background: '#ff6b6b',
-                color: '#160404',
-                border: 'none',
-                fontWeight: 600,
-                cursor: wiping ? 'not-allowed' : 'pointer',
-                opacity: wiping ? 0.6 : 1,
-              }}
-            >
-              {wiping ? 'Wiping…' : 'Wipe everything'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ── the blank canvas shown right after a wipe: pure black, one line, one move ── */
-function EmptyCanvas({ onStart }: { onStart: () => void }) {
+/* ── the welcome-home "see the vision" screen: pure black, one line, one way back ── */
+function EmptyCanvas({ onBack }: { onBack: () => void }) {
   return (
     <div
       style={{
@@ -490,7 +401,7 @@ function EmptyCanvas({ onStart }: { onStart: () => void }) {
       </p>
       <button
         type="button"
-        onClick={onStart}
+        onClick={onBack}
         style={{
           marginTop: 42,
           background: '#6EE7B7',
@@ -503,7 +414,7 @@ function EmptyCanvas({ onStart }: { onStart: () => void }) {
           cursor: 'pointer',
         }}
       >
-        Start building
+        ← Back to dashboard
       </button>
     </div>
   )
@@ -522,18 +433,12 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   const [openId, setOpenId] = useState<string | null>(null) // filled slot opened live
   const [connectId, setConnectId] = useState<string | null>(null) // empty slot connector
   const [newOpen, setNewOpen] = useState(false) // "+ New tile" creator
-  const [wipeOpen, setWipeOpen] = useState(false) // Reset confirm
-  const [wiped, setWiped] = useState(false) // blank "see the vision" canvas after a wipe
+  const [showWelcome, setShowWelcome] = useState(false) // transient "see the vision" home (non-destructive)
 
   const { register, unregister } = useTileHost(userId, undefined, () => {})
 
   useEffect(() => {
     setMounted(true)
-    try {
-      setWiped(window.localStorage.getItem(WIPED_KEY) === '1')
-    } catch {
-      /* ignore */
-    }
   }, [])
 
   // Column bucket, matching the CSS: 4 desktop / 2 phone.
@@ -552,17 +457,6 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   useEffect(() => {
     let alive = true
     ;(async () => {
-      // after a wipe, stay on the blank canvas — don't re-discover the starter tiles.
-      let wipedNow = false
-      try {
-        wipedNow = window.localStorage.getItem(WIPED_KEY) === '1'
-      } catch {
-        /* ignore */
-      }
-      if (wipedNow) {
-        if (alive) setFilled({})
-        return
-      }
       const pairs = await Promise.all(
         SLOT_ORDER.map(async (id) => {
           try {
@@ -620,21 +514,6 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   }, [openId, connectId])
 
   if (!mounted) return null
-
-  if (wiped) {
-    return (
-      <EmptyCanvas
-        onStart={() => {
-          try {
-            window.localStorage.removeItem(WIPED_KEY)
-          } catch {
-            /* ignore */
-          }
-          window.location.reload()
-        }}
-      />
-    )
-  }
 
   const openSlot = (id: string) => {
     if (filled[id]) setOpenId(id)
@@ -707,8 +586,8 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
 
       <button
         type="button"
-        onClick={() => setWipeOpen(true)}
-        aria-label="Reset dashboard"
+        onClick={() => setShowWelcome(true)}
+        aria-label="See the vision"
         style={{
           position: 'fixed',
           left: 24,
@@ -724,10 +603,10 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
           cursor: 'pointer',
         }}
       >
-        Reset
+        See the vision
       </button>
 
-      {wipeOpen && <WipeOverlay onClose={() => setWipeOpen(false)} />}
+      {showWelcome && <EmptyCanvas onBack={() => setShowWelcome(false)} />}
     </div>
   )
 }

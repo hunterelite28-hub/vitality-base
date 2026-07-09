@@ -34,7 +34,7 @@ By default your data saves in the browser, per device. To sync across your phone
 laptop, add your own free Supabase project:
 
 1. Create a project at https://supabase.com
-2. In the SQL editor, run [`supabase/tile_data.sql`](supabase/tile_data.sql)
+2. In the SQL editor, run [`supabase/sync.sql`](supabase/sync.sql)
 3. Add two env vars (in Vercel, and `.env.local` for local dev):
 
 ```bash
