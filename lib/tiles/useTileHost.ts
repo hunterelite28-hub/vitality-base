@@ -85,31 +85,24 @@ export function useTileHost(
           src.postMessage({ source: 'vitality-host', type: 'save:error', id: msg.id, reason: 'too_large_or_full' }, '*')
           return
         }
-<<<<<<< HEAD
-        // Local-first, then mirror to the owner's Supabase (if configured) so the
-        // same data shows up on their other devices. Fire-and-forget.
-        if (syncEnabled()) void syncSave(tileId, msg.data, new Date().toISOString())
-=======
         // ack success so a tile's `await window.Vitality.save(...)` resolves truthfully
         src.postMessage({ source: 'vitality-host', type: 'save:ok', id: msg.id }, '*')
->>>>>>> ef24a6b088a62207bbd108b48b33f50dba7203bd
+        // then mirror to the owner's Supabase (if configured) so the same data shows
+        // up on their other devices. Fire-and-forget — never blocks the tile.
+        if (syncEnabled()) void syncSave(tileId, msg.data, new Date().toISOString())
         const count = Array.isArray(msg.data) ? msg.data.length : 0
         activity.current?.({ tileId, type: 'save', count })
         return
       }
 
       if (msg.type === 'load') {
-<<<<<<< HEAD
         // Prefer the cloud copy when sync is on (so a fresh device — the phone —
         // gets the real data); fall back to this browser's local copy otherwise.
-        let data = tileStore.loadData(userId, tileId)
+        let data = await tileStore.loadData(userId, tileId)
         if (syncEnabled()) {
           const remote = await syncLoad(tileId)
           if (remote != null) data = remote as typeof data
         }
-=======
-        const data = await tileStore.loadData(userId, tileId)
->>>>>>> ef24a6b088a62207bbd108b48b33f50dba7203bd
         // reply to the exact sender, never a broadcast. targetOrigin stays '*'
         // because a sealed srcDoc tile has an opaque (null) origin; the sender
         // is already verified via the registered e.source, and the payload is

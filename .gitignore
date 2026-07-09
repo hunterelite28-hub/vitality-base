@@ -41,26 +41,14 @@ next-env.d.ts
 # logs
 *.log
 
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-# claude code local state — but SHIP the slash commands that build tiles
-.claude/*
-!.claude/commands/
-=======
-# claude code local state stays local, but the /tile command SHIPS with the
-# base (the README depends on it). Episode drop-ins (train.*, etc.) are paid
-# Patreon deliverables and must never land in this public repo.
+# claude code local state stays local, but the /tile command SHIPS with the base
+# (the README depends on it) and so does the auto-push hook. Episode drop-ins
+# (train.*, etc.) are paid Patreon deliverables and must never land in this public repo.
 .claude/*
 !.claude/commands/
 .claude/commands/*
 !.claude/commands/tile.md
->>>>>>> ef24a6b088a62207bbd108b48b33f50dba7203bd
-=======
-# claude code local state — but SHIP the slash commands + the auto-push hook
-.claude/*
-!.claude/commands/
 !.claude/settings.json
->>>>>>> Stashed changes
 
 # personal MCP connection (contains a per-user vitm_ token — never commit)
 .mcp.json

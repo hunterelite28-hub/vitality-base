@@ -129,13 +129,7 @@ the connector and the tile shows up on your dashboard. The tools it exposes:
 
 ## Tech
 
-<<<<<<< Updated upstream
-Next.js 14 (App Router), vanilla CSS, Three.js for the header gem, deployed on
-Vercel. A tile's data lives in your browser, or in your own Supabase project if you
-add one.
-=======
 Next.js 14 (App Router) · vanilla CSS · Three.js for the header gem · deployed on
 Vercel. Zero-backend by default (tiles are static files, data lives in your browser);
 add your own Supabase + set `MCP_TOKEN` to build tiles from Claude and sync across
 devices via the connector (`app/api/mcp`).
->>>>>>> Stashed changes

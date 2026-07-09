@@ -6,11 +6,8 @@ import { CORE_TILES, VEE_TILE, DEFAULT_HOME_ORDER, coreDefaultSize, type CoreTil
 import type { TileSize } from '@/lib/tiles/tileSkin'
 import { initVeeTiles } from '@/components/veeTilesAnim'
 import { useTileHost } from '@/lib/tiles/useTileHost'
-<<<<<<< Updated upstream
 import { withBridge } from '@/lib/tiles/tileBridge'
-=======
 import { syncEnabled, syncLoadTiles } from '@/lib/sync'
->>>>>>> Stashed changes
 import type { DashboardChrome } from '@/lib/tiles/dashboardChrome'
 
 /**
