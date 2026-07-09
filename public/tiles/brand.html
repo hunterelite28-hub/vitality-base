@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Brand</title>
+<style>
+  :root{--mint:#6EE7B7;--bg:#050506;--card:#0e0e11;--line:#1d1d22;--fg:#ededf0;--muted:#84848c}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;display:flex;justify-content:center;padding:44px 20px}
+  .wrap{width:100%;max-width:600px}
+  h1{font-size:24px;font-weight:600;margin:0 0 2px;letter-spacing:-.01em}
+  .sub{color:var(--muted);margin:0 0 22px;font-size:13px}
+  .stats{display:flex;gap:12px;margin-bottom:22px}
+  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .stat .l{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+  .stat .n{font-size:26px;font-weight:700;color:var(--mint);line-height:1}
+  .stat .d{font-size:12px;margin-top:7px;color:var(--muted)}
+  .up{color:var(--mint)}
+  .row{display:flex;gap:8px;margin-bottom:20px}
+  input{background:var(--card);border:1px solid var(--line);color:var(--fg);border-radius:11px;padding:11px 13px;min-width:0;flex:1}
+  input:focus{outline:none;border-color:var(--mint)}
+  input::placeholder{color:#55555c}
+  .add{background:var(--mint);color:#04140d;border:none;border-radius:11px;padding:11px 18px;font-weight:600;cursor:pointer}
+  .item{display:flex;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:8px}
+  .meta{color:var(--muted);font-size:13px}
+  .empty{color:var(--muted);font-size:14px;padding:8px 2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Brand</h1>
+  <p class="sub">Log a weekly snapshot. Watch it grow.</p>
+  <div class="stats">
+    <div class="stat"><div class="l">Followers</div><div class="n" id="folN">—</div><div class="d" id="folD"></div></div>
+    <div class="stat"><div class="l">Revenue</div><div class="n" id="revN">—</div><div class="d" id="revD"></div></div>
+  </div>
+  <div class="row">
+    <input id="fol" placeholder="Followers" inputmode="numeric" />
+    <input id="rev" placeholder="Revenue $" inputmode="numeric" />
+    <button class="add" id="add">Log</button>
+  </div>
+  <div id="list"></div>
+</div>
+<script>
+  const $=s=>document.querySelector(s);
+  let rows=[];
+  const when=ts=>new Date(ts).toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  const fmt=n=>(+n||0).toLocaleString();
+  function delta(cur,prev,key){if(prev==null)return "";const d=(+cur[key]||0)-(+prev[key]||0);if(!d)return "no change";return (d>0?"+":"")+fmt(d)+" this snapshot";}
+  function render(){
+    const last=rows[rows.length-1], prev=rows[rows.length-2];
+    if(last){
+      $("#folN").textContent=fmt(last.fol);$("#revN").textContent="$"+fmt(last.rev);
+      $("#folD").innerHTML=prev?`<span class="${(+last.fol>=+prev.fol)?"up":""}">${delta(last,prev,"fol")}</span>`:"first snapshot";
+      $("#revD").innerHTML=prev?`<span class="${(+last.rev>=+prev.rev)?"up":""}">${delta(last,prev,"rev")}</span>`:"first snapshot";
+    }
+    $("#list").innerHTML=rows.slice().reverse().map(r=>
+      `<div class="item"><span>${when(r.ts)}</span><span class="meta">${fmt(r.fol)} followers · $${fmt(r.rev)}</span></div>`
+    ).join("")||'<div class="empty">No snapshots yet.</div>';
+  }
+  $("#add").onclick=async()=>{
+    if(!$("#fol").value.trim()&&!$("#rev").value.trim())return;
+    rows.push({fol:$("#fol").value.trim(),rev:$("#rev").value.trim(),ts:Date.now()});
+    $("#fol").value=$("#rev").value="";
+    render(); await window.Vitality.save(rows);
+  };
+  (async()=>{const d=await window.Vitality.load();rows=Array.isArray(d)?d:[];render();})();
+</script>
+</body>
+</html>

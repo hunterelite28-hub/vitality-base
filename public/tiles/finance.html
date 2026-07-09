@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Finance</title>
+<style>
+  :root{--mint:#6EE7B7;--bg:#050506;--card:#0e0e11;--line:#1d1d22;--fg:#ededf0;--muted:#84848c}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;display:flex;justify-content:center;padding:44px 20px}
+  .wrap{width:100%;max-width:600px}
+  h1{font-size:24px;font-weight:600;margin:0 0 2px;letter-spacing:-.01em}
+  .sub{color:var(--muted);margin:0 0 20px;font-size:13px}
+  .net{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:22px}
+  .net .l{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  .net .n{font-size:38px;font-weight:700;color:var(--mint);line-height:1;margin-top:8px}
+  .row{display:flex;gap:8px;margin-bottom:20px}
+  input{background:var(--card);border:1px solid var(--line);color:var(--fg);border-radius:11px;padding:11px 13px;min-width:0}
+  #name{flex:1}#bal{width:120px}
+  input:focus{outline:none;border-color:var(--mint)}
+  input::placeholder{color:#55555c}
+  .add{background:var(--mint);color:#04140d;border:none;border-radius:11px;padding:11px 18px;font-weight:600;cursor:pointer}
+  .item{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:8px}
+  .item .x{color:var(--muted);cursor:pointer;padding:0 6px}
+  .amt{font-variant-numeric:tabular-nums}
+  .empty{color:var(--muted);font-size:14px;padding:8px 2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Net Worth</h1>
+  <p class="sub">Every account in one number.</p>
+  <div class="net"><div class="l">Total</div><div class="n" id="total">$0</div></div>
+  <div class="row">
+    <input id="name" placeholder="Account (e.g. Savings)" />
+    <input id="bal" placeholder="Balance $" inputmode="numeric" />
+    <button class="add" id="add">Add</button>
+  </div>
+  <div id="list"></div>
+</div>
+<script>
+  const $=s=>document.querySelector(s);
+  let rows=[];
+  const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const fmt=n=>(n<0?"-$":"$")+Math.abs(+n||0).toLocaleString();
+  function render(){
+    const total=rows.reduce((a,r)=>a+(+r.bal||0),0);
+    $("#total").textContent=fmt(total);
+    $("#list").innerHTML=rows.map((r,i)=>
+      `<div class="item"><span>${esc(r.name)}</span><span><span class="amt">${fmt(r.bal)}</span> <span class="x" data-i="${i}">×</span></span></div>`
+    ).join("")||'<div class="empty">Add your first account.</div>';
+    document.querySelectorAll(".x").forEach(el=>el.onclick=()=>del(+el.dataset.i));
+  }
+  async function del(i){rows.splice(i,1);render();await window.Vitality.save(rows);}
+  $("#add").onclick=async()=>{
+    const name=$("#name").value.trim(); if(!name)return;
+    rows.push({name,bal:$("#bal").value.trim()||"0"});
+    $("#name").value=$("#bal").value="";
+    render(); await window.Vitality.save(rows);
+  };
+  (async()=>{const d=await window.Vitality.load();rows=Array.isArray(d)?d:[];render();})();
+</script>
+</body>
+</html>

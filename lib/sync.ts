@@ -85,3 +85,22 @@ export async function syncLoadTiles(): Promise<Record<string, RemoteTile>> {
     return {}
   }
 }
+
+/**
+ * Write a tile into the owner's Supabase `tiles` table (the "+ New tile" button /
+ * paste box). Same store the MCP connector writes to, so a tile made in the browser
+ * and one made from Claude land in the same place. Returns false if unconfigured or
+ * the write fails (e.g. tiles.sql not run yet).
+ */
+export async function syncSaveTile(slot: string, html: string, name?: string): Promise<boolean> {
+  const c = syncClient()
+  if (!c) return false
+  try {
+    const { error } = await c
+      .from('tiles')
+      .upsert({ slot, html, name: name ?? null, updated_at: new Date().toISOString() }, { onConflict: 'slot' })
+    return !error
+  } catch {
+    return false
+  }
+}

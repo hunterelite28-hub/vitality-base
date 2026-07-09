@@ -7,7 +7,7 @@ import type { TileSize } from '@/lib/tiles/tileSkin'
 import { initVeeTiles } from '@/components/veeTilesAnim'
 import { useTileHost } from '@/lib/tiles/useTileHost'
 import { withBridge } from '@/lib/tiles/tileBridge'
-import { syncEnabled, syncLoadTiles } from '@/lib/sync'
+import { syncEnabled, syncLoadTiles, syncSaveTile } from '@/lib/sync'
 import type { DashboardChrome } from '@/lib/tiles/dashboardChrome'
 
 /**
@@ -255,6 +255,117 @@ function ConnectorOverlay({ id, label, onClose }: { id: string; label: string; o
   )
 }
 
+/* ── the "+ New tile" creator: pick a slot, paste sealed HTML, save it live ── */
+function NewTileOverlay({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void
+  onSaved: (slot: string, html: string) => void
+}) {
+  const [slot, setSlot] = useState<string>(SLOT_ORDER[0])
+  const [name, setName] = useState('')
+  const [html, setHtml] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [status, setStatus] = useState<string | null>(null)
+  const enabled = syncEnabled()
+
+  const field: CSSProperties = {
+    width: '100%',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border)',
+    color: 'var(--fg)',
+    borderRadius: 10,
+    padding: '10px 12px',
+    font: 'inherit',
+  }
+
+  const save = async () => {
+    if (!html.trim()) {
+      setStatus('Paste the tile HTML first.')
+      return
+    }
+    setSaving(true)
+    setStatus(null)
+    const ok = await syncSaveTile(slot, html, name.trim() || undefined)
+    setSaving(false)
+    if (ok) {
+      onSaved(slot, html)
+      onClose()
+    } else {
+      setStatus('Could not save. Connect your Supabase and run supabase/tiles.sql, then try again.')
+    }
+  }
+
+  return (
+    <div
+      className="openOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="New tile"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div className="openCard" style={{ maxWidth: 660 }}>
+        <div className="openTop">
+          <span className="openTitle">New tile</span>
+          <button type="button" className="openClose" aria-label="Close" onClick={onClose}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div className="openStage" style={{ display: 'block', overflow: 'auto', padding: '22px 24px' }}>
+          {!enabled && (
+            <p style={{ color: 'var(--muted)', lineHeight: 1.6, marginTop: 0 }}>
+              Saving from here needs your Supabase connected (see the README). Without it, build a
+              tile in Claude Code with <code style={{ color: 'var(--mint)' }}>/tile &lt;slot&gt;</code> instead.
+            </p>
+          )}
+          <label style={{ display: 'block', color: 'var(--muted)', fontSize: 13, marginBottom: 6 }}>Slot</label>
+          <select value={slot} onChange={(e) => setSlot(e.target.value)} style={field}>
+            {SLOT_ORDER.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <label style={{ display: 'block', color: 'var(--muted)', fontSize: 13, margin: '14px 0 6px' }}>Name (optional)</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Morning brief" style={field} />
+          <label style={{ display: 'block', color: 'var(--muted)', fontSize: 13, margin: '14px 0 6px' }}>
+            Tile HTML — one sealed, self-contained file
+          </label>
+          <textarea
+            value={html}
+            onChange={(e) => setHtml(e.target.value)}
+            placeholder="<!doctype html>…"
+            style={{ ...field, minHeight: 180, fontFamily: 'ui-monospace, Menlo, monospace', resize: 'vertical' }}
+          />
+          {status && <p style={{ color: 'var(--mint)', fontSize: 13, marginTop: 10 }}>{status}</p>}
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving || !enabled}
+            style={{
+              marginTop: 14,
+              padding: '0.7rem 1.3rem',
+              borderRadius: 999,
+              background: 'var(--mint)',
+              color: 'var(--mint-ink, #042a1c)',
+              fontWeight: 600,
+              border: 'none',
+              cursor: saving || !enabled ? 'not-allowed' : 'pointer',
+              opacity: saving || !enabled ? 0.5 : 1,
+            }}
+          >
+            {saving ? 'Saving…' : 'Save tile'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface DashboardGridProps {
   userId: string
   chrome?: DashboardChrome
@@ -267,6 +378,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   const [filled, setFilled] = useState<FilledMap>({})
   const [openId, setOpenId] = useState<string | null>(null) // filled slot opened live
   const [connectId, setConnectId] = useState<string | null>(null) // empty slot connector
+  const [newOpen, setNewOpen] = useState(false) // "+ New tile" creator
 
   const { register, unregister } = useTileHost(userId, undefined, () => {})
 
@@ -383,6 +495,36 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
 
       {connectId && (
         <ConnectorOverlay id={connectId} label={labelFor(connectId)} onClose={() => setConnectId(null)} />
+      )}
+
+      <button
+        type="button"
+        onClick={() => setNewOpen(true)}
+        aria-label="New tile"
+        style={{
+          position: 'fixed',
+          right: 24,
+          bottom: 24,
+          zIndex: 50,
+          background: 'var(--mint)',
+          color: 'var(--mint-ink, #042a1c)',
+          border: 'none',
+          borderRadius: 999,
+          padding: '12px 18px',
+          fontWeight: 600,
+          fontSize: 14,
+          cursor: 'pointer',
+          boxShadow: '0 6px 24px rgba(0,0,0,.45)',
+        }}
+      >
+        + New tile
+      </button>
+
+      {newOpen && (
+        <NewTileOverlay
+          onClose={() => setNewOpen(false)}
+          onSaved={(slot, html) => setFilled((prev) => ({ ...prev, [slot]: html }))}
+        />
       )}
     </div>
   )

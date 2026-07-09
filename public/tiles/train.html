@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Train</title>
+<style>
+  :root{--mint:#6EE7B7;--bg:#050506;--card:#0e0e11;--line:#1d1d22;--fg:#ededf0;--muted:#84848c}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;display:flex;justify-content:center;padding:44px 20px}
+  .wrap{width:100%;max-width:600px}
+  h1{font-size:24px;font-weight:600;margin:0 0 2px;letter-spacing:-.01em}
+  .sub{color:var(--muted);margin:0 0 26px;font-size:13px}
+  .row{display:flex;gap:8px;margin-bottom:20px}
+  input{background:var(--card);border:1px solid var(--line);color:var(--fg);border-radius:11px;padding:11px 13px;min-width:0}
+  #ex{flex:1}#wt,#rp{width:78px}
+  input:focus{outline:none;border-color:var(--mint)}
+  input::placeholder{color:#55555c}
+  .add{background:var(--mint);color:#04140d;border:none;border-radius:11px;padding:11px 18px;font-weight:600;cursor:pointer}
+  .item{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:8px}
+  .item b{font-weight:600}
+  .meta{color:var(--muted);font-size:13px}
+  .empty{color:var(--muted);font-size:14px;padding:8px 2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Today's Training</h1>
+  <p class="sub" id="sub">Log a set</p>
+  <div class="row">
+    <input id="ex" placeholder="Exercise" />
+    <input id="wt" placeholder="kg" inputmode="decimal" />
+    <input id="rp" placeholder="reps" inputmode="numeric" />
+    <button class="add" id="add">Add</button>
+  </div>
+  <div id="list"></div>
+</div>
+<script>
+  const $=s=>document.querySelector(s);
+  let rows=[];
+  const dayKey=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+  const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  function render(){
+    const today=rows.filter(r=>r.day===dayKey());
+    $("#sub").textContent=today.length?today.length+(today.length===1?" set today":" sets today"):"Log a set";
+    $("#list").innerHTML=today.slice().reverse().map(r=>
+      `<div class="item"><b>${esc(r.ex)}</b><span class="meta">${r.wt?esc(r.wt)+" kg · ":""}${esc(r.rp)} reps</span></div>`
+    ).join("")||'<div class="empty">Nothing logged yet today.</div>';
+  }
+  async function add(){
+    const ex=$("#ex").value.trim(); if(!ex)return;
+    rows.push({ex,wt:$("#wt").value.trim(),rp:$("#rp").value.trim()||"0",day:dayKey(),ts:Date.now()});
+    $("#ex").value=$("#wt").value=$("#rp").value="";$("#ex").focus();
+    render(); await window.Vitality.save(rows);
+  }
+  $("#add").onclick=add;
+  document.addEventListener("keydown",e=>{if(e.key==="Enter")add();});
+  (async()=>{const d=await window.Vitality.load();rows=Array.isArray(d)?d:[];render();})();
+</script>
+</body>
+</html>
