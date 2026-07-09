@@ -99,11 +99,14 @@ one-time steps switch it on:
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    ```
 
-2. **Set the connector password** — one more env var, any long random string. Without
-   it the connector stays disabled (returns 503).
+2. **Set the connector password** — any long random string. Without it the connector
+   stays disabled (returns 503). A second, **recommended** secret signs the OAuth
+   tokens used by the claude.ai path below; if you skip it, it is derived from
+   `MCP_TOKEN`, so `MCP_TOKEN` alone is enough to work.
 
    ```bash
-   MCP_TOKEN=make-this-a-long-random-secret
+   MCP_TOKEN=make-this-a-long-random-secret          # required — the connector password
+   MCP_OAUTH_SECRET=another-long-random-secret        # recommended — signs OAuth tokens
    ```
 
    Redeploy so Vercel picks up the new vars.
@@ -121,9 +124,25 @@ the connector and the tile shows up on your dashboard. The tools it exposes:
 `list_slots`, `read_tile`, `create_tile` (also edits — it replaces a slot), and
 `delete_tile`.
 
-> **Phone note:** connecting from the **claude.ai phone app** needs an OAuth login flow
-> (not just a token) — that's a later build. Today the connector works from **Claude
-> Code**; your phone still views the dashboard, and any tile's saved data syncs to it.
+### Connect from claude.ai, Claude Desktop, or a scheduled task (OAuth)
+
+Those clients can't send a static bearer token, so the same connector also speaks
+**OAuth 2.1** — no extra setup, it's live as soon as `MCP_TOKEN` is set. To connect:
+
+1. In claude.ai (or Claude Desktop): **Settings → Connectors → Add custom connector.**
+2. Paste your MCP URL: `https://YOUR-SITE.vercel.app/api/mcp/mcp`
+3. Claude discovers the OAuth server and opens **your site's authorize page**.
+4. **Enter your `MCP_TOKEN`** and click Allow — that's the login. Connected.
+
+Your `MCP_TOKEN` is the only thing that can authorize a connection, so treat that
+authorize page like a password prompt: only enter your token when *you* started the
+connect, and check the client host it names before allowing.
+
+The flow is **stateless** — authorization codes and access tokens are short-lived
+signed JWTs (PKCE-protected), so there are no OAuth tables to add. Discovery lives at
+`/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource`;
+the endpoints are under [`app/api/mcp/oauth`](app/api/mcp/oauth). Access tokens last
+1h; to revoke everything, rotate `MCP_OAUTH_SECRET` (or `MCP_TOKEN`) and redeploy.
 
 ---
 

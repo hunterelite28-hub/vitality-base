@@ -1,7 +1,9 @@
 import { createMcpHandler } from 'mcp-handler'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
-import { timingSafeEqual } from 'node:crypto'
+
+import { constantTimeEquals, looksLikeJwt, verifyAccessToken } from '../oauth/crypto'
+import { MCP_SCOPE, mcpResourceUrl, oauthSecret, originOf, resourceMetadataUrl } from '../oauth/shared'
 
 /**
  * The Vitality Base connector — a personal, single-user MCP server.
@@ -15,14 +17,18 @@ import { timingSafeEqual } from 'node:crypto'
  *      supabase/tiles.sql — that's the store the tiles live in.
  *   2. Set MCP_TOKEN to any long secret string. It's the password for this
  *      connector; without it the endpoint is disabled (503).
- *   3. Connect from Claude Code:
+ *   3. Connect from Claude Code (bearer token, no OAuth):
  *        claude mcp add --transport http vitality \
  *          https://YOUR-SITE.vercel.app/api/mcp/mcp \
  *          --header "Authorization: Bearer YOUR_MCP_TOKEN"
  *
- * Auth is a single shared secret compared in constant time. This is deliberately
- * simple (no OAuth) so it ships in the template and works from Claude Code today.
- * Connecting from the claude.ai phone app needs an OAuth layer — a later build.
+ * Auth is DUAL:
+ *   • Claude Code presents the raw MCP_TOKEN bearer (constant-time compared).
+ *   • claude.ai / Claude Desktop / cloud tasks can't send a static bearer, so
+ *     they connect via the OAuth 2.1 flow under app/api/mcp/oauth/* and present
+ *     a signed access-token JWT here instead. See CONNECTOR.md.
+ * A request with no/invalid auth gets a 401 carrying `WWW-Authenticate` with the
+ * protected-resource-metadata URL, which is how claude.ai discovers the OAuth AS.
  */
 
 export const runtime = 'nodejs'
@@ -140,11 +146,41 @@ function bearerToken(req: Request): string | null {
   return m ? m[1].trim() : null
 }
 
-function tokenMatches(provided: string, expected: string): boolean {
-  const a = Buffer.from(provided)
-  const b = Buffer.from(expected)
-  if (a.length !== b.length) return false
-  return timingSafeEqual(a, b)
+/** 401 that tells an OAuth client where to discover the authorization server
+ *  (RFC 9728). claude.ai reads `resource_metadata` here, fetches it, then runs
+ *  the OAuth flow — that is how it bootstraps a connection with no static token. */
+function unauthorized(req: Request): Response {
+  const metadata = resourceMetadataUrl(originOf(req))
+  return new Response(JSON.stringify({ error: 'unauthorized' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'WWW-Authenticate': `Bearer resource_metadata="${metadata}"`,
+    },
+  })
+}
+
+/** True if the bearer authorizes this request via EITHER path:
+ *  the raw MCP_TOKEN (Claude Code) or a valid OAuth access-token JWT (claude.ai). */
+function isAuthorized(req: Request, expected: string): boolean {
+  const provided = bearerToken(req)
+  if (!provided) return false
+
+  // Path 1 — Claude Code: raw shared secret, constant-time.
+  if (constantTimeEquals(provided, expected)) return true
+
+  // Path 2 — OAuth: a signed access token bound (aud) to this resource.
+  if (looksLikeJwt(provided)) {
+    const secret = oauthSecret()
+    if (!secret) return false
+    const verified = verifyAccessToken(provided, {
+      secret,
+      expectedAud: mcpResourceUrl(originOf(req)),
+    })
+    if (verified && verified.scope.split(/\s+/).includes(MCP_SCOPE)) return true
+  }
+
+  return false
 }
 
 async function handler(req: Request): Promise<Response> {
@@ -155,10 +191,7 @@ async function handler(req: Request): Promise<Response> {
       { status: 503 },
     )
   }
-  const provided = bearerToken(req)
-  if (!provided || !tokenMatches(provided, expected)) {
-    return Response.json({ error: 'unauthorized' }, { status: 401 })
-  }
+  if (!isAuthorized(req, expected)) return unauthorized(req)
   return mcpHandler(req)
 }
 
