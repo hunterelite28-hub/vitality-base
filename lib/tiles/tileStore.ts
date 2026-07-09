@@ -1,5 +1,6 @@
 import type { Tile, TileData, TileEnvelope, ReportKind } from './types'
 import { tileSkin, type Skin } from './tileSkin'
+import { supa } from './tileSupabase'
 
 /**
  * tileStore is the ONLY module that touches persistence for user tiles.
@@ -235,8 +236,20 @@ const MAX_TILE_DATA = 512 * 1024 // ~512KB per tile, protects the shared localSt
 
 /** Persist a tile's data. Returns whether the write actually landed so callers
  *  never tell the user "Saved" for a payload that was silently dropped (oversized
- *  or quota-blocked). */
-function saveData(userId: string, id: string, data: TileData): boolean {
+ *  or quota-blocked). When a Supabase project is configured (env vars present) the
+ *  write goes there so it syncs across devices; otherwise it stays in localStorage. */
+async function saveData(userId: string, id: string, data: TileData): Promise<boolean> {
+  const db = supa()
+  if (db) {
+    try {
+      const { error } = await db
+        .from('tile_data')
+        .upsert({ tile_id: `${userId}:${id}`, data, updated_at: new Date().toISOString() })
+      return !error
+    } catch {
+      return false
+    }
+  }
   if (!hasStorage()) return false
   try {
     const json = JSON.stringify(data)
@@ -249,7 +262,21 @@ function saveData(userId: string, id: string, data: TileData): boolean {
   }
 }
 
-function loadData(userId: string, id: string): TileData {
+async function loadData(userId: string, id: string): Promise<TileData> {
+  const db = supa()
+  if (db) {
+    try {
+      const { data, error } = await db
+        .from('tile_data')
+        .select('data')
+        .eq('tile_id', `${userId}:${id}`)
+        .maybeSingle()
+      if (error || !data) return []
+      return (data.data as TileData) ?? []
+    } catch {
+      return []
+    }
+  }
   if (!hasStorage()) return []
   try {
     const raw = window.localStorage.getItem(dataKey(userId, id))
@@ -267,7 +294,7 @@ function loadData(userId: string, id: string): TileData {
  * caller supplies a default), then remove the legacy key. Guarded on an empty
  * index so it never runs twice.
  */
-function migrateLegacy(userId: string, defaultHtml: string): Tile | undefined {
+async function migrateLegacy(userId: string, defaultHtml: string): Promise<Tile | undefined> {
   if (!hasStorage()) return undefined
   if (readIndex(userId).length > 0) return undefined
   let legacyData: TileData = null
@@ -279,11 +306,15 @@ function migrateLegacy(userId: string, defaultHtml: string): Tile | undefined {
     return undefined
   }
   const tile = createTile(userId, { name: 'My first tile', html: defaultHtml })
-  saveData(userId, tile.id, legacyData)
-  try {
-    window.localStorage.removeItem(legacyKey(userId))
-  } catch {
-    /* ignore */
+  // Confirm the write landed before dropping the only copy of the legacy data
+  // (the Supabase path is a network write, so a fire-and-forget delete could lose it).
+  const ok = await saveData(userId, tile.id, legacyData)
+  if (ok) {
+    try {
+      window.localStorage.removeItem(legacyKey(userId))
+    } catch {
+      /* ignore */
+    }
   }
   return tile
 }

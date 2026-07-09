@@ -149,7 +149,7 @@
 .veeTiles .feedgrp{transition:opacity .5s ease}
 .veeTiles .feedgrp.hide{opacity:0}
 /* The score is set in Instrument Serif italic — the same editorial face as the
-   "Good afternoon, Luke" greeting and the tile labels — so the whole dashboard
+   "Good afternoon, <name>" greeting and the tile labels, so the whole dashboard
    reads as one typographic voice (the old Hanken sans looked like a HUD digit).
    Tabular figures keep every digit equal-width so any score sits dead-centre and
    the count-up reveal doesn't jitter sideways. */
@@ -342,9 +342,9 @@
    tile model), just like a core tile navigates to its module. The overlay below
    holds the tile's own sealed iframe — the only place it runs live.
 
-   The full view: a dark scrim + a large centred frame holding the tile's own
-   sealed iframe, framed on-brand (pure black, hairline border, mint accents) with
-   a cozy entrance. Tall, and a Fuel-sized tile scrolls inside its own sealed frame. */
+   A FILLED tile takes over the whole viewport like a real module page (openFull):
+   pure black, a slim top bar with a Dashboard back link, the sealed iframe fills
+   the rest. The centred card look remains for the connector (build-this) dialog. */
 .veeTiles .openOverlay{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:24px;
   background:rgba(0,0,0,.72);backdrop-filter:blur(6px);animation:openFade .22s var(--vease) both}
 .veeTiles .openCard{width:min(640px,100%);height:min(86vh,820px);display:flex;flex-direction:column;
@@ -364,6 +364,20 @@
 .veeTiles .openFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
 @keyframes openFade{from{opacity:0}to{opacity:1}}
 @keyframes openRise{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+
+/* Filled tile = full page. No scrim, no card chrome: the tile IS the page. */
+.veeTiles .openOverlay.openFull{padding:0;place-items:stretch;background:#000;backdrop-filter:none}
+.veeTiles .openOverlay.openFull .openCard{width:100%;height:100%;border:0;border-radius:0;box-shadow:none;
+  animation:openPage .32s var(--vease) both}
+.veeTiles .openOverlay.openFull .openTop{padding:max(14px,env(safe-area-inset-top)) 20px 12px;
+  border-bottom:1px solid rgba(255,255,255,.06)}
+.veeTiles .openBack{display:inline-flex;align-items:center;gap:10px;border:0;background:none;cursor:pointer;
+  font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(167,243,208,.78);padding:4px 2px;transition:color .18s var(--vease)}
+.veeTiles .openBack:hover{color:var(--mint)}
+.veeTiles .openSlotName{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(255,255,255,.38);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes openPage{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
 /* No-routine state: a gentle prompt replaces the score number on the Vee tile. */
 .veeTiles .tile.vee .vee-setup-prompt {

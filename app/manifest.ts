@@ -13,8 +13,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Vitality',
     short_name: 'Vitality',
-    description: 'Your personal life dashboard — workouts, fuel, recovery, and more.',
-    start_url: '/app',
+    description: 'Your personal life dashboard: workouts, fuel, recovery, and more.',
+    start_url: '/',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',

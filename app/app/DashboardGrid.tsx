@@ -6,6 +6,7 @@ import { CORE_TILES, VEE_TILE, DEFAULT_HOME_ORDER, coreDefaultSize, type CoreTil
 import type { TileSize } from '@/lib/tiles/tileSkin'
 import { initVeeTiles } from '@/components/veeTilesAnim'
 import { useTileHost } from '@/lib/tiles/useTileHost'
+import { withBridge } from '@/lib/tiles/tileBridge'
 import type { DashboardChrome } from '@/lib/tiles/dashboardChrome'
 
 /**
@@ -129,24 +130,13 @@ function OpenTileOverlay({
 }) {
   const winRef = useRef<Window | null>(null)
   return (
-    <div
-      className="openOverlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label={slot.name}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
+    <div className="openOverlay openFull" role="dialog" aria-modal="true" aria-label={slot.name}>
       <div className="openCard">
         <div className="openTop">
-          <span className="openTitle">{slot.name}</span>
-          <button type="button" className="openClose" aria-label="Close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
+          <button type="button" className="openBack" onClick={onClose}>
+            <span aria-hidden="true">←</span> Dashboard
           </button>
+          <span className="openSlotName">{slot.name}</span>
         </div>
         <div className="openStage">
           <iframe
@@ -164,7 +154,7 @@ function OpenTileOverlay({
               register(e.currentTarget.contentWindow, slot.id)
             }}
             className="openFrame"
-            srcDoc={slot.html}
+            srcDoc={withBridge(slot.html)}
             sandbox="allow-scripts"
             title={slot.name}
           />
@@ -177,7 +167,7 @@ function OpenTileOverlay({
 /* ── the connector: how to build (and hook up) an empty slot ── */
 function ConnectorOverlay({ id, label, onClose }: { id: string; label: string; onClose: () => void }) {
   const path = `public/tiles/${id}.html`
-  const prompt = `Build a "${label}" tile for my Vitality dashboard as ONE self-contained HTML file (dark, mint #6EE7B7, may use window.Vitality.save()/load()). Save it to ${path}.`
+  const prompt = `Build a "${label}" tile for my Vitality dashboard as ONE self-contained HTML file (all CSS and JS inline, no external requests). Dark background, mint #6EE7B7. Save and load with await window.Vitality.save(data) and await window.Vitality.load() (the dashboard provides window.Vitality, do not use localStorage). Write it to ${path}.`
   const [copied, setCopied] = useState(false)
   const copy = () => {
     navigator.clipboard?.writeText(prompt).then(() => {

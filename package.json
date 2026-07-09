@@ -12,7 +12,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@supabase/supabase-js": "^2.105.4",
+=======
+    "@supabase/supabase-js": "^2.45.0",
+>>>>>>> ef24a6b088a62207bbd108b48b33f50dba7203bd
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18",

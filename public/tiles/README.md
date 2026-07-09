@@ -24,20 +24,25 @@ shows the "how to build this" panel instead.
 
 ## The tile format
 
-Each slot file is **one self-contained HTML file** — all CSS and JS inline, no
-external requests (it runs sandboxed with `allow-scripts`, no same-origin access).
-Match the look: dark background, mint accent `#6EE7B7`.
+Each slot file is **one self-contained HTML file**: all CSS and JS inline, no
+external requests. It runs in a sandboxed frame with `allow-scripts` and no
+same-origin access, so it has no network and cannot use localStorage. Match the
+look: dark background, mint accent `#6EE7B7`.
 
-### Saving data (optional)
+### Saving data
 
-A tile can persist its own data through the host bridge — no backend needed, it
-writes to the browser's localStorage:
+A tile persists its data through the host bridge, which the dashboard provides. Do
+not use localStorage (it is blocked in the sealed frame). Just call:
 
 ```js
 // inside your tile
-await window.Vitality.save(myData)      // persist
-const data = await window.Vitality.load() // read it back
+await window.Vitality.save(myData)         // persist
+const data = await window.Vitality.load()  // read it back, returns [] when empty
 ```
+
+By default this saves in the browser. If the dashboard owner has added a Supabase
+project (see the main README), the same calls sync across devices with no change to
+your tile.
 
 ## Two ways to fill a slot
 

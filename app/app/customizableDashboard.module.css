@@ -339,7 +339,7 @@
 /* ── wallpaper picker ── a light scrim (so the real dashboard re-themes live
    behind it) + a floating bottom panel. The panel blur is fine here: it is a
    static element, not a dragging one (the phone-lag rule is about motion). */
-/* Centered modal (Luke's ask): dimmed, blurred backdrop with the panel floated
+/* Centered modal: dimmed, blurred backdrop with the panel floated
    dead-centre, so the settings read as a deliberate dialog, not a bottom tray. */
 .wallScrim {
   position: fixed;
@@ -352,7 +352,7 @@
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
 }
-/* Origin-grade card (Luke's ask): a premium gradient in Vitality's palette
+/* Origin-grade card: a premium gradient in Vitality's palette
    (a mint/teal wash, not purple), a top highlight, and real depth — so the
    pop-up sheets read as a finished product surface, not a plain modal. */
 .wallPanel {
