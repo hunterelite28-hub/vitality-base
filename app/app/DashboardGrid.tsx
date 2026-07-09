@@ -6,7 +6,11 @@ import { CORE_TILES, VEE_TILE, DEFAULT_HOME_ORDER, coreDefaultSize, type CoreTil
 import type { TileSize } from '@/lib/tiles/tileSkin'
 import { initVeeTiles } from '@/components/veeTilesAnim'
 import { useTileHost } from '@/lib/tiles/useTileHost'
+<<<<<<< Updated upstream
 import { withBridge } from '@/lib/tiles/tileBridge'
+=======
+import { syncEnabled, syncLoadTiles } from '@/lib/sync'
+>>>>>>> Stashed changes
 import type { DashboardChrome } from '@/lib/tiles/dashboardChrome'
 
 /**
@@ -280,27 +284,36 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
     return () => mq.removeEventListener('change', apply)
   }, [])
 
-  // Discover which slots are filled: fetch /tiles/<id>.html; 404 → empty.
+  // Discover which slots are filled, from two sources (live wins over static):
+  //   1. static files committed to public/tiles/<id>.html (the /tile + Patreon path)
+  //   2. live tiles in Supabase, built from Claude via the MCP connector — these
+  //      override a static file for the same slot and appear without a redeploy.
   useEffect(() => {
     let alive = true
-    Promise.all(
-      SLOT_ORDER.map(async (id) => {
-        try {
-          const res = await fetch(`/tiles/${id}.html`, { cache: 'no-store' })
-          if (!res.ok) return null // 404 → slot is empty
-          const html = await res.text()
-          if (!html.trim()) return null
-          return [id, html] as const
-        } catch {
-          return null
-        }
-      }),
-    ).then((pairs) => {
-      if (!alive) return
+    ;(async () => {
+      const pairs = await Promise.all(
+        SLOT_ORDER.map(async (id) => {
+          try {
+            const res = await fetch(`/tiles/${id}.html`, { cache: 'no-store' })
+            if (!res.ok) return null // 404 → slot is empty
+            const html = await res.text()
+            if (!html.trim()) return null
+            return [id, html] as const
+          } catch {
+            return null
+          }
+        }),
+      )
       const map: FilledMap = {}
       for (const p of pairs) if (p) map[p[0]] = p[1]
-      setFilled(map)
-    })
+
+      if (syncEnabled()) {
+        const remote = await syncLoadTiles()
+        for (const id of SLOT_ORDER) if (remote[id]) map[id] = remote[id].html
+      }
+
+      if (alive) setFilled(map)
+    })()
     return () => {
       alive = false
     }

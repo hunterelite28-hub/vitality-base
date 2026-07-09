@@ -78,8 +78,64 @@ The slots: `train`, `fuel`, `vitals`, `vee`, `brand`, `peak`, `finance`.
 
 ---
 
+## Talk to your dashboard (the connector)
+
+Optional — but this is the magic. Connect Claude to your dashboard and it can **build
+and edit tiles by talking**, with no copy-paste and no redeploy. Say *"make me a water
+tile"* in Claude and it appears on your live dashboard on the next reload.
+
+The connector is a personal, single-user MCP server baked into this same app
+(`app/api/mcp`), so **deploying the dashboard already deployed the connector.** Three
+one-time steps switch it on:
+
+1. **Add a free Supabase** — this is where connector-built tiles live, so they sync
+   across your devices. Create a project at https://supabase.com, then in the SQL
+   editor run [`supabase/tiles.sql`](supabase/tiles.sql) (and
+   [`supabase/sync.sql`](supabase/sync.sql) if you want per-tile data to sync too).
+   Add two env vars, in Vercel **and** `.env.local` for local dev:
+
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=your-project-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   ```
+
+2. **Set the connector password** — one more env var, any long random string. Without
+   it the connector stays disabled (returns 503).
+
+   ```bash
+   MCP_TOKEN=make-this-a-long-random-secret
+   ```
+
+   Redeploy so Vercel picks up the new vars.
+
+3. **Connect Claude Code** — one command:
+
+   ```bash
+   claude mcp add --transport http vitality \
+     https://YOUR-SITE.vercel.app/api/mcp/mcp \
+     --header "Authorization: Bearer YOUR_MCP_TOKEN"
+   ```
+
+Now, in Claude Code: *"build a discipline-scoreboard tile in the vitals slot."* It uses
+the connector and the tile shows up on your dashboard. The tools it exposes:
+`list_slots`, `read_tile`, `create_tile` (also edits — it replaces a slot), and
+`delete_tile`.
+
+> **Phone note:** connecting from the **claude.ai phone app** needs an OAuth login flow
+> (not just a token) — that's a later build. Today the connector works from **Claude
+> Code**; your phone still views the dashboard, and any tile's saved data syncs to it.
+
+---
+
 ## Tech
 
+<<<<<<< Updated upstream
 Next.js 14 (App Router), vanilla CSS, Three.js for the header gem, deployed on
 Vercel. A tile's data lives in your browser, or in your own Supabase project if you
 add one.
+=======
+Next.js 14 (App Router) · vanilla CSS · Three.js for the header gem · deployed on
+Vercel. Zero-backend by default (tiles are static files, data lives in your browser);
+add your own Supabase + set `MCP_TOKEN` to build tiles from Claude and sync across
+devices via the connector (`app/api/mcp`).
+>>>>>>> Stashed changes

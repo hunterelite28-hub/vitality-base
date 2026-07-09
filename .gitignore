@@ -41,6 +41,7 @@ next-env.d.ts
 # logs
 *.log
 
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 # claude code local state — but SHIP the slash commands that build tiles
 .claude/*
@@ -54,6 +55,12 @@ next-env.d.ts
 .claude/commands/*
 !.claude/commands/tile.md
 >>>>>>> ef24a6b088a62207bbd108b48b33f50dba7203bd
+=======
+# claude code local state — but SHIP the slash commands + the auto-push hook
+.claude/*
+!.claude/commands/
+!.claude/settings.json
+>>>>>>> Stashed changes
 
 # personal MCP connection (contains a per-user vitm_ token — never commit)
 .mcp.json

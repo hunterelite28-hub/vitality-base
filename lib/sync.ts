@@ -55,3 +55,33 @@ export async function syncLoad(tileId: string): Promise<unknown | null> {
     return null
   }
 }
+
+/** A tile document stored in the owner's Supabase (built from Claude via the MCP connector). */
+export interface RemoteTile {
+  html: string
+  name: string | null
+}
+
+/**
+ * Read every MCP-built tile from the owner's Supabase, keyed by slot. Returns an
+ * empty object if sync is unconfigured / offline. The dashboard prefers these over
+ * the static public/tiles files, so a tile made from Claude — on the laptop or the
+ * phone — appears without a redeploy. Requires the `tiles` table (supabase/tiles.sql).
+ */
+export async function syncLoadTiles(): Promise<Record<string, RemoteTile>> {
+  const c = syncClient()
+  if (!c) return {}
+  try {
+    const { data, error } = await c.from('tiles').select('slot, html, name')
+    if (error || !data) return {}
+    const map: Record<string, RemoteTile> = {}
+    for (const row of data as Array<{ slot: string; html: string; name: string | null }>) {
+      if (row.slot && typeof row.html === 'string' && row.html.trim()) {
+        map[row.slot] = { html: row.html, name: row.name ?? null }
+      }
+    }
+    return map
+  } catch {
+    return {}
+  }
+}
