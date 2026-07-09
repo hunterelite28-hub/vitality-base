@@ -420,6 +420,62 @@ function EmptyCanvas({ onBack }: { onBack: () => void }) {
   )
 }
 
+/* ── the blank board's default face: shown when no tiles exist yet ── */
+function VisionEmptyState({ onNewTile }: { onNewTile: () => void }) {
+  return (
+    <div
+      style={{
+        minHeight: '62vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: '48px 24px',
+      }}
+    >
+      <h1
+        style={{
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontStyle: 'italic',
+          fontWeight: 400,
+          fontSize: 'clamp(36px, 6vw, 68px)',
+          color: 'var(--fg, #fff)',
+          margin: 0,
+          letterSpacing: '-.015em',
+        }}
+      >
+        See the vision.
+      </h1>
+      <p style={{ color: '#6EE7B7', fontSize: 'clamp(15px, 2.4vw, 20px)', margin: '16px 0 0', letterSpacing: '.02em' }}>
+        You can create anything.
+      </p>
+      <p style={{ color: 'var(--muted, #8a8f98)', fontSize: 14, margin: '28px 0 0', maxWidth: 460, lineHeight: 1.65 }}>
+        This board is yours, and empty. Build your own tile with <strong style={{ color: 'var(--fg, #fff)' }}>+ New
+        tile</strong> — or run <code style={{ color: '#6EE7B7' }}>/vitality</code> in Claude Code to load the full
+        dashboard we built.
+      </p>
+      <button
+        type="button"
+        onClick={onNewTile}
+        style={{
+          marginTop: 30,
+          background: '#6EE7B7',
+          color: '#04140d',
+          border: 'none',
+          borderRadius: 999,
+          padding: '12px 26px',
+          fontWeight: 600,
+          fontSize: 15,
+          cursor: 'pointer',
+        }}
+      >
+        + New tile
+      </button>
+    </div>
+  )
+}
+
 interface DashboardGridProps {
   userId: string
   chrome?: DashboardChrome
@@ -434,6 +490,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   const [connectId, setConnectId] = useState<string | null>(null) // empty slot connector
   const [newOpen, setNewOpen] = useState(false) // "+ New tile" creator
   const [showWelcome, setShowWelcome] = useState(false) // transient "see the vision" home (non-destructive)
+  const [loaded, setLoaded] = useState(false) // tile discovery finished — gates the blank "see the vision" state
 
   const { register, unregister } = useTileHost(userId, undefined, () => {})
 
@@ -478,27 +535,35 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
         for (const id of SLOT_ORDER) if (remote[id]) map[id] = remote[id].html
       }
 
-      if (alive) setFilled(map)
+      if (alive) {
+        setFilled(map)
+        setLoaded(true)
+      }
     })()
     return () => {
       alive = false
     }
   }, [])
 
-  // Layout: pure function of (order, sizes, cols).
+  // The board shows ONLY tiles that actually exist. A fresh scaffold has none, so
+  // it boots to the blank "see the vision" canvas; tiles appear as they're built
+  // (/tile) or installed (/vitality writes the full set into public/tiles).
+  const filledOrder = useMemo(() => SLOT_ORDER.filter((id) => filled[id]), [filled])
+
+  // Layout: pure function of (which tiles exist, sizes, cols).
   const { positions, rows } = useMemo(() => {
-    const feet = SLOT_ORDER.map((id) => {
+    const feet = filledOrder.map((id) => {
       const size = (id === 'vee' ? coreDefaultSize('vee') : coreDefaultSize(id as Parameters<typeof coreDefaultSize>[0])) as TileSize
       return footprintFor(id, size, cols)
     })
     return packTiles(feet, cols)
-  }, [cols])
+  }, [filledOrder, cols])
 
   // (Re)bind the living orbs whenever the packed layout changes.
   useEffect(() => {
     if (!ref.current || !mounted) return
     return initVeeTiles(ref.current, { score: null, showNumber: false })
-  }, [mounted, cols])
+  }, [mounted, cols, filledOrder])
 
   // Esc closes any overlay.
   useEffect(() => {
@@ -522,23 +587,29 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
 
   const labelFor = (id: string) => (id === 'vee' ? VEE_TILE.label : CORE_TILES[id as keyof typeof CORE_TILES].label)
 
+  const isEmpty = filledOrder.length === 0
+
   return (
     <div className="veeTiles" ref={ref}>
-      <div className="grid" style={{ ['--rows' as string]: rows }}>
-        {SLOT_ORDER.map((id) => {
-          const isVee = id === 'vee'
-          return (
-            <TileFace
-              key={id}
-              id={id}
-              isVee={isVee}
-              core={isVee ? null : CORE_TILES[id as keyof typeof CORE_TILES]}
-              pos={positions.get(id)}
-              onOpen={() => openSlot(id)}
-            />
-          )
-        })}
-      </div>
+      {!loaded ? null : isEmpty ? (
+        <VisionEmptyState onNewTile={() => setNewOpen(true)} />
+      ) : (
+        <div className="grid" style={{ ['--rows' as string]: rows }}>
+          {filledOrder.map((id) => {
+            const isVee = id === 'vee'
+            return (
+              <TileFace
+                key={id}
+                id={id}
+                isVee={isVee}
+                core={isVee ? null : CORE_TILES[id as keyof typeof CORE_TILES]}
+                pos={positions.get(id)}
+                onOpen={() => openSlot(id)}
+              />
+            )
+          })}
+        </div>
+      )}
 
       {openId && filled[openId] && (
         <OpenTileOverlay
@@ -554,28 +625,30 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
         <ConnectorOverlay id={connectId} label={labelFor(connectId)} onClose={() => setConnectId(null)} />
       )}
 
-      <button
-        type="button"
-        onClick={() => setNewOpen(true)}
-        aria-label="New tile"
-        style={{
-          position: 'fixed',
-          right: 24,
-          bottom: 24,
-          zIndex: 50,
-          background: 'var(--mint)',
-          color: 'var(--mint-ink, #042a1c)',
-          border: 'none',
-          borderRadius: 999,
-          padding: '12px 18px',
-          fontWeight: 600,
-          fontSize: 14,
-          cursor: 'pointer',
-          boxShadow: '0 6px 24px rgba(0,0,0,.45)',
-        }}
-      >
-        + New tile
-      </button>
+      {!isEmpty && (
+        <button
+          type="button"
+          onClick={() => setNewOpen(true)}
+          aria-label="New tile"
+          style={{
+            position: 'fixed',
+            right: 24,
+            bottom: 24,
+            zIndex: 50,
+            background: 'var(--mint)',
+            color: 'var(--mint-ink, #042a1c)',
+            border: 'none',
+            borderRadius: 999,
+            padding: '12px 18px',
+            fontWeight: 600,
+            fontSize: 14,
+            cursor: 'pointer',
+            boxShadow: '0 6px 24px rgba(0,0,0,.45)',
+          }}
+        >
+          + New tile
+        </button>
+      )}
 
       {newOpen && (
         <NewTileOverlay
@@ -584,27 +657,29 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
         />
       )}
 
-      <button
-        type="button"
-        onClick={() => setShowWelcome(true)}
-        aria-label="See the vision"
-        style={{
-          position: 'fixed',
-          left: 24,
-          bottom: 24,
-          zIndex: 50,
-          background: 'transparent',
-          color: 'var(--muted)',
-          border: '1px solid var(--border)',
-          borderRadius: 999,
-          padding: '10px 16px',
-          fontWeight: 500,
-          fontSize: 13,
-          cursor: 'pointer',
-        }}
-      >
-        See the vision
-      </button>
+      {!isEmpty && (
+        <button
+          type="button"
+          onClick={() => setShowWelcome(true)}
+          aria-label="See the vision"
+          style={{
+            position: 'fixed',
+            left: 24,
+            bottom: 24,
+            zIndex: 50,
+            background: 'transparent',
+            color: 'var(--muted)',
+            border: '1px solid var(--border)',
+            borderRadius: 999,
+            padding: '10px 16px',
+            fontWeight: 500,
+            fontSize: 13,
+            cursor: 'pointer',
+          }}
+        >
+          See the vision
+        </button>
+      )}
 
       {showWelcome && <EmptyCanvas onBack={() => setShowWelcome(false)} />}
     </div>
