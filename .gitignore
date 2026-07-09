@@ -48,6 +48,7 @@ next-env.d.ts
 !.claude/commands/
 .claude/commands/*
 !.claude/commands/tile.md
+!.claude/commands/vitality.md
 !.claude/settings.json
 
 # personal MCP connection (contains a per-user vitm_ token — never commit)
