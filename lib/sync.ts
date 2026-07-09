@@ -104,3 +104,20 @@ export async function syncSaveTile(slot: string, html: string, name?: string): P
     return false
   }
 }
+
+/**
+ * Wipe the owner's cloud data — every tile's saved data AND every tile they built
+ * (the connector / "+ New tile" store). Used by the dashboard's Reset button. No-op
+ * if sync is unconfigured. Best-effort; never throws.
+ */
+export async function syncWipe(): Promise<void> {
+  const c = syncClient()
+  if (!c) return
+  try {
+    // PostgREST refuses an unfiltered delete, so match every real row.
+    await c.from('tile_data').delete().neq('tile_id', '')
+    await c.from('tiles').delete().neq('slot', '')
+  } catch {
+    /* best-effort */
+  }
+}
