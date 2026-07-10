@@ -34,6 +34,9 @@ function ScratchPanel({ userId, onClose }: { userId: string; onClose: () => void
       window.localStorage.clear() // data + customization, gone
       // A black void is a persisted background; keeping the ambiance is the default world bg.
       if (!keepBg) dashboardChrome.setBackground(userId, { mode: 'solid', color: '#000' })
+      // Mark a deliberate reset so the board shows a CLEAN canvas — just header +
+      // background, no middle onboarding text (set after clear so it survives).
+      window.localStorage.setItem('vitality:scratched', '1')
     } catch {
       /* ignore */
     }

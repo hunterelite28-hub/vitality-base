@@ -491,11 +491,17 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   const [newOpen, setNewOpen] = useState(false) // "+ New tile" creator
   const [showWelcome, setShowWelcome] = useState(false) // transient "see the vision" home (non-destructive)
   const [loaded, setLoaded] = useState(false) // tile discovery finished — gates the blank "see the vision" state
+  const [scratched, setScratched] = useState(false) // deliberate "start from scratch" → clean canvas, no onboarding text
 
   const { register, unregister } = useTileHost(userId, undefined, () => {})
 
   useEffect(() => {
     setMounted(true)
+    try {
+      setScratched(window.localStorage.getItem('vitality:scratched') === '1')
+    } catch {
+      /* ignore */
+    }
   }, [])
 
   // Column bucket, matching the CSS: 4 desktop / 2 phone.
@@ -592,7 +598,9 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   return (
     <div className="veeTiles" ref={ref}>
       {!loaded ? null : isEmpty ? (
-        <VisionEmptyState onNewTile={() => setNewOpen(true)} />
+        // A fresh board shows the onboarding vision; a deliberately-scratched board
+        // stays clean — just header + background, nothing in the middle.
+        scratched ? null : <VisionEmptyState onNewTile={() => setNewOpen(true)} />
       ) : (
         <div className="grid" style={{ ['--rows' as string]: rows }}>
           {filledOrder.map((id) => {
