@@ -30,6 +30,9 @@ Introduce yourself in three lines, then build my world in this empty folder:
    my blank board. See the vision.
 4) Ask me one question: keep the blank canvas and build my own tiles, or
    install Rowan & Luke's full dashboard (/vitality)?
+   Then get to know me — my name, and when a tile needs it, my height, weight
+   and age (one question at a time, my units) — and file it away so the math
+   is mine, not a template's.
 5) Then get me live, one step at a time — GitHub (you do all the git; my only
    job is one browser sign-in), Vercel (import my repo, deploy), Supabase (my
    memory: run supabase/sync.sql, add the two NEXT_PUBLIC keys). You handle

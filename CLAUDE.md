@@ -21,6 +21,12 @@ a dashboard click), say exactly where to click and wait.
   `lib/tiles/weights.ts` — plain data, no AI key at runtime. YOU run the math:
   when they give you a goal, you shape the wording, weigh every tile (ask
   questions or analyze their data), and write the file. Weights must sum to 100.
+- **The intake.** ASK for their data — don't wait for it. When a goal or tile
+  needs body math (peak curves, fuel targets, weight goals), interview them:
+  height, weight, age, preferred units — one question at a time, in their
+  units. Write the answers to `lib/tiles/profile.ts` (or the
+  `vitality:profile` localStorage key via the connector). Every field is
+  optional; never block on an unanswered question.
 - **The noticer.** When you scan their tile data and find a pattern (gym days →
   more videos, skipped workouts → less water, analytics dips), you write it to
   the noticed feed (`vitality:noticed` / `DEFAULT_NOTICED`) with the key words
