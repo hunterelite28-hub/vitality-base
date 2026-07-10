@@ -2,7 +2,12 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { CORE_TILES, VEE_TILE, DEFAULT_HOME_ORDER, coreDefaultSize, type CoreTile } from '@/lib/tiles/coreTiles'
-import { activeGoal as readActiveGoal, tileWeights, type Goal } from '@/lib/tiles/weights'
+import dynamic from 'next/dynamic'
+import { activeGoal as readActiveGoal, allGoals, setActiveGoalId, tileWeights, type Goal } from '@/lib/tiles/weights'
+
+// Lazy: the board never pays for the mentor (Three.js gem included) until it
+// comes alive. Keeps first load fast.
+const MentorPage = dynamic(() => import('@/app/mentor/MentorPage'), { ssr: false })
 import { initVeeTiles } from '@/components/veeTilesAnim'
 import { useTileHost } from '@/lib/tiles/useTileHost'
 import { withBridge } from '@/lib/tiles/tileBridge'
@@ -57,6 +62,55 @@ function VeeArt() {
       </svg>
       <div className="scrim" />
     </>
+  )
+}
+
+/* ── a percentage that ROLLS to its value like a stock ticker ── */
+function RollPct({ value, color }: { value: number; color: string }) {
+  const [shown, setShown] = useState(value)
+  const prev = useRef(value)
+  useEffect(() => {
+    const from = prev.current
+    prev.current = value
+    if (from === value) return
+    const t0 = performance.now()
+    const dur = 900
+    let raf = 0
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - t0) / dur)
+      const e = 1 - Math.pow(1 - p, 3)
+      setShown(Math.round(from + (value - from) * e))
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+  return (
+    <span
+      style={{
+        // top-centre with generous margin — clear of the index row above and
+        // the art + caption below, so the number is never blocked.
+        position: 'absolute',
+        top: 52,
+        left: 0,
+        right: 0,
+        zIndex: 5,
+        display: 'flex',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+        fontFamily: 'ui-monospace, Menlo, monospace',
+        fontSize: 46,
+        fontWeight: 300,
+        letterSpacing: '.02em',
+        fontVariantNumeric: 'tabular-nums',
+        color,
+        opacity: 0.9,
+        textShadow: `0 0 26px ${color}59`,
+        transition: 'color .8s ease, text-shadow .8s ease',
+      }}
+    >
+      {shown}%
+    </span>
   )
 }
 
@@ -121,30 +175,7 @@ function TileFace({
       )}
       <span className="arrow">→</span>
 
-      {weight != null && (
-        <span
-          aria-label={`${weight}% of the goal`}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 5,
-            display: 'grid',
-            placeItems: 'center',
-            pointerEvents: 'none',
-            fontFamily: 'ui-monospace, Menlo, monospace',
-            fontSize: 46,
-            fontWeight: 300,
-            letterSpacing: '.02em',
-            fontVariantNumeric: 'tabular-nums',
-            color: accent ?? '#6EE7B7',
-            opacity: 0.9,
-            textShadow: `0 0 26px ${accent ?? '#6EE7B7'}59`,
-            transition: 'color .8s ease, text-shadow .8s ease',
-          }}
-        >
-          {weight}%
-        </span>
-      )}
+      {weight != null && <RollPct value={weight} color={accent ?? '#6EE7B7'} />}
 
       {/* Inert: clicking opens the slot (filled tile or connector), never navigates. */}
       <button type="button" className="hit" aria-label={`Open ${label}`} onClick={onOpen} />
@@ -597,6 +628,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   const [order, setOrder] = useState<string[]>([]) // persisted row order (x tiles)
   const [removed, setRemoved] = useState<string[]>([]) // slots removed from the row in edit mode
   const [goal, setGoal] = useState<Goal | undefined>(undefined) // active goal: drives %s, colors, the mentor kicker
+  const [mentorAlive, setMentorAlive] = useState(false) // the mentor comes to life OVER the board — no page load
   const dragId = useRef<string | null>(null)
 
   const { register, unregister } = useTileHost(userId, undefined, () => {})
@@ -751,12 +783,101 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
         // ── The equation: y on top (the mentor — the output), x + x + x below
         //    (the inputs — one scrollable row, every tile the same size). ──
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <a href="/mentor" style={{ display: 'flex', alignItems: 'baseline', gap: 10, textDecoration: 'none', width: 'fit-content' }}>
-            <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 22, color: goal?.accent ?? 'var(--mint, #6EE7B7)', transition: 'color .8s ease' }}>y</span>
-            <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--muted, #8a8f98)' }}>
-              = the output — {goal ? goal.title.toLowerCase() : 'every tile, summed'}
+          <style>{`@keyframes goalPop { from { opacity: 0; transform: translateY(12px) scale(.94) } to { opacity: 1; transform: none } }`}</style>
+
+          {/* the picked goal comes out — big, centred, in its own colour */}
+          <div style={{ textAlign: 'center', minHeight: 46 }}>
+            <span
+              key={goal?.id ?? 'none'}
+              style={{
+                display: 'inline-block',
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                fontSize: 'clamp(22px, 3.2vw, 34px)',
+                color: goal?.accent ?? 'var(--mint, #6EE7B7)',
+                textShadow: `0 0 34px ${goal?.accent ?? '#6EE7B7'}44`,
+                animation: 'goalPop .7s cubic-bezier(.22,1,.36,1) both',
+              }}
+            >
+              {goal?.id === 'overall' ? '★ ' : ''}
+              {goal?.title ?? ''}
             </span>
-          </a>
+          </div>
+
+          {/* y = the goal picker — every goal visible, one tap to switch */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 22, color: goal?.accent ?? 'var(--mint, #6EE7B7)', transition: 'color .8s ease' }}>y</span>
+            <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--muted, #8a8f98)' }}>=</span>
+
+            {/* one segmented control: every goal visible, one tap to switch */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 4,
+                border: '1px solid var(--border, #262626)',
+                borderRadius: 999,
+                padding: 4,
+                flexWrap: 'wrap',
+              }}
+            >
+              {(mounted ? allGoals() : []).map((g) => {
+                const on = g.id === goal?.id
+                const gA = g.accent ?? '#6EE7B7'
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveGoalId(g.id)
+                      setGoal(g)
+                      try {
+                        window.dispatchEvent(new CustomEvent('vitality:goal'))
+                      } catch {
+                        /* ignore */
+                      }
+                    }}
+                    style={{
+                      fontFamily: 'ui-monospace, Menlo, monospace',
+                      fontSize: 11,
+                      letterSpacing: '.12em',
+                      textTransform: 'uppercase',
+                      color: on ? gA : 'var(--muted, #8a8f98)',
+                      background: on ? `${gA}1a` : 'transparent',
+                      border: 'none',
+                      boxShadow: on ? `inset 0 0 0 1px ${gA}66` : 'none',
+                      borderRadius: 999,
+                      padding: '7px 15px',
+                      cursor: 'pointer',
+                      transition: 'color .5s ease, background .5s ease, box-shadow .5s ease',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {g.id === 'overall' ? '★ ' : ''}
+                    {g.title}
+                  </button>
+                )
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMentorAlive(true)}
+              style={{
+                fontFamily: 'ui-monospace, Menlo, monospace',
+                fontSize: 11,
+                letterSpacing: '.14em',
+                textTransform: 'uppercase',
+                color: 'var(--muted, #8a8f98)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                marginLeft: 'auto',
+              }}
+            >
+              mentor →
+            </button>
+          </div>
           <TileFace
             id="vee"
             isVee
@@ -764,7 +885,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
             fixed={{ width: '100%', height: 'clamp(240px, 34vh, 340px)' }}
             kicker={goal?.title}
             onOpen={() => {
-              if (!editing) window.location.assign('/mentor')
+              if (!editing) setMentorAlive(true) // the mentor comes to life — no page load
             }}
           />
 
@@ -848,7 +969,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
                   fixed={{ width: 300, height: 340 }}
                   editable
                   onRemove={editing ? () => saveRemoved([...removed, id]) : undefined}
-                  weight={weights[id]}
+                  weight={weights[id] ?? 0}
                   accent={goal?.accent}
                   onOpen={() => openSlot(id)}
                 />
@@ -940,6 +1061,34 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
       )}
 
       {showWelcome && <EmptyCanvas onBack={() => setShowWelcome(false)} />}
+
+      {/* the mentor, alive over the board — everything fades behind it */}
+      {mentorAlive && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 95,
+            overflowY: 'auto',
+            background: 'rgba(3, 8, 6, .93)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <MentorPage
+            overlay
+            onClose={() => {
+              setMentorAlive(false)
+              // whatever goal they picked in there, the board follows it
+              setGoal(readActiveGoal())
+              try {
+                window.dispatchEvent(new CustomEvent('vitality:goal'))
+              } catch {
+                /* ignore */
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }

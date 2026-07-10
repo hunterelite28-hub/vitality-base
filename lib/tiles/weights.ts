@@ -31,6 +31,9 @@ export interface Goal {
   pending?: boolean
   /** each goal tints the board a little; the overall goal goes gold */
   accent?: string
+  /** how far you've come, 0–100 — computed by the mentor from data sweeps
+   *  (analytics, manual logs, wearables), never guessed by the app */
+  progress?: number
 }
 
 /** One observation the mentor pushed after scanning your data, with any
@@ -39,6 +42,8 @@ export interface Notice {
   id: string
   when: string
   text: string
+  /** bullet points; **bold** marks the highlighted words */
+  points?: string[]
   deltas?: { tile: string; from: number; to: number }[]
 }
 
@@ -50,12 +55,14 @@ export const DEFAULT_GOALS: Goal[] = [
     // Train entered this goal when the mentor noticed workouts drive output —
     // see DEFAULT_NOTICED. Before: brand 70 / vitals 20 / finance 10.
     weights: { brand: 62, train: 8, vitals: 20, finance: 10 },
+    progress: 28,
   },
   {
     id: 'lean185',
     title: 'Be 185 lb lean',
     accent: '#8AB4FF',
     weights: { train: 40, fuel: 30, vitals: 20, peak: 10 },
+    progress: 61,
   },
 ]
 
@@ -66,6 +73,7 @@ export const OVERALL_GOAL: Goal = {
   title: 'A jacked, famous YouTuber',
   accent: '#E8C878',
   weights: { brand: 30, train: 25, vitals: 20, fuel: 13, finance: 7, peak: 5 },
+  progress: 34,
 }
 
 /** Overall first, then the individual goals. */
@@ -84,6 +92,12 @@ export const DEFAULT_NOTICED: Notice[] = [
     id: 'n-workouts-drive',
     when: 'this morning',
     text: 'When you skip the gym, you drink less water — and your analytics take a deep dive the same day. Workouts might be the key to your drive, not just your body. I moved Train into the YouTuber goal.',
+    points: [
+      'When you skip the gym, you drink **less water** the same day',
+      'No-workout days: your **analytics take a deep dive**',
+      '**Workouts might be the key to your drive** — not just your body',
+      'So I moved **Train into the YouTuber goal**',
+    ],
     deltas: [
       { tile: 'train', from: 0, to: 8 },
       { tile: 'brand', from: 70, to: 62 },

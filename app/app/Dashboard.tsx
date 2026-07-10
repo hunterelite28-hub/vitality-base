@@ -220,6 +220,10 @@ export default function Dashboard({ firstName, userId }: DashboardProps) {
     } catch {
       /* ignore */
     }
+    // picking a goal on the board re-tints the whole room, live
+    const onGoal = () => setGoalAccent(activeGoal()?.accent)
+    window.addEventListener('vitality:goal', onGoal)
+    return () => window.removeEventListener('vitality:goal', onGoal)
   }, [userId])
 
   // The active goal tints the whole room — the main goal turns it gold.
@@ -233,6 +237,18 @@ export default function Dashboard({ firstName, userId }: DashboardProps) {
   return (
     <main className={`${styles.page} ${styles.oneScreen} grain-overlay`} style={{ ['--wall-accent' as string]: wallAccent }}>
       <WelcomeBackdrop background={chrome?.background} />
+      {/* the active goal's tint over the world — animates on switch (gold = main goal) */}
+      <div
+        aria-hidden
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 2,
+          pointerEvents: 'none',
+          background: `radial-gradient(55% 40% at 50% 0%, ${wallAccent}1f, transparent 70%)`,
+          transition: 'background 1.2s ease',
+        }}
+      />
 
       <div className={styles.shell}>
         <div className={styles.headerRow}>
