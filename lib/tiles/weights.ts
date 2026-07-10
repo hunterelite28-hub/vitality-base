@@ -27,20 +27,95 @@ export interface Goal {
   title: string
   /** tile slot -> % of this goal (sums to ~100) */
   weights: Record<string, number>
+  /** true while the mentor (Claude Code) hasn't shaped + weighed it yet */
+  pending?: boolean
+  /** each goal tints the board a little; the overall goal goes gold */
+  accent?: string
+}
+
+/** One observation the mentor pushed after scanning your data, with any
+ *  weight changes it made because of what it found. */
+export interface Notice {
+  id: string
+  when: string
+  text: string
+  deltas?: { tile: string; from: number; to: number }[]
 }
 
 export const DEFAULT_GOALS: Goal[] = [
   {
     id: 'youtube',
     title: 'Become a famous YouTuber',
-    weights: { brand: 70, finance: 10, vitals: 20 },
+    accent: '#6EE7B7',
+    // Train entered this goal when the mentor noticed workouts drive output —
+    // see DEFAULT_NOTICED. Before: brand 70 / vitals 20 / finance 10.
+    weights: { brand: 62, train: 8, vitals: 20, finance: 10 },
   },
   {
     id: 'lean185',
     title: 'Be 185 lb lean',
+    accent: '#8AB4FF',
     weights: { train: 40, fuel: 30, vitals: 20, peak: 10 },
   },
 ]
+
+/** The overseer's synthesis of EVERY goal, polished into one sentence by the
+ *  mentor (Claude Code). Switching it on = top priority — the board goes gold. */
+export const OVERALL_GOAL: Goal = {
+  id: 'overall',
+  title: 'A jacked, famous YouTuber',
+  accent: '#E8C878',
+  weights: { brand: 30, train: 25, vitals: 20, fuel: 13, finance: 7, peak: 5 },
+}
+
+/** Overall first, then the individual goals. */
+export function allGoals(): Goal[] {
+  return [OVERALL_GOAL, ...goals()]
+}
+
+/** The full active Goal (incl. overall), for accent + title. */
+export function activeGoal(): Goal | undefined {
+  const id = activeGoalId()
+  return allGoals().find((g) => g.id === id) ?? goals()[0]
+}
+
+export const DEFAULT_NOTICED: Notice[] = [
+  {
+    id: 'n-workouts-drive',
+    when: 'this morning',
+    text: 'When you skip the gym, you drink less water — and your analytics take a deep dive the same day. Workouts might be the key to your drive, not just your body. I moved Train into the YouTuber goal.',
+    deltas: [
+      { tile: 'train', from: 0, to: 8 },
+      { tile: 'brand', from: 70, to: 62 },
+    ],
+  },
+]
+
+/** The mentor's noticed feed: localStorage override, else the seeded example.
+ *  Claude Code (or the connector) writes 'vitality:noticed' after a scan. */
+export function noticedFeed(): Notice[] {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = window.localStorage.getItem('vitality:noticed')
+      if (raw) {
+        const o = JSON.parse(raw)
+        if (Array.isArray(o)) return o as Notice[]
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  return DEFAULT_NOTICED
+}
+
+/** Save the goals list (used by the mentor page's goal input). */
+export function saveGoals(list: Goal[]): void {
+  try {
+    window.localStorage.setItem('vitality:goals', JSON.stringify(list))
+  } catch {
+    /* ignore */
+  }
+}
 
 /** All goals: localStorage override ('vitality:goals') if valid, else defaults. */
 export function goals(): Goal[] {
@@ -81,7 +156,5 @@ export function setActiveGoalId(id: string): void {
 
 /** The active goal's weights (the badges on the row read these). */
 export function tileWeights(): Record<string, number> {
-  const id = activeGoalId()
-  const g = goals().find((x) => x.id === id) ?? goals()[0]
-  return g?.weights ?? {}
+  return activeGoal()?.weights ?? {}
 }

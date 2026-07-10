@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { CORE_TILES, VEE_TILE, DEFAULT_HOME_ORDER, coreDefaultSize, type CoreTile } from '@/lib/tiles/coreTiles'
-import { goals, activeGoalId, setActiveGoalId, tileWeights, type Goal } from '@/lib/tiles/weights'
+import { activeGoal as readActiveGoal, tileWeights, type Goal } from '@/lib/tiles/weights'
 import { initVeeTiles } from '@/components/veeTilesAnim'
 import { useTileHost } from '@/lib/tiles/useTileHost'
 import { withBridge } from '@/lib/tiles/tileBridge'
@@ -69,6 +69,8 @@ function TileFace({
   editable,
   onRemove,
   weight,
+  accent,
+  kicker,
   onOpen,
 }: {
   id: string
@@ -80,8 +82,12 @@ function TileFace({
   editable?: boolean
   /** Present only in edit mode: shows the ✕ remove badge. */
   onRemove?: () => void
-  /** This input's estimated share of the goal (bottom-right, e.g. "≈ 22%"). */
+  /** This input's share of the active goal — big, centered, no border. */
   weight?: number
+  /** The active goal's color: mint by default, gold for the main goal. */
+  accent?: string
+  /** Mentor only: the active goal title, shown as the kicker. */
+  kicker?: string
   onOpen: () => void
 }) {
   const label = isVee ? VEE_TILE.label : core!.label
@@ -104,7 +110,7 @@ function TileFace({
 
       <span className="index">{index}</span>
       {!isVee && core && <span className="glyph">{core.glyph}</span>}
-      {isVee && <span className="kicker">{VEE_TILE.kicker}</span>}
+      {isVee && <span className="kicker">{kicker ?? VEE_TILE.kicker}</span>}
 
       {isVee ? (
         <span className="label">{label}</span>
@@ -117,23 +123,26 @@ function TileFace({
 
       {weight != null && (
         <span
-          aria-label={`≈ ${weight}% of the goal`}
+          aria-label={`${weight}% of the goal`}
           style={{
             position: 'absolute',
-            right: 16,
-            bottom: 46,
-            zIndex: 6,
+            inset: 0,
+            zIndex: 5,
+            display: 'grid',
+            placeItems: 'center',
+            pointerEvents: 'none',
             fontFamily: 'ui-monospace, Menlo, monospace',
-            fontSize: 11,
-            letterSpacing: '.08em',
-            color: 'rgba(110,231,183,.75)',
-            background: 'rgba(4,20,13,.55)',
-            border: '1px solid rgba(110,231,183,.22)',
-            borderRadius: 999,
-            padding: '3px 9px',
+            fontSize: 46,
+            fontWeight: 300,
+            letterSpacing: '.02em',
+            fontVariantNumeric: 'tabular-nums',
+            color: accent ?? '#6EE7B7',
+            opacity: 0.9,
+            textShadow: `0 0 26px ${accent ?? '#6EE7B7'}59`,
+            transition: 'color .8s ease, text-shadow .8s ease',
           }}
         >
-          ≈ {weight}%
+          {weight}%
         </span>
       )}
 
@@ -213,208 +222,6 @@ function OpenTileOverlay({
             sandbox="allow-scripts"
             title={slot.name}
           />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ── the Mentor (y): real data — your goals, each with its tile weights.
- * No AI key here: the math is written by Claude Code in VS Code (build time)
- * into lib/tiles/weights.ts; this view just renders the numbers. ── */
-function MentorOverlay({
-  labelFor,
-  active,
-  onSelect,
-  onClose,
-}: {
-  labelFor: (id: string) => string
-  active: string
-  onSelect: (id: string) => void
-  onClose: () => void
-}) {
-  const list: Goal[] = goals()
-  const [copied, setCopied] = useState(false)
-  const prompt =
-    'My goals are listed in lib/tiles/weights.ts. Re-run the math: for each goal, weigh how much each tile’s input actually moves it — ask me questions if you need to, or analyze my tile data for patterns. Each goal’s weights must sum to 100.'
-  const copy = () => {
-    navigator.clipboard?.writeText(prompt).then(() => {
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1600)
-    })
-  }
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Mentor — goals and weights"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 90,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-        background: 'rgba(0,0,0,.62)',
-        backdropFilter: 'blur(6px)',
-      }}
-    >
-      <div
-        style={{
-          width: 'min(560px, 100%)',
-          maxHeight: '86vh',
-          overflow: 'auto',
-          background: 'var(--bg-elevated, #121212)',
-          border: '1px solid var(--border, #262626)',
-          borderRadius: 16,
-          boxShadow: '0 24px 60px rgba(0,0,0,.6)',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            justifyContent: 'space-between',
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--border, #262626)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-            <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 20, color: 'var(--mint, #6EE7B7)' }}>y</span>
-            <span style={{ fontWeight: 600, color: 'var(--fg, #fff)' }}>Mentor — the overseer</span>
-          </div>
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            style={{ background: 'transparent', border: 'none', color: 'var(--muted, #8a8f98)', cursor: 'pointer', padding: 4 }}
-          >
-            ✕
-          </button>
-        </div>
-
-        <div style={{ padding: '18px 20px' }}>
-          <p style={{ margin: '0 0 14px', color: 'var(--muted, #8a8f98)', fontSize: 13, lineHeight: 1.6 }}>
-            Your goals, and how much each tile moves them. The active goal drives the ≈% badges on the row.
-          </p>
-
-          {list.map((g) => {
-            const isActive = g.id === active
-            return (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() => onSelect(g.id)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  background: isActive ? 'rgba(110,231,183,.07)' : 'transparent',
-                  border: `1px solid ${isActive ? 'rgba(110,231,183,.4)' : 'var(--border, #262626)'}`,
-                  borderRadius: 12,
-                  padding: '14px 16px',
-                  marginBottom: 12,
-                  cursor: 'pointer',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ color: 'var(--fg, #fff)', fontWeight: 600, fontSize: 15 }}>{g.title}</span>
-                  <span
-                    style={{
-                      fontFamily: 'ui-monospace, Menlo, monospace',
-                      fontSize: 10,
-                      letterSpacing: '.12em',
-                      textTransform: 'uppercase',
-                      color: isActive ? 'var(--mint, #6EE7B7)' : 'var(--muted, #8a8f98)',
-                    }}
-                  >
-                    {isActive ? '● active' : 'set active'}
-                  </span>
-                </div>
-                {Object.entries(g.weights)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([tile, w]) => (
-                    <div key={tile} style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0' }}>
-                      <span style={{ width: 74, color: 'var(--muted, #8a8f98)', fontSize: 12 }}>{labelFor(tile)}</span>
-                      <span
-                        style={{
-                          flex: 1,
-                          height: 4,
-                          borderRadius: 999,
-                          background: 'rgba(110,231,183,.12)',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <span
-                          style={{
-                            display: 'block',
-                            width: `${Math.min(100, w)}%`,
-                            height: '100%',
-                            borderRadius: 999,
-                            background: 'var(--mint, #6EE7B7)',
-                            opacity: isActive ? 0.9 : 0.45,
-                          }}
-                        />
-                      </span>
-                      <span style={{ width: 52, textAlign: 'right', fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12, color: 'var(--fg, #fff)' }}>
-                        {w}%
-                      </span>
-                    </div>
-                  ))}
-              </button>
-            )
-          })}
-
-          <div
-            style={{
-              border: '1px solid var(--border, #262626)',
-              borderRadius: 12,
-              padding: '14px 16px',
-              marginTop: 4,
-            }}
-          >
-            <p style={{ margin: '0 0 10px', color: 'var(--muted, #8a8f98)', fontSize: 13, lineHeight: 1.6 }}>
-              <strong style={{ color: 'var(--fg, #fff)' }}>The math is Claude&apos;s job — in VS Code, not on a key.</strong>{' '}
-              Paste this in Claude Code and it rebalances the weights for your goals (asking you questions, or
-              analyzing your tile data for patterns — like whether gym days pump out more videos):
-            </p>
-            <pre
-              style={{
-                background: 'var(--bg, #000)',
-                border: '1px solid var(--border, #262626)',
-                borderRadius: 10,
-                padding: '10px 12px',
-                whiteSpace: 'pre-wrap',
-                color: 'var(--fg, #fff)',
-                fontSize: 12,
-                lineHeight: 1.55,
-                margin: 0,
-              }}
-            >
-              {prompt}
-            </pre>
-            <button
-              type="button"
-              onClick={copy}
-              style={{
-                marginTop: 10,
-                padding: '8px 16px',
-                borderRadius: 999,
-                background: 'var(--mint, #6EE7B7)',
-                color: 'var(--mint-ink, #042a1c)',
-                fontWeight: 600,
-                fontSize: 13,
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              {copied ? 'Copied ✓' : 'Copy the math prompt'}
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -789,8 +596,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   const [editing, setEditing] = useState(false) // edit mode: row tiles wobble, show ✕, drag to reorder
   const [order, setOrder] = useState<string[]>([]) // persisted row order (x tiles)
   const [removed, setRemoved] = useState<string[]>([]) // slots removed from the row in edit mode
-  const [mentorOpen, setMentorOpen] = useState(false) // the y view: goals + per-tile weights
-  const [activeGoal, setActiveGoal] = useState('') // drives the ≈% badges
+  const [goal, setGoal] = useState<Goal | undefined>(undefined) // active goal: drives %s, colors, the mentor kicker
   const dragId = useRef<string | null>(null)
 
   const { register, unregister } = useTileHost(userId, undefined, () => {})
@@ -803,7 +609,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
       if (Array.isArray(o)) setOrder(o.filter((x) => typeof x === 'string'))
       const r = JSON.parse(window.localStorage.getItem('vitality:eq:removed') || 'null')
       if (Array.isArray(r)) setRemoved(r.filter((x) => typeof x === 'string'))
-      setActiveGoal(activeGoalId())
+      setGoal(readActiveGoal())
     } catch {
       /* ignore */
     }
@@ -863,7 +669,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
 
   // Each input's estimated share of the goal (plain numbers — Claude retunes them
   // at build time for YOUR goal; localStorage override wins. See lib/tiles/weights).
-  const weights = useMemo(() => (mounted ? tileWeights() : {}), [mounted, activeGoal])
+  const weights = useMemo(() => (mounted ? tileWeights() : {}), [mounted, goal])
 
   // The equation row (the x's): every filled slot except the mentor, in the user's
   // saved order, minus anything they removed in edit mode. New tiles append.
@@ -945,29 +751,30 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
         // ── The equation: y on top (the mentor — the output), x + x + x below
         //    (the inputs — one scrollable row, every tile the same size). ──
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-            <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 22, color: 'var(--mint, #6EE7B7)' }}>y</span>
+          <a href="/mentor" style={{ display: 'flex', alignItems: 'baseline', gap: 10, textDecoration: 'none', width: 'fit-content' }}>
+            <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 22, color: goal?.accent ?? 'var(--mint, #6EE7B7)', transition: 'color .8s ease' }}>y</span>
             <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--muted, #8a8f98)' }}>
-              = the output — every tile, summed
+              = the output — {goal ? goal.title.toLowerCase() : 'every tile, summed'}
             </span>
-          </div>
+          </a>
           <TileFace
             id="vee"
             isVee
             core={null}
             fixed={{ width: '100%', height: 'clamp(240px, 34vh, 340px)' }}
+            kicker={goal?.title}
             onOpen={() => {
-              if (!editing) setMentorOpen(true)
+              if (!editing) window.location.assign('/mentor')
             }}
           />
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-              <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 22, color: 'var(--mint, #6EE7B7)' }}>x</span>
+            <a href="/mentor" style={{ display: 'flex', alignItems: 'baseline', gap: 10, textDecoration: 'none' }}>
+              <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 22, color: goal?.accent ?? 'var(--mint, #6EE7B7)', transition: 'color .8s ease' }}>x</span>
               <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--muted, #8a8f98)' }}>
                 = the inputs — each one feeds the goal
               </span>
-            </div>
+            </a>
             <button
               type="button"
               onClick={() => setEditing((v) => !v)}
@@ -1042,6 +849,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
                   editable
                   onRemove={editing ? () => saveRemoved([...removed, id]) : undefined}
                   weight={weights[id]}
+                  accent={goal?.accent}
                   onOpen={() => openSlot(id)}
                 />
               </div>
@@ -1129,18 +937,6 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
             See the vision
           </button>
         </div>
-      )}
-
-      {mentorOpen && (
-        <MentorOverlay
-          labelFor={labelFor}
-          active={activeGoal}
-          onSelect={(id) => {
-            setActiveGoalId(id)
-            setActiveGoal(id)
-          }}
-          onClose={() => setMentorOpen(false)}
-        />
       )}
 
       {showWelcome && <EmptyCanvas onBack={() => setShowWelcome(false)} />}

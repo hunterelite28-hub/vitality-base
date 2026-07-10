@@ -9,6 +9,7 @@ import DashboardGrid from './DashboardGrid'
 import '@/components/veeTiles.css'
 import { dashboardChrome, backgroundAccent, DEFAULT_CHROME, type DashboardChrome } from '@/lib/tiles/dashboardChrome'
 import { syncWipe } from '@/lib/sync'
+import { activeGoal } from '@/lib/tiles/weights'
 
 interface DashboardProps {
   firstName: string | null
@@ -209,17 +210,20 @@ export default function Dashboard({ firstName, userId }: DashboardProps) {
   const [chrome, setChrome] = useState<DashboardChrome | undefined>(undefined)
   const [scratchOpen, setScratchOpen] = useState(false)
   const [scratched, setScratched] = useState(false)
+  const [goalAccent, setGoalAccent] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     setChrome(dashboardChrome.get(userId))
     try {
       setScratched(window.localStorage.getItem('vitality:scratched') === '1')
+      setGoalAccent(activeGoal()?.accent)
     } catch {
       /* ignore */
     }
   }, [userId])
 
-  const wallAccent = chrome ? backgroundAccent(chrome.background) : '#6EE7B7'
+  // The active goal tints the whole room — the main goal turns it gold.
+  const wallAccent = goalAccent ?? (chrome ? backgroundAccent(chrome.background) : '#6EE7B7')
   // In scratch mode there's no gem and no avatar. The greeting stays only when the
   // background was kept (world); a pure-black scratch drops it too. The gear (settings)
   // is always there — the way into scratch and back.
