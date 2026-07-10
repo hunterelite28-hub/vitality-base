@@ -11,6 +11,7 @@ import {
   goals,
   saveGoals,
   noticedFeed,
+  tileIdeas,
   type Goal,
 } from '@/lib/tiles/weights'
 
@@ -78,6 +79,7 @@ export default function MentorPage({
   const [list, setList] = useState<Goal[]>([])
   const [active, setActive] = useState('')
   const [draft, setDraft] = useState('')
+  const [ideasOpen, setIdeasOpen] = useState(false) // the +: blueprints for tiles you're missing
   const gemRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -256,7 +258,105 @@ export default function MentorPage({
               </div>
             </div>
           ))}
+
+          {/* the +: what you're NOT tracking — the mentor's blueprints */}
+          <button
+            type="button"
+            onClick={() => setIdeasOpen(true)}
+            aria-label="What am I missing?"
+            title="What am I missing?"
+            style={{
+              width: 54,
+              height: 54,
+              borderRadius: 999,
+              border: `1px dashed ${accent}59`,
+              background: 'transparent',
+              color: accent,
+              fontSize: 26,
+              fontWeight: 300,
+              cursor: 'pointer',
+              transition: 'border-color .6s ease, color .6s ease',
+            }}
+          >
+            +
+          </button>
         </div>
+
+        {ideasOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Blueprints — tiles you're missing"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) setIdeasOpen(false)
+            }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 96,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 24,
+              background: 'rgba(0,0,0,.66)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <div
+              style={{
+                width: 'min(540px, 100%)',
+                maxHeight: '84vh',
+                overflow: 'auto',
+                background: 'var(--bg-elevated, #101413)',
+                border: `1px solid ${accent}40`,
+                borderRadius: 16,
+                padding: '20px 22px',
+                textAlign: 'left',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontFamily: 'var(--font-serif), Georgia, serif', fontStyle: 'italic', fontSize: 20, color: 'var(--fg, #fff)' }}>
+                  You&apos;re not tracking everything.
+                </span>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  onClick={() => setIdeasOpen(false)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--muted, #8a8f98)', cursor: 'pointer', fontSize: 15 }}
+                >
+                  ✕
+                </button>
+              </div>
+              <p style={{ ...mono, fontSize: 10, color: accent, margin: '0 0 14px' }}>
+                blueprints · from your data, for “{act?.title}”
+              </p>
+
+              {tileIdeas(act?.id ?? 'overall').map((idea) => (
+                <div
+                  key={idea.title}
+                  style={{
+                    border: '1px solid var(--border, #262626)',
+                    borderRadius: 12,
+                    padding: '14px 16px',
+                    marginBottom: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{ color: 'var(--fg, #fff)', fontWeight: 600, fontSize: 15 }}>{idea.title}</span>
+                    <span style={{ ...mono, fontSize: 10.5, color: accent, flex: '0 0 auto' }}>would earn ≈ {idea.estWeight}%</span>
+                  </div>
+                  <p style={{ ...mono, fontSize: 10, color: 'var(--muted, #8a8f98)', margin: '6px 0 8px' }}>tracks: {idea.tracks}</p>
+                  <p style={{ color: 'var(--muted, #b9c4be)', fontSize: 13, lineHeight: 1.6, margin: 0 }}>{idea.why}</p>
+                </div>
+              ))}
+
+              <p style={{ color: 'var(--muted, #8a8f98)', fontSize: 12.5, lineHeight: 1.6, margin: '14px 0 0' }}>
+                Want one? Tell the mentor in Claude Code: <i style={{ color: 'var(--fg, #fff)' }}>“build me the
+                {' '}<b>water</b> tile from your blueprint”</i> — it builds it, weighs it, and it joins the equation.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* = y — results, progress, advice */}
         <div style={{ marginTop: 52, animation: 'fadeUp .8s ease .55s both' }}>

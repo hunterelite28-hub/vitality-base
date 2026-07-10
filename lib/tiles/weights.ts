@@ -105,6 +105,80 @@ export const DEFAULT_NOTICED: Notice[] = [
   },
 ]
 
+/** A blueprint for a tile they SHOULD have — a gap the mentor found between
+ *  their goal and what their tiles actually track. Pre-written by the mentor
+ *  (Claude Code) from their data; localStorage 'vitality:ideas' overrides. */
+export interface TileIdea {
+  title: string
+  /** what the tile tracks, in one line */
+  tracks: string
+  /** why it moves THIS goal — tied to their data when possible */
+  why: string
+  /** the weight it would likely earn (≈ %) */
+  estWeight: number
+}
+
+export const DEFAULT_IDEAS: Record<string, TileIdea[]> = {
+  overall: [
+    {
+      title: 'Content pipeline',
+      tracks: 'videos in flight → published, per week',
+      why: 'Your output IS the goal — but nothing tracks the machine that makes it. Brand tracks the channel; this tracks the work.',
+      estWeight: 10,
+    },
+    {
+      title: 'Sleep consistency',
+      tracks: 'bedtime variance, night by night',
+      why: 'Your recovery swings track your analytics dips. Vitals sees the score — this would see the habit behind it.',
+      estWeight: 6,
+    },
+  ],
+  youtube: [
+    {
+      title: 'Content pipeline',
+      tracks: 'ideas → filmed → edited → published',
+      why: 'You track the channel (Brand) but not the machine that feeds it. Publishing cadence is the single biggest lever here.',
+      estWeight: 12,
+    },
+    {
+      title: 'Caffeine timing',
+      tracks: 'when + how much, against publish days',
+      why: 'The data hints more caffeine on publish days — fuel or crutch? One small tile answers it.',
+      estWeight: 5,
+    },
+  ],
+  lean185: [
+    {
+      title: 'Water',
+      tracks: 'daily intake vs target',
+      why: 'The noticed pattern: skip the gym → drink less. No tile tracks water yet — it is the cheapest input you are missing.',
+      estWeight: 8,
+    },
+    {
+      title: 'Steps / NEAT',
+      tracks: 'daily movement outside the gym',
+      why: 'At 185-lean, the deficit is won between workouts. Train sees sessions; nothing sees the other 23 hours.',
+      estWeight: 7,
+    },
+  ],
+}
+
+/** The mentor's tile recommendations for a goal (localStorage override wins). */
+export function tileIdeas(goalId: string): TileIdea[] {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = window.localStorage.getItem('vitality:ideas')
+      if (raw) {
+        const o = JSON.parse(raw)
+        if (o && typeof o === 'object' && Array.isArray(o[goalId])) return o[goalId] as TileIdea[]
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  return DEFAULT_IDEAS[goalId] ?? DEFAULT_IDEAS.overall ?? []
+}
+
 /** The mentor's noticed feed: localStorage override, else the seeded example.
  *  Claude Code (or the connector) writes 'vitality:noticed' after a scan. */
 export function noticedFeed(): Notice[] {
