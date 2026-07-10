@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { CORE_TILES, VEE_TILE, DEFAULT_HOME_ORDER, coreDefaultSize, type CoreTile } from '@/lib/tiles/coreTiles'
+import { tileWeights } from '@/lib/tiles/weights'
 import { initVeeTiles } from '@/components/veeTilesAnim'
 import { useTileHost } from '@/lib/tiles/useTileHost'
 import { withBridge } from '@/lib/tiles/tileBridge'
@@ -67,6 +68,7 @@ function TileFace({
   fixed,
   editable,
   onRemove,
+  weight,
   onOpen,
 }: {
   id: string
@@ -78,6 +80,8 @@ function TileFace({
   editable?: boolean
   /** Present only in edit mode: shows the ✕ remove badge. */
   onRemove?: () => void
+  /** This input's estimated share of the goal (bottom-right, e.g. "≈ 22%"). */
+  weight?: number
   onOpen: () => void
 }) {
   const label = isVee ? VEE_TILE.label : core!.label
@@ -110,6 +114,28 @@ function TileFace({
         </div>
       )}
       <span className="arrow">→</span>
+
+      {weight != null && (
+        <span
+          aria-label={`≈ ${weight}% of the goal`}
+          style={{
+            position: 'absolute',
+            right: 16,
+            bottom: 46,
+            zIndex: 6,
+            fontFamily: 'ui-monospace, Menlo, monospace',
+            fontSize: 11,
+            letterSpacing: '.08em',
+            color: 'rgba(110,231,183,.75)',
+            background: 'rgba(4,20,13,.55)',
+            border: '1px solid rgba(110,231,183,.22)',
+            borderRadius: 999,
+            padding: '3px 9px',
+          }}
+        >
+          ≈ {weight}%
+        </span>
+      )}
 
       {/* Inert: clicking opens the slot (filled tile or connector), never navigates. */}
       <button type="button" className="hit" aria-label={`Open ${label}`} onClick={onOpen} />
@@ -283,6 +309,9 @@ function ConnectorOverlay({ id, label, onClose }: { id: string; label: string; o
   )
 }
 
+/** Rowan & Luke's tile shop — every episode's /command lives here (Patreon). */
+const DESIGN_LAB_URL = 'https://www.patreon.com/cw/RowanTBK/shop'
+
 /* ── the "+ New tile" creator: pick a slot, paste sealed HTML, save it live ── */
 function NewTileOverlay({
   onClose,
@@ -346,6 +375,41 @@ function NewTileOverlay({
           </button>
         </div>
         <div className="openStage" style={{ display: 'block', overflow: 'auto', padding: '22px 24px' }}>
+          <div
+            style={{
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '14px 16px',
+              marginBottom: 18,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <p style={{ margin: 0, color: 'var(--muted)', fontSize: 13, lineHeight: 1.55 }}>
+              Out of ideas or inspo? Browse <strong style={{ color: 'var(--fg)' }}>Rowan &amp; Luke&apos;s tiles</strong> in
+              the Vitality Design Lab — every episode&apos;s <code style={{ color: 'var(--mint)' }}>/command</code> lives
+              there. Support them!
+            </p>
+            <a
+              href={DESIGN_LAB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                flex: '0 0 auto',
+                background: 'var(--mint)',
+                color: 'var(--mint-ink, #042a1c)',
+                borderRadius: 999,
+                padding: '9px 16px',
+                fontWeight: 600,
+                fontSize: 13,
+                textDecoration: 'none',
+              }}
+            >
+              Design Lab →
+            </a>
+          </div>
           {!enabled && (
             <p style={{ color: 'var(--muted)', lineHeight: 1.6, marginTop: 0 }}>
               Saving from here needs your Supabase connected (see the README). Without it, build a
@@ -592,6 +656,10 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   // (/tile), shipped by an episode command (/logger), or installed (/vitality).
   const filledOrder = useMemo(() => SLOT_ORDER.filter((id) => filled[id]), [filled])
 
+  // Each input's estimated share of the goal (plain numbers — Claude retunes them
+  // at build time for YOUR goal; localStorage override wins. See lib/tiles/weights).
+  const weights = useMemo(() => (mounted ? tileWeights() : {}), [mounted])
+
   // The equation row (the x's): every filled slot except the mentor, in the user's
   // saved order, minus anything they removed in edit mode. New tiles append.
   const rowIds = useMemo(() => {
@@ -672,6 +740,12 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
         // ── The equation: y on top (the mentor — the output), x + x + x below
         //    (the inputs — one scrollable row, every tile the same size). ──
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+            <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 22, color: 'var(--mint, #6EE7B7)' }}>y</span>
+            <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--muted, #8a8f98)' }}>
+              = the output — every tile, summed
+            </span>
+          </div>
           <TileFace
             id="vee"
             isVee
@@ -680,7 +754,13 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
             onOpen={() => openSlot('vee')}
           />
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+              <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 22, color: 'var(--mint, #6EE7B7)' }}>x</span>
+              <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--muted, #8a8f98)' }}>
+                = the inputs — each one feeds the goal
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => setEditing((v) => !v)}
@@ -699,10 +779,39 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 14 }}>
-            {rowIds.map((id) => (
+          <div
+            style={{
+              display: 'flex',
+              gap: 16,
+              overflowX: 'auto',
+              paddingBottom: 14,
+              // soften the row's edges: tiles fade out instead of clipping hard
+              WebkitMaskImage:
+                'linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 64px), transparent 100%)',
+              maskImage:
+                'linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 64px), transparent 100%)',
+              padding: '4px 18px 14px',
+              margin: '0 -18px',
+            }}
+          >
+            {rowIds.map((id, i) => (
+              <Fragment key={id}>
+                {i > 0 && (
+                  <span
+                    aria-hidden
+                    style={{
+                      flex: '0 0 auto',
+                      alignSelf: 'center',
+                      color: 'rgba(110,231,183,.45)',
+                      fontFamily: 'Georgia, "Times New Roman", serif',
+                      fontSize: 30,
+                      fontWeight: 300,
+                    }}
+                  >
+                    +
+                  </span>
+                )}
               <div
-                key={id}
                 draggable={editing}
                 onDragStart={() => {
                   dragId.current = id
@@ -725,10 +834,28 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
                   fixed={{ width: 300, height: 340 }}
                   editable
                   onRemove={editing ? () => saveRemoved([...removed, id]) : undefined}
+                  weight={weights[id]}
                   onOpen={() => openSlot(id)}
                 />
               </div>
+              </Fragment>
             ))}
+
+            {rowIds.length > 0 && (
+              <span
+                aria-hidden
+                style={{
+                  flex: '0 0 auto',
+                  alignSelf: 'center',
+                  color: 'rgba(110,231,183,.45)',
+                  fontFamily: 'Georgia, "Times New Roman", serif',
+                  fontSize: 30,
+                  fontWeight: 300,
+                }}
+              >
+                +
+              </span>
+            )}
 
             {/* the + tile: same size, transparent — build the next input */}
             <button
@@ -776,27 +903,25 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
       )}
 
       {!isEmpty && (
-        <button
-          type="button"
-          onClick={() => setShowWelcome(true)}
-          aria-label="See the vision"
-          style={{
-            position: 'fixed',
-            left: 24,
-            bottom: 24,
-            zIndex: 50,
-            background: 'transparent',
-            color: 'var(--muted)',
-            border: '1px solid var(--border)',
-            borderRadius: 999,
-            padding: '10px 16px',
-            fontWeight: 500,
-            fontSize: 13,
-            cursor: 'pointer',
-          }}
-        >
-          See the vision
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 6 }}>
+          <button
+            type="button"
+            onClick={() => setShowWelcome(true)}
+            aria-label="See the vision"
+            style={{
+              background: 'transparent',
+              color: 'var(--muted)',
+              border: '1px solid var(--border)',
+              borderRadius: 999,
+              padding: '10px 16px',
+              fontWeight: 500,
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            See the vision
+          </button>
+        </div>
       )}
 
       {showWelcome && <EmptyCanvas onBack={() => setShowWelcome(false)} />}
