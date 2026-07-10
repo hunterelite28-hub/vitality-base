@@ -138,6 +138,9 @@ export default function MentorPage({
         @keyframes mentorIn { from { opacity: 0; transform: translateY(26px) scale(.86) } to { opacity: 1; transform: none } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
         @keyframes mentorPulse { 0% { transform: scale(1) } 40% { transform: scale(1.16) rotate(-2deg) } 100% { transform: scale(1) } }
+        @keyframes bpVeil { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes bpIn { from { opacity: 0; transform: translateY(22px) scale(.94) } to { opacity: 1; transform: none } }
+        @keyframes bpRow { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
       `}</style>
       {!overlay && <WelcomeBackdrop />}
       <div
@@ -298,61 +301,66 @@ export default function MentorPage({
               alignItems: 'center',
               justifyContent: 'center',
               padding: 24,
-              background: 'rgba(0,0,0,.66)',
-              backdropFilter: 'blur(8px)',
+              background: 'rgba(0,0,0,.72)',
+              backdropFilter: 'blur(12px)',
+              animation: 'bpVeil .35s ease both',
+              cursor: 'pointer',
             }}
           >
             <div
               style={{
-                width: 'min(540px, 100%)',
+                width: 'min(480px, 100%)',
                 maxHeight: '84vh',
                 overflow: 'auto',
-                background: 'var(--bg-elevated, #101413)',
-                border: `1px solid ${accent}40`,
-                borderRadius: 16,
-                padding: '20px 22px',
-                textAlign: 'left',
+                textAlign: 'center',
+                padding: '12px 8px',
+                animation: 'bpIn .55s cubic-bezier(.34,1.56,.64,1) both',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontFamily: 'var(--font-serif), Georgia, serif', fontStyle: 'italic', fontSize: 20, color: 'var(--fg, #fff)' }}>
-                  You&apos;re not tracking everything.
-                </span>
-                <button
-                  type="button"
-                  aria-label="Close"
-                  onClick={() => setIdeasOpen(false)}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--muted, #8a8f98)', cursor: 'pointer', fontSize: 15 }}
-                >
-                  ✕
-                </button>
-              </div>
-              <p style={{ ...mono, fontSize: 10, color: accent, margin: '0 0 14px' }}>
-                blueprints · from your data, for “{act?.title}”
+              <p style={{ ...mono, fontSize: 9.5, color: accent, letterSpacing: '.2em', margin: '0 0 8px' }}>
+                THE MENTOR SEES A GAP
               </p>
+              <span style={{ fontFamily: 'var(--font-serif), Georgia, serif', fontStyle: 'italic', fontSize: 24, color: 'var(--fg, #fff)' }}>
+                You&apos;re not tracking everything.
+              </span>
 
-              {tileIdeas(act?.id ?? 'overall').map((idea) => (
-                <div
-                  key={idea.title}
-                  style={{
-                    border: '1px solid var(--border, #262626)',
-                    borderRadius: 12,
-                    padding: '14px 16px',
-                    marginBottom: 12,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-                    <span style={{ color: 'var(--fg, #fff)', fontWeight: 600, fontSize: 15 }}>{idea.title}</span>
-                    <span style={{ ...mono, fontSize: 10.5, color: accent, flex: '0 0 auto' }}>would earn ≈ {idea.estWeight}%</span>
+              <div style={{ margin: '30px 0 6px' }}>
+                {tileIdeas(act?.id ?? 'overall').map((idea, i) => (
+                  <div
+                    key={idea.title}
+                    style={{ padding: '18px 0', animation: `bpRow .6s cubic-bezier(.22,1,.36,1) ${0.12 + i * 0.09}s both` }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 14 }}>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-serif), Georgia, serif',
+                          fontStyle: 'italic',
+                          fontSize: 'clamp(30px, 5vw, 40px)',
+                          fontWeight: 400,
+                          color: 'var(--fg, #fff)',
+                        }}
+                      >
+                        {idea.word ?? idea.title.split(/[\s/]/)[0]}
+                      </span>
+                      <span style={{ ...mono, fontSize: 13, color: accent }}>≈ {idea.estWeight}%</span>
+                    </div>
+                    <p style={{ ...mono, fontSize: 10, color: 'var(--muted, #8a8f98)', margin: '7px 0 0', letterSpacing: '.08em' }}>
+                      {idea.title.toLowerCase()} · {idea.tracks}
+                    </p>
                   </div>
-                  <p style={{ ...mono, fontSize: 10, color: 'var(--muted, #8a8f98)', margin: '6px 0 8px' }}>tracks: {idea.tracks}</p>
-                  <p style={{ color: 'var(--muted, #b9c4be)', fontSize: 13, lineHeight: 1.6, margin: 0 }}>{idea.why}</p>
-                </div>
-              ))}
+                ))}
+              </div>
 
-              <p style={{ color: 'var(--muted, #8a8f98)', fontSize: 12.5, lineHeight: 1.6, margin: '14px 0 0' }}>
-                Want one? Tell the mentor in Claude Code: <i style={{ color: 'var(--fg, #fff)' }}>“build me the
-                {' '}<b>water</b> tile from your blueprint”</i> — it builds it, weighs it, and it joins the equation.
+              <p
+                style={{
+                  ...mono,
+                  fontSize: 10,
+                  color: 'var(--muted, #8a8f98)',
+                  margin: '18px 0 0',
+                  animation: 'bpRow .6s ease .4s both',
+                }}
+              >
+                want one? tell the mentor — <i style={{ color: 'var(--fg, #fff)', fontFamily: 'var(--font-serif), Georgia, serif', fontSize: 13 }}>“build me water”</i>
               </p>
             </div>
           </div>

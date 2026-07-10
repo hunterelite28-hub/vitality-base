@@ -287,6 +287,51 @@ async function loadData(userId: string, id: string): Promise<TileData> {
 }
 
 /**
+ * Which tiles currently HAVE saved data (localStorage scan). Powers the gear
+ * panel's "wipe the demo data" list: every id here still keeps its card — only
+ * what's inside can be detonated. Supabase-synced data won't appear in this
+ * scan (v1), but clearData still clears both stores.
+ */
+function listDataIds(userId: string): string[] {
+  if (!hasStorage()) return []
+  const prefix = `vitality:${userId}:tile:`
+  const ids: string[] = []
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i)
+      if (k && k.startsWith(prefix) && k.endsWith(':data')) {
+        ids.push(k.slice(prefix.length, -':data'.length))
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return ids
+}
+
+/**
+ * Detonate what's INSIDE a tile — the card survives, its data goes black.
+ * Clears both stores (Supabase row if configured, localStorage always) so the
+ * tile renders its empty state on next load.
+ */
+async function clearData(userId: string, id: string): Promise<void> {
+  const db = supa()
+  if (db) {
+    try {
+      await db.from('tile_data').delete().eq('tile_id', `${userId}:${id}`)
+    } catch {
+      /* network fail — still clear local below */
+    }
+  }
+  if (!hasStorage()) return
+  try {
+    window.localStorage.removeItem(dataKey(userId, id))
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
  * One-time migration from the BUILD71 single-tile key, where
  * vitality:<userId>:tile:draft held the saved data array directly (literal id
  * "draft", no html persisted). If the registry is empty and that key exists,
@@ -331,5 +376,7 @@ export const tileStore = {
   deleteTile,
   saveData,
   loadData,
+  listDataIds,
+  clearData,
   migrateLegacy,
 }

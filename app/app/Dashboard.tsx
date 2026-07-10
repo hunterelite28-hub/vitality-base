@@ -9,6 +9,7 @@ import DashboardGrid from './DashboardGrid'
 import '@/components/veeTiles.css'
 import { dashboardChrome, backgroundAccent, DEFAULT_CHROME, type DashboardChrome } from '@/lib/tiles/dashboardChrome'
 import { activeGoal } from '@/lib/tiles/weights'
+import { tileStore } from '@/lib/tiles/tileStore'
 import { site } from '@/content/site'
 
 interface DashboardProps {
@@ -16,25 +17,81 @@ interface DashboardProps {
   userId: string
 }
 
-/* ── "Start from scratch": the DETONATION PROMPT ──
- * The app can no longer destroy anything. Instead it hands you a copy-pasteable
- * prompt for Claude Code: Claude wipes the board to a black screen in code —
- * but its context survives, so it still remembers everything you built and can
- * help you rebuild. The checkbox changes the prompt (keep the ambiance or not). */
-function ScratchPanel({ onClose }: { onClose: () => void }) {
+/* ── The gear panel ──
+ * The app can't destroy anything by itself; everything sharp is a PROMPT you
+ * copy into Claude Code (deterministic — /detonate is code, not improvisation).
+ * Four rooms:
+ *   how      — the loop: dashboard ⇄ Claude Code, the 4 data-in lanes, Rowan's videos
+ *   yours    — "make it yours": a talk-first restyle prompt (the mentor interviews you)
+ *   data     — wipe what's INSIDE tiles (all, or one) — cards stay, contents go black
+ *   scratch  — the detonation prompt (black screen, context survives)
+ */
+const MAKE_IT_YOURS_PROMPT =
+  "Make this dashboard MINE. Before you touch anything, talk it through with me — one question at a time: do I keep the gem avatar? The art on each tile? The mentor tile's design? The background (mountains + particles)? Then ask how I want it to FEEL — mood, colors, energy. Only after my answers: strip every piece of Vitality style I let go of, restyle the board to me, and keep every tile and all my data working."
+
+function ScratchPanel({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const [tab, setTab] = useState<'how' | 'yours' | 'data' | 'scratch'>('how')
   const [keepBg, setKeepBg] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<string | null>(null)
+  const [dataIds, setDataIds] = useState<string[]>([])
+  const [armed, setArmed] = useState(false) // two-step "wipe all"
+
+  useEffect(() => {
+    setDataIds(tileStore.listDataIds(userId))
+  }, [userId])
 
   const prompt = keepBg
     ? 'Detonate my dashboard, but keep the atmosphere. Remove every tile from my board (clear public/tiles of tiles) and strip the middle of the page — no tiles, no onboarding text. KEEP the ambient background (mountains, particles, aurora), the greeting and the date, and the settings gear. Do not touch git history, docs, or your memory of this project — remember everything we built so you can help me rebuild from this clean slate.'
     : 'Detonate my dashboard. Remove every tile from my board (clear public/tiles of tiles) and make it render a pure black screen — no tiles, no greeting, no gem, no background. Keep only the settings gear as the way back. Do not touch git history, docs, or your memory of this project — remember everything we built so you can help me rebuild from this clean slate.'
 
-  const copy = () => {
-    navigator.clipboard?.writeText(prompt).then(() => {
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1600)
+  const copy = (text: string, tag: string) => {
+    navigator.clipboard?.writeText(text).then(() => {
+      setCopied(tag)
+      window.setTimeout(() => setCopied(null), 1600)
     })
   }
+
+  const wipeOne = async (id: string) => {
+    await tileStore.clearData(userId, id)
+    window.location.reload() // tiles load their data on mount — a clean reload shows the black card
+  }
+  const wipeAll = async () => {
+    if (!armed) {
+      setArmed(true)
+      return
+    }
+    await Promise.all(dataIds.map((id) => tileStore.clearData(userId, id)))
+    window.location.reload()
+  }
+
+  const mono: React.CSSProperties = {
+    fontFamily: 'ui-monospace, Menlo, monospace',
+    letterSpacing: '.08em',
+  }
+  const pill = (id: 'how' | 'yours' | 'data' | 'scratch', label: string) => (
+    <button
+      key={id}
+      type="button"
+      onClick={() => {
+        setTab(id)
+        setArmed(false)
+      }}
+      style={{
+        ...mono,
+        fontSize: 10,
+        letterSpacing: '.12em',
+        textTransform: 'uppercase',
+        color: tab === id ? 'var(--fg, #fff)' : 'var(--muted, #8a8f98)',
+        background: tab === id ? 'rgba(255,255,255,.08)' : 'transparent',
+        border: 'none',
+        borderRadius: 999,
+        padding: '7px 13px',
+        cursor: 'pointer',
+      }}
+    >
+      {label}
+    </button>
+  )
 
   return (
     <div
@@ -71,11 +128,16 @@ function ScratchPanel({ onClose }: { onClose: () => void }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '16px 18px',
+            padding: '14px 18px 10px',
             borderBottom: '1px solid var(--border, #262626)',
           }}
         >
-          <span style={{ fontWeight: 600, color: 'var(--fg, #fff)' }}>Start from scratch?</span>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {pill('how', 'How it works')}
+            {pill('yours', 'Make it yours')}
+            {pill('data', 'Tile data')}
+            {pill('scratch', 'Detonate')}
+          </div>
           <button
             type="button"
             aria-label="Close"
@@ -88,66 +150,65 @@ function ScratchPanel({ onClose }: { onClose: () => void }) {
             </svg>
           </button>
         </div>
-        <div style={{ padding: '22px 24px' }}>
-          <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: 0, fontSize: 14 }}>
-            Nothing gets destroyed from here. Paste the <strong style={{ color: 'var(--fg)' }}>detonation prompt</strong>{' '}
-            into Claude Code: it wipes the board to a black screen — but Claude{' '}
-            <strong style={{ color: 'var(--fg)' }}>keeps the context</strong> of everything you built, so when you start
-            building again it already knows your world.
-          </p>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              marginTop: 16,
-              color: 'var(--fg)',
-              cursor: 'pointer',
-              fontSize: 14,
-            }}
-          >
-            <input type="checkbox" checked={keepBg} onChange={(e) => setKeepBg(e.target.checked)} />
-            Keep the background (mountains + particles)
-          </label>
-          <pre
-            style={{
-              background: 'var(--bg, #000)',
-              border: '1px solid var(--border, #262626)',
-              borderRadius: 10,
-              padding: '12px 14px',
-              whiteSpace: 'pre-wrap',
-              color: 'var(--fg)',
-              fontSize: 12,
-              lineHeight: 1.55,
-              margin: '14px 0 0',
-              maxHeight: 180,
-              overflow: 'auto',
-            }}
-          >
-            {prompt}
-          </pre>
-          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-            <button
-              type="button"
-              onClick={onClose}
+
+        {tab === 'how' && (
+          <div style={{ padding: '22px 24px' }}>
+            <p style={{ fontWeight: 600, color: 'var(--fg, #fff)', margin: '0 0 8px', fontSize: 15 }}>
+              Your board renders. Claude Code thinks.
+            </p>
+            <p style={{ color: 'var(--muted)', lineHeight: 1.65, margin: 0, fontSize: 13.5 }}>
+              The AI Mentor works as a loop: data runs <strong style={{ color: 'var(--fg)' }}>back and forth</strong>{' '}
+              between your personal dashboard and Claude Code. The mentor reads what your tiles saved, retunes your
+              weights, goals and notices, and writes them back — the board only renders. The longer the loop runs,
+              the more it adjusts to <em>you</em>.
+            </p>
+            <p style={{ color: 'var(--muted)', lineHeight: 1.65, margin: '12px 0 0', fontSize: 13.5 }}>
+              <strong style={{ color: 'var(--fg)' }}>Rowan teaches every piece on YouTube</strong> — how to automate
+              it and build your own input tiles, one video at a time.
+            </p>
+            <p style={{ ...mono, fontSize: 10, letterSpacing: '.16em', color: 'var(--mint, #6EE7B7)', margin: '18px 0 8px', textTransform: 'uppercase' }}>
+              how data gets in
+            </p>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', color: 'var(--muted)', fontSize: 13, lineHeight: 2 }}>
+              <li><strong style={{ color: 'var(--fg)' }}>manual</strong> — type it straight into a tile</li>
+              <li><strong style={{ color: 'var(--fg)' }}>api keys</strong> — Claude fetches (stocks, YouTube) and files it in</li>
+              <li><strong style={{ color: 'var(--fg)' }}>mcp connector</strong> — your own token; Claude writes in from anywhere</li>
+              <li><strong style={{ color: 'var(--fg)' }}>cowork + scheduled sweeps</strong> — Claude runs on a schedule, noticing while you sleep</li>
+            </ul>
+          </div>
+        )}
+
+        {tab === 'yours' && (
+          <div style={{ padding: '22px 24px' }}>
+            <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: 0, fontSize: 14 }}>
+              Want your own design? This is a <strong style={{ color: 'var(--fg)' }}>conversation, not a switch</strong>.
+              Paste this into Claude Code and the mentor talks it through with you first — what do you keep (the avatar,
+              the tile art, the mentor tile, the background), and how do you want it to feel — before it strips a single
+              pixel of Vitality style.
+            </p>
+            <pre
               style={{
-                flex: 1,
-                padding: '0.7rem 1rem',
-                borderRadius: 999,
-                background: 'transparent',
+                background: 'var(--bg, #000)',
+                border: '1px solid var(--border, #262626)',
+                borderRadius: 10,
+                padding: '12px 14px',
+                whiteSpace: 'pre-wrap',
                 color: 'var(--fg)',
-                border: '1px solid var(--border)',
-                fontWeight: 600,
-                cursor: 'pointer',
+                fontSize: 12,
+                lineHeight: 1.55,
+                margin: '14px 0 0',
+                maxHeight: 200,
+                overflow: 'auto',
               }}
             >
-              Cancel
-            </button>
+              {MAKE_IT_YOURS_PROMPT}
+            </pre>
             <button
               type="button"
-              onClick={copy}
+              onClick={() => copy(MAKE_IT_YOURS_PROMPT, 'yours')}
               style={{
-                flex: 1.4,
+                width: '100%',
+                marginTop: 16,
                 padding: '0.7rem 1rem',
                 borderRadius: 999,
                 background: 'var(--mint, #6EE7B7)',
@@ -157,10 +218,156 @@ function ScratchPanel({ onClose }: { onClose: () => void }) {
                 cursor: 'pointer',
               }}
             >
-              {copied ? 'Copied ✓' : 'Copy the detonation prompt'}
+              {copied === 'yours' ? 'Copied ✓' : 'Copy the make-it-yours prompt'}
             </button>
           </div>
-        </div>
+        )}
+
+        {tab === 'data' && (
+          <div style={{ padding: '22px 24px' }}>
+            <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: 0, fontSize: 14 }}>
+              Don&apos;t like the demo numbers? <strong style={{ color: 'var(--fg)' }}>Every card stays</strong> — only
+              what&apos;s inside goes black. Wipe one tile to keep it as a clean shell to build off, or detonate all
+              the data at once.
+            </p>
+            {dataIds.length === 0 ? (
+              <p style={{ ...mono, fontSize: 11, color: 'var(--muted, #8a8f98)', margin: '18px 0 0' }}>
+                no saved tile data on this device — the cards are already clean.
+              </p>
+            ) : (
+              <>
+                <div style={{ margin: '16px 0 0' }}>
+                  {dataIds.map((id) => (
+                    <div
+                      key={id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '9px 0',
+                        borderBottom: '1px solid var(--border, #1c1c1c)',
+                      }}
+                    >
+                      <span style={{ color: 'var(--fg)', fontSize: 13.5, textTransform: 'capitalize' }}>{id}</span>
+                      <button
+                        type="button"
+                        onClick={() => wipeOne(id)}
+                        style={{
+                          ...mono,
+                          fontSize: 10,
+                          letterSpacing: '.12em',
+                          textTransform: 'uppercase',
+                          color: 'var(--muted, #8a8f98)',
+                          background: 'transparent',
+                          border: '1px solid var(--border, #262626)',
+                          borderRadius: 999,
+                          padding: '5px 12px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        wipe
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={wipeAll}
+                  style={{
+                    width: '100%',
+                    marginTop: 18,
+                    padding: '0.7rem 1rem',
+                    borderRadius: 999,
+                    background: armed ? '#e5484d' : 'transparent',
+                    color: armed ? '#fff' : 'var(--fg)',
+                    border: armed ? 'none' : '1px solid var(--border)',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'background .25s ease, color .25s ease',
+                  }}
+                >
+                  {armed ? 'Sure? Everything inside every tile goes black' : 'Detonate all tile data'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {tab === 'scratch' && (
+          <div style={{ padding: '22px 24px' }}>
+            <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: 0, fontSize: 14 }}>
+              Nothing gets destroyed from here. Paste the <strong style={{ color: 'var(--fg)' }}>detonation prompt</strong>{' '}
+              into Claude Code: it wipes the board to a black screen — but Claude{' '}
+              <strong style={{ color: 'var(--fg)' }}>keeps the context</strong> of everything you built, so when you start
+              building again it already knows your world.
+            </p>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                marginTop: 16,
+                color: 'var(--fg)',
+                cursor: 'pointer',
+                fontSize: 14,
+              }}
+            >
+              <input type="checkbox" checked={keepBg} onChange={(e) => setKeepBg(e.target.checked)} />
+              Keep the background (mountains + particles)
+            </label>
+            <pre
+              style={{
+                background: 'var(--bg, #000)',
+                border: '1px solid var(--border, #262626)',
+                borderRadius: 10,
+                padding: '12px 14px',
+                whiteSpace: 'pre-wrap',
+                color: 'var(--fg)',
+                fontSize: 12,
+                lineHeight: 1.55,
+                margin: '14px 0 0',
+                maxHeight: 180,
+                overflow: 'auto',
+              }}
+            >
+              {prompt}
+            </pre>
+            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  flex: 1,
+                  padding: '0.7rem 1rem',
+                  borderRadius: 999,
+                  background: 'transparent',
+                  color: 'var(--fg)',
+                  border: '1px solid var(--border)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => copy(prompt, 'detonate')}
+                style={{
+                  flex: 1.4,
+                  padding: '0.7rem 1rem',
+                  borderRadius: 999,
+                  background: 'var(--mint, #6EE7B7)',
+                  color: 'var(--mint-ink, #042a1c)',
+                  border: 'none',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {copied === 'detonate' ? 'Copied ✓' : 'Copy the detonation prompt'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -241,7 +448,7 @@ export default function Dashboard({ firstName, userId }: DashboardProps) {
         >
           run /detonate undo in claude code to come back
         </p>
-        {scratchOpen && <ScratchPanel onClose={() => setScratchOpen(false)} />}
+        {scratchOpen && <ScratchPanel userId={userId} onClose={() => setScratchOpen(false)} />}
       </main>
     )
   }
@@ -294,7 +501,7 @@ export default function Dashboard({ firstName, userId }: DashboardProps) {
         <DashboardGrid userId={userId} chrome={chrome ?? DEFAULT_CHROME} />
       </div>
 
-      {scratchOpen && <ScratchPanel onClose={() => setScratchOpen(false)} />}
+      {scratchOpen && <ScratchPanel userId={userId} onClose={() => setScratchOpen(false)} />}
     </main>
   )
 }

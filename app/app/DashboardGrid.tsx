@@ -570,6 +570,17 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
     }
   }, [])
 
+  // While the mentor is alive over the board, the board must not scroll —
+  // only the overlay does (it has its own overflowY). Blur stays.
+  useEffect(() => {
+    if (!mentorAlive) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [mentorAlive])
+
   // Column bucket, matching the CSS: 4 desktop / 2 phone.
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 760px)')
@@ -783,23 +794,6 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
               })}
             </div>
 
-            <button
-              type="button"
-              onClick={() => setMentorAlive(true)}
-              style={{
-                fontFamily: 'ui-monospace, Menlo, monospace',
-                fontSize: 11,
-                letterSpacing: '.14em',
-                textTransform: 'uppercase',
-                color: 'var(--muted, #8a8f98)',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                marginLeft: 'auto',
-              }}
-            >
-              mentor →
-            </button>
           </div>
           <TileFace
             id="vee"
@@ -993,6 +987,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
             inset: 0,
             zIndex: 95,
             overflowY: 'auto',
+            overscrollBehavior: 'contain', // reaching the ends must not scroll the board behind
             background: 'rgba(3, 8, 6, .93)',
             backdropFilter: 'blur(10px)',
           }}
