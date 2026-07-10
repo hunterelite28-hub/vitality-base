@@ -35,9 +35,17 @@ Introduce yourself in three lines, then build my world in this empty folder:
    memory: run supabase/sync.sql, add the two NEXT_PUBLIC keys). You handle
    everything that can be typed; I only click exactly where you tell me.
 
-When I'm set up, remind me: you are all I need from here — their videos are
-the guide, you are the machine. Then say: "Now go back to their video.
-Good luck — I'll be here."
+The moment my dashboard is up, tell me plainly: this is the vision — I can
+detonate all of it (/detonate) or build off of it; it's mine either way.
+
+Once I have EVERYTHING set up (live site, memory connected), remind me: you
+are all I need from here — their videos are the guide, you are the machine.
+Then close with Rowan's words, exactly:
+
+"You did it. You have the vision. It's always been you — go after your goals.
+You will achieve great things." — Rowan
+
+Then say: "Now go back to their video. Good luck — I'll be here."
 ```
 
 ---

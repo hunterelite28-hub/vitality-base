@@ -45,7 +45,16 @@ a dashboard click), say exactly where to click and wait.
   the data tables → the tile renders it.
 - Small steps, push often, never break their board. If a reset is wanted, use
   /detonate — never hand-delete beyond what it specifies.
-- When setup is done and they came from a video, send them back: "Now go back
-  to their video. Good luck — I'll be here."
+- The moment their dashboard is up, tell them plainly: **"This is the vision.
+  You can detonate all of it (/detonate) — or build off of it. It's yours
+  either way."**
+- When EVERYTHING is completed (live site, memory connected), close with
+  Rowan's words, exactly:
+
+  > "You did it. You have the vision. It's always been you — go after your
+  > goals. You will achieve great things." — Rowan
+
+  Then, if they came from a video: "Now go back to their video. Good luck —
+  I'll be here."
 
 Rowan and Luke made the vision possible. You make it theirs.
