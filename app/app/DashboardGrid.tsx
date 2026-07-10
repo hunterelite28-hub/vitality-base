@@ -1,9 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { footprintFor, packTiles } from '@/lib/tiles/packLayout'
 import { CORE_TILES, VEE_TILE, DEFAULT_HOME_ORDER, coreDefaultSize, type CoreTile } from '@/lib/tiles/coreTiles'
-import type { TileSize } from '@/lib/tiles/tileSkin'
 import { initVeeTiles } from '@/components/veeTilesAnim'
 import { useTileHost } from '@/lib/tiles/useTileHost'
 import { withBridge } from '@/lib/tiles/tileBridge'
@@ -66,32 +64,34 @@ function TileFace({
   id,
   isVee,
   core,
-  pos,
+  fixed,
+  editable,
+  onRemove,
   onOpen,
 }: {
   id: string
   isVee: boolean
   core: CoreTile | null
-  pos: { x: number; y: number; w: number; h: number } | undefined
+  /** Equation layout: explicit size (y = full-width mentor, x = uniform row tile). */
+  fixed?: CSSProperties
+  /** Row tiles wobble in edit mode; the mentor (y) never does. */
+  editable?: boolean
+  /** Present only in edit mode: shows the ✕ remove badge. */
+  onRemove?: () => void
   onOpen: () => void
 }) {
   const label = isVee ? VEE_TILE.label : core!.label
   const index = isVee ? VEE_TILE.index : core!.index
   const variant = (core?.variant || (isVee ? 'vee' : undefined)) as string | undefined
   const orb = !isVee && core ? core.orb : undefined
-  const style: CSSProperties = {
-    ['--x' as string]: pos?.x ?? 0,
-    ['--y' as string]: pos?.y ?? 0,
-    ['--w' as string]: pos?.w ?? 1,
-    ['--h' as string]: pos?.h ?? 1,
-  }
+  const style: CSSProperties = { position: 'relative', ...fixed }
   return (
     <div
       data-size={isVee ? coreDefaultSize('vee') : coreDefaultSize(id as Parameters<typeof coreDefaultSize>[0])}
       data-orb={orb?.mode}
       data-roam={orb?.roam}
       data-pt={orb?.pt}
-      className={`tile${variant ? ' ' + variant : ''} editable`}
+      className={`tile${variant ? ' ' + variant : ''}${editable ? ' editable' : ''}`}
       style={style}
     >
       <div className="aurora" />
@@ -113,6 +113,34 @@ function TileFace({
 
       {/* Inert: clicking opens the slot (filled tile or connector), never navigates. */}
       <button type="button" className="hit" aria-label={`Open ${label}`} onClick={onOpen} />
+
+      {onRemove && (
+        <button
+          type="button"
+          aria-label={`Remove ${label}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onRemove()
+          }}
+          style={{
+            position: 'absolute',
+            top: 10,
+            left: 10,
+            zIndex: 9,
+            width: 26,
+            height: 26,
+            borderRadius: 999,
+            border: '1px solid rgba(255,107,107,.5)',
+            background: 'rgba(20,6,6,.85)',
+            color: '#ff6b6b',
+            cursor: 'pointer',
+            fontSize: 13,
+            lineHeight: 1,
+          }}
+        >
+          ✕
+        </button>
+      )}
     </div>
   )
 }
@@ -492,6 +520,10 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   const [showWelcome, setShowWelcome] = useState(false) // transient "see the vision" home (non-destructive)
   const [loaded, setLoaded] = useState(false) // tile discovery finished — gates the blank "see the vision" state
   const [scratched, setScratched] = useState(false) // deliberate "start from scratch" → clean canvas, no onboarding text
+  const [editing, setEditing] = useState(false) // edit mode: row tiles wobble, show ✕, drag to reorder
+  const [order, setOrder] = useState<string[]>([]) // persisted row order (x tiles)
+  const [removed, setRemoved] = useState<string[]>([]) // slots removed from the row in edit mode
+  const dragId = useRef<string | null>(null)
 
   const { register, unregister } = useTileHost(userId, undefined, () => {})
 
@@ -499,6 +531,10 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
     setMounted(true)
     try {
       setScratched(window.localStorage.getItem('vitality:scratched') === '1')
+      const o = JSON.parse(window.localStorage.getItem('vitality:eq:order') || 'null')
+      if (Array.isArray(o)) setOrder(o.filter((x) => typeof x === 'string'))
+      const r = JSON.parse(window.localStorage.getItem('vitality:eq:removed') || 'null')
+      if (Array.isArray(r)) setRemoved(r.filter((x) => typeof x === 'string'))
     } catch {
       /* ignore */
     }
@@ -553,17 +589,47 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
 
   // The board shows ONLY tiles that actually exist. A fresh scaffold has none, so
   // it boots to the blank "see the vision" canvas; tiles appear as they're built
-  // (/tile) or installed (/vitality writes the full set into public/tiles).
+  // (/tile), shipped by an episode command (/logger), or installed (/vitality).
   const filledOrder = useMemo(() => SLOT_ORDER.filter((id) => filled[id]), [filled])
 
-  // Layout: pure function of (which tiles exist, sizes, cols).
-  const { positions, rows } = useMemo(() => {
-    const feet = filledOrder.map((id) => {
-      const size = (id === 'vee' ? coreDefaultSize('vee') : coreDefaultSize(id as Parameters<typeof coreDefaultSize>[0])) as TileSize
-      return footprintFor(id, size, cols)
-    })
-    return packTiles(feet, cols)
-  }, [filledOrder, cols])
+  // The equation row (the x's): every filled slot except the mentor, in the user's
+  // saved order, minus anything they removed in edit mode. New tiles append.
+  const rowIds = useMemo(() => {
+    const base = order.length ? order : SLOT_ORDER
+    const seen = new Set(base)
+    const all = [...base, ...SLOT_ORDER.filter((id) => !seen.has(id))]
+    return all.filter((id) => id !== 'vee' && filled[id] && !removed.includes(id))
+  }, [order, filled, removed])
+
+  const saveOrder = (next: string[]) => {
+    setOrder(next)
+    try {
+      window.localStorage.setItem('vitality:eq:order', JSON.stringify(next))
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const saveRemoved = (next: string[]) => {
+    setRemoved(next)
+    try {
+      window.localStorage.setItem('vitality:eq:removed', JSON.stringify(next))
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Drag-reorder: while dragging over a sibling, move the dragged tile there live.
+  const moveTo = (src: string, dst: string) => {
+    if (src === dst) return
+    const cur = rowIds.slice()
+    const from = cur.indexOf(src)
+    const to = cur.indexOf(dst)
+    if (from < 0 || to < 0) return
+    cur.splice(from, 1)
+    cur.splice(to, 0, src)
+    saveOrder(cur)
+  }
 
   // (Re)bind the living orbs whenever the packed layout changes.
   useEffect(() => {
@@ -587,6 +653,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   if (!mounted) return null
 
   const openSlot = (id: string) => {
+    if (editing) return // while editing, taps rearrange — they don't open
     if (filled[id]) setOpenId(id)
     else setConnectId(id)
   }
@@ -596,26 +663,94 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   const isEmpty = filledOrder.length === 0
 
   return (
-    <div className="veeTiles" ref={ref}>
+    <div className={`veeTiles${editing ? ' editing' : ''}`} ref={ref}>
       {!loaded ? null : isEmpty ? (
         // A fresh board shows the onboarding vision; a deliberately-scratched board
         // stays clean — just header + background, nothing in the middle.
         scratched ? null : <VisionEmptyState onNewTile={() => setNewOpen(true)} />
       ) : (
-        <div className="grid" style={{ ['--rows' as string]: rows }}>
-          {filledOrder.map((id) => {
-            const isVee = id === 'vee'
-            return (
-              <TileFace
+        // ── The equation: y on top (the mentor — the output), x + x + x below
+        //    (the inputs — one scrollable row, every tile the same size). ──
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <TileFace
+            id="vee"
+            isVee
+            core={null}
+            fixed={{ width: '100%', height: 'clamp(240px, 34vh, 340px)' }}
+            onOpen={() => openSlot('vee')}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => setEditing((v) => !v)}
+              style={{
+                background: editing ? 'var(--mint)' : 'transparent',
+                color: editing ? 'var(--mint-ink, #042a1c)' : 'var(--muted)',
+                border: editing ? 'none' : '1px solid var(--border)',
+                borderRadius: 999,
+                padding: '5px 14px',
+                fontWeight: 600,
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              {editing ? 'Done' : 'Edit'}
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 14 }}>
+            {rowIds.map((id) => (
+              <div
                 key={id}
-                id={id}
-                isVee={isVee}
-                core={isVee ? null : CORE_TILES[id as keyof typeof CORE_TILES]}
-                pos={positions.get(id)}
-                onOpen={() => openSlot(id)}
-              />
-            )
-          })}
+                draggable={editing}
+                onDragStart={() => {
+                  dragId.current = id
+                }}
+                onDragOver={(e) => {
+                  if (editing && dragId.current && dragId.current !== id) {
+                    e.preventDefault()
+                    moveTo(dragId.current, id)
+                  }
+                }}
+                onDragEnd={() => {
+                  dragId.current = null
+                }}
+                style={{ flex: '0 0 auto' }}
+              >
+                <TileFace
+                  id={id}
+                  isVee={false}
+                  core={CORE_TILES[id as keyof typeof CORE_TILES]}
+                  fixed={{ width: 300, height: 340 }}
+                  editable
+                  onRemove={editing ? () => saveRemoved([...removed, id]) : undefined}
+                  onOpen={() => openSlot(id)}
+                />
+              </div>
+            ))}
+
+            {/* the + tile: same size, transparent — build the next input */}
+            <button
+              type="button"
+              onClick={() => setNewOpen(true)}
+              aria-label="New tile"
+              style={{
+                flex: '0 0 auto',
+                width: 300,
+                height: 340,
+                borderRadius: 20,
+                border: '1px dashed rgba(110,231,183,.35)',
+                background: 'transparent',
+                color: 'var(--mint, #6EE7B7)',
+                fontSize: 46,
+                fontWeight: 300,
+                cursor: 'pointer',
+              }}
+            >
+              +
+            </button>
+          </div>
         </div>
       )}
 
@@ -631,31 +766,6 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
 
       {connectId && (
         <ConnectorOverlay id={connectId} label={labelFor(connectId)} onClose={() => setConnectId(null)} />
-      )}
-
-      {!isEmpty && (
-        <button
-          type="button"
-          onClick={() => setNewOpen(true)}
-          aria-label="New tile"
-          style={{
-            position: 'fixed',
-            right: 24,
-            bottom: 24,
-            zIndex: 50,
-            background: 'var(--mint)',
-            color: 'var(--mint-ink, #042a1c)',
-            border: 'none',
-            borderRadius: 999,
-            padding: '12px 18px',
-            fontWeight: 600,
-            fontSize: 14,
-            cursor: 'pointer',
-            boxShadow: '0 6px 24px rgba(0,0,0,.45)',
-          }}
-        >
-          + New tile
-        </button>
       )}
 
       {newOpen && (

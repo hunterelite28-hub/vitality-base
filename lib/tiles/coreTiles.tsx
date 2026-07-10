@@ -237,8 +237,8 @@ export const VEE_TILE = {
   id: 'vee' as const,
   href: '/app/starter',
   index: '06',
-  label: 'Vee',
-  kicker: 'Your AI mentor',
+  label: 'Mentor',
+  kicker: 'Notices everything',
 }
 
 export type HomeTileId = CoreTileId | 'vee' | 'library'
