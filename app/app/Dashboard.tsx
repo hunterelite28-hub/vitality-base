@@ -8,51 +8,32 @@ import DashboardHeaderGem from './DashboardHeaderGem'
 import DashboardGrid from './DashboardGrid'
 import '@/components/veeTiles.css'
 import { dashboardChrome, backgroundAccent, DEFAULT_CHROME, type DashboardChrome } from '@/lib/tiles/dashboardChrome'
-import { syncWipe } from '@/lib/sync'
 import { activeGoal } from '@/lib/tiles/weights'
+import { site } from '@/content/site'
 
 interface DashboardProps {
   firstName: string | null
   userId: string
 }
 
-/* ── "Start from scratch": a true hard reset (opened by clicking the V) ──
- * Wipes saved data + tiles + customization and turns the board black. The
- * checkbox keeps the ambient background (mountains + particles); off = pure
- * black void. Files built in VS Code stay on disk — that's the way back. */
-function ScratchPanel({ userId, scratched, onClose }: { userId: string; scratched: boolean; onClose: () => void }) {
+/* ── "Start from scratch": the DETONATION PROMPT ──
+ * The app can no longer destroy anything. Instead it hands you a copy-pasteable
+ * prompt for Claude Code: Claude wipes the board to a black screen in code —
+ * but its context survives, so it still remembers everything you built and can
+ * help you rebuild. The checkbox changes the prompt (keep the ambiance or not). */
+function ScratchPanel({ onClose }: { onClose: () => void }) {
   const [keepBg, setKeepBg] = useState(false)
-  const [wiping, setWiping] = useState(false)
+  const [copied, setCopied] = useState(false)
 
-  // Undo a scratch — back to the default board (gem + greeting + world background).
-  const restore = () => {
-    try {
-      window.localStorage.removeItem('vitality:scratched')
-      dashboardChrome.reset(userId)
-    } catch {
-      /* ignore */
-    }
-    window.location.reload()
-  }
+  const prompt = keepBg
+    ? 'Detonate my dashboard, but keep the atmosphere. Remove every tile from my board (clear public/tiles of tiles) and strip the middle of the page — no tiles, no onboarding text. KEEP the ambient background (mountains, particles, aurora), the greeting and the date, and the settings gear. Do not touch git history, docs, or your memory of this project — remember everything we built so you can help me rebuild from this clean slate.'
+    : 'Detonate my dashboard. Remove every tile from my board (clear public/tiles of tiles) and make it render a pure black screen — no tiles, no greeting, no gem, no background. Keep only the settings gear as the way back. Do not touch git history, docs, or your memory of this project — remember everything we built so you can help me rebuild from this clean slate.'
 
-  const wipe = async () => {
-    setWiping(true)
-    try {
-      await syncWipe() // clear tiles built by talking to Claude (remote)
-    } catch {
-      /* ignore */
-    }
-    try {
-      window.localStorage.clear() // data + customization, gone
-      // A black void is a persisted background; keeping the ambiance is the default world bg.
-      if (!keepBg) dashboardChrome.setBackground(userId, { mode: 'solid', color: '#000' })
-      // Mark a deliberate reset so the board shows a CLEAN canvas — just header +
-      // background, no middle onboarding text (set after clear so it survives).
-      window.localStorage.setItem('vitality:scratched', '1')
-    } catch {
-      /* ignore */
-    }
-    window.location.reload()
+  const copy = () => {
+    navigator.clipboard?.writeText(prompt).then(() => {
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    })
   }
 
   return (
@@ -61,7 +42,7 @@ function ScratchPanel({ userId, scratched, onClose }: { userId: string; scratche
       aria-modal="true"
       aria-label="Start from scratch"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget && !wiping) onClose()
+        if (e.target === e.currentTarget) onClose()
       }}
       style={{
         position: 'fixed',
@@ -77,7 +58,7 @@ function ScratchPanel({ userId, scratched, onClose }: { userId: string; scratche
     >
       <div
         style={{
-          width: 'min(460px, 100%)',
+          width: 'min(520px, 100%)',
           background: 'var(--bg-elevated, #121212)',
           border: '1px solid var(--border, #262626)',
           borderRadius: 16,
@@ -99,15 +80,7 @@ function ScratchPanel({ userId, scratched, onClose }: { userId: string; scratche
             type="button"
             aria-label="Close"
             onClick={onClose}
-            disabled={wiping}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--muted, #8a8f98)',
-              cursor: 'pointer',
-              padding: 4,
-              display: 'flex',
-            }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--muted, #8a8f98)', cursor: 'pointer', padding: 4, display: 'flex' }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -116,17 +89,18 @@ function ScratchPanel({ userId, scratched, onClose }: { userId: string; scratche
           </button>
         </div>
         <div style={{ padding: '22px 24px' }}>
-          <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: 0 }}>
-            This turns everything <strong style={{ color: 'var(--fg)' }}>black</strong> and wipes your saved data,
-            tiles, and customization — a clean slate. Anything you built in VS&nbsp;Code stays on disk, so that&apos;s
-            your way back. This can&apos;t be undone.
+          <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: 0, fontSize: 14 }}>
+            Nothing gets destroyed from here. Paste the <strong style={{ color: 'var(--fg)' }}>detonation prompt</strong>{' '}
+            into Claude Code: it wipes the board to a black screen — but Claude{' '}
+            <strong style={{ color: 'var(--fg)' }}>keeps the context</strong> of everything you built, so when you start
+            building again it already knows your world.
           </p>
           <label
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 10,
-              marginTop: 18,
+              marginTop: 16,
               color: 'var(--fg)',
               cursor: 'pointer',
               fontSize: 14,
@@ -135,11 +109,27 @@ function ScratchPanel({ userId, scratched, onClose }: { userId: string; scratche
             <input type="checkbox" checked={keepBg} onChange={(e) => setKeepBg(e.target.checked)} />
             Keep the background (mountains + particles)
           </label>
-          <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+          <pre
+            style={{
+              background: 'var(--bg, #000)',
+              border: '1px solid var(--border, #262626)',
+              borderRadius: 10,
+              padding: '12px 14px',
+              whiteSpace: 'pre-wrap',
+              color: 'var(--fg)',
+              fontSize: 12,
+              lineHeight: 1.55,
+              margin: '14px 0 0',
+              maxHeight: 180,
+              overflow: 'auto',
+            }}
+          >
+            {prompt}
+          </pre>
+          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
             <button
               type="button"
               onClick={onClose}
-              disabled={wiping}
               style={{
                 flex: 1,
                 padding: '0.7rem 1rem',
@@ -155,42 +145,21 @@ function ScratchPanel({ userId, scratched, onClose }: { userId: string; scratche
             </button>
             <button
               type="button"
-              onClick={wipe}
-              disabled={wiping}
+              onClick={copy}
               style={{
-                flex: 1,
+                flex: 1.4,
                 padding: '0.7rem 1rem',
                 borderRadius: 999,
-                background: '#ff6b6b',
-                color: '#160404',
+                background: 'var(--mint, #6EE7B7)',
+                color: 'var(--mint-ink, #042a1c)',
                 border: 'none',
                 fontWeight: 600,
-                cursor: wiping ? 'not-allowed' : 'pointer',
-                opacity: wiping ? 0.6 : 1,
+                cursor: 'pointer',
               }}
             >
-              {wiping ? 'Wiping…' : 'Start from scratch'}
+              {copied ? 'Copied ✓' : 'Copy the detonation prompt'}
             </button>
           </div>
-          {scratched && (
-            <button
-              type="button"
-              onClick={restore}
-              disabled={wiping}
-              style={{
-                display: 'block',
-                margin: '16px auto 0',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--mint, #6EE7B7)',
-                cursor: 'pointer',
-                fontSize: 13,
-                textDecoration: 'underline',
-              }}
-            >
-              Bring the full board back
-            </button>
-          )}
         </div>
       </div>
     </div>
@@ -231,8 +200,51 @@ export default function Dashboard({ firstName, userId }: DashboardProps) {
   // In scratch mode there's no gem and no avatar. The greeting stays only when the
   // background was kept (world); a pure-black scratch drops it too. The gear (settings)
   // is always there — the way into scratch and back.
-  const showGem = (chrome?.gem.show ?? true) && !scratched
-  const showGreeting = !scratched || chrome?.background.mode === 'world'
+  const detonated = site.detonated // set IN CODE by /detonate — deterministic, same every time
+  const showGem = (chrome?.gem.show ?? true) && !scratched && !detonated
+  const showGreeting = (!scratched || chrome?.background.mode === 'world') && detonated !== 'black'
+  const showBoard = !detonated
+
+  // /detonate black: pure black, only the gear and the way back.
+  if (detonated === 'black') {
+    return (
+      <main style={{ minHeight: '100vh', background: '#000', position: 'relative' }}>
+        <div style={{ position: 'fixed', top: 24, right: 24 }}>
+          <div
+            className={styles.profileAvatar}
+            onClick={() => setScratchOpen(true)}
+            role="button"
+            tabIndex={0}
+            title="Settings"
+            aria-label="Settings"
+            style={{ cursor: 'pointer' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </div>
+        </div>
+        <p
+          style={{
+            position: 'fixed',
+            bottom: 22,
+            left: 0,
+            right: 0,
+            textAlign: 'center',
+            fontFamily: 'ui-monospace, Menlo, monospace',
+            fontSize: 10,
+            letterSpacing: '.16em',
+            textTransform: 'uppercase',
+            color: '#2c2c2c',
+          }}
+        >
+          run /detonate undo in claude code to come back
+        </p>
+        {scratchOpen && <ScratchPanel onClose={() => setScratchOpen(false)} />}
+      </main>
+    )
+  }
 
   return (
     <main className={`${styles.page} ${styles.oneScreen} grain-overlay`} style={{ ['--wall-accent' as string]: wallAccent }}>
@@ -282,7 +294,7 @@ export default function Dashboard({ firstName, userId }: DashboardProps) {
         <DashboardGrid userId={userId} chrome={chrome ?? DEFAULT_CHROME} />
       </div>
 
-      {scratchOpen && <ScratchPanel userId={userId} scratched={scratched} onClose={() => setScratchOpen(false)} />}
+      {scratchOpen && <ScratchPanel onClose={() => setScratchOpen(false)} />}
     </main>
   )
 }
