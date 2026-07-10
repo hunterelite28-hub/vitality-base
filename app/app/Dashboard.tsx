@@ -19,9 +19,20 @@ interface DashboardProps {
  * Wipes saved data + tiles + customization and turns the board black. The
  * checkbox keeps the ambient background (mountains + particles); off = pure
  * black void. Files built in VS Code stay on disk — that's the way back. */
-function ScratchPanel({ userId, onClose }: { userId: string; onClose: () => void }) {
+function ScratchPanel({ userId, scratched, onClose }: { userId: string; scratched: boolean; onClose: () => void }) {
   const [keepBg, setKeepBg] = useState(false)
   const [wiping, setWiping] = useState(false)
+
+  // Undo a scratch — back to the default board (gem + greeting + world background).
+  const restore = () => {
+    try {
+      window.localStorage.removeItem('vitality:scratched')
+      dashboardChrome.reset(userId)
+    } catch {
+      /* ignore */
+    }
+    window.location.reload()
+  }
 
   const wipe = async () => {
     setWiping(true)
@@ -160,6 +171,25 @@ function ScratchPanel({ userId, onClose }: { userId: string; onClose: () => void
               {wiping ? 'Wiping…' : 'Start from scratch'}
             </button>
           </div>
+          {scratched && (
+            <button
+              type="button"
+              onClick={restore}
+              disabled={wiping}
+              style={{
+                display: 'block',
+                margin: '16px auto 0',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--mint, #6EE7B7)',
+                cursor: 'pointer',
+                fontSize: 13,
+                textDecoration: 'underline',
+              }}
+            >
+              Bring the full board back
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -176,16 +206,25 @@ function ScratchPanel({ userId, onClose }: { userId: string; onClose: () => void
  * localStorage namespaces (chrome, tile skins, layout) stay stable per browser.
  */
 export default function Dashboard({ firstName, userId }: DashboardProps) {
-  const avatarInitial = (firstName?.trim()?.[0] || 'V').toUpperCase()
   const [chrome, setChrome] = useState<DashboardChrome | undefined>(undefined)
   const [scratchOpen, setScratchOpen] = useState(false)
+  const [scratched, setScratched] = useState(false)
 
   useEffect(() => {
     setChrome(dashboardChrome.get(userId))
+    try {
+      setScratched(window.localStorage.getItem('vitality:scratched') === '1')
+    } catch {
+      /* ignore */
+    }
   }, [userId])
 
   const wallAccent = chrome ? backgroundAccent(chrome.background) : '#6EE7B7'
-  const showGem = chrome?.gem.show ?? true
+  // In scratch mode there's no gem and no avatar. The greeting stays only when the
+  // background was kept (world); a pure-black scratch drops it too. The gear (settings)
+  // is always there — the way into scratch and back.
+  const showGem = (chrome?.gem.show ?? true) && !scratched
+  const showGreeting = !scratched || chrome?.background.mode === 'world'
 
   return (
     <main className={`${styles.page} ${styles.oneScreen} grain-overlay`} style={{ ['--wall-accent' as string]: wallAccent }}>
@@ -194,15 +233,17 @@ export default function Dashboard({ firstName, userId }: DashboardProps) {
       <div className={styles.shell}>
         <div className={styles.headerRow}>
           {showGem && <DashboardHeaderGem className={styles.headerGem} />}
-          <DashboardHeader firstName={firstName} greeting={chrome?.greeting} date={chrome?.date} />
-          {/* The V (top-right): click to start from scratch (hard reset → black). */}
+          {showGreeting && (
+            <DashboardHeader firstName={firstName} greeting={chrome?.greeting} date={chrome?.date} />
+          )}
+          {/* Settings gear (top-right): opens the scratch panel — the way in, and back. */}
           <div
             className={styles.profileAvatar}
             onClick={() => setScratchOpen(true)}
             role="button"
             tabIndex={0}
-            title="Start from scratch"
-            aria-label="Start from scratch"
+            title="Settings"
+            aria-label="Settings"
             style={{ cursor: 'pointer' }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -211,14 +252,17 @@ export default function Dashboard({ firstName, userId }: DashboardProps) {
               }
             }}
           >
-            <span>{avatarInitial}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
           </div>
         </div>
 
         <DashboardGrid userId={userId} chrome={chrome ?? DEFAULT_CHROME} />
       </div>
 
-      {scratchOpen && <ScratchPanel userId={userId} onClose={() => setScratchOpen(false)} />}
+      {scratchOpen && <ScratchPanel userId={userId} scratched={scratched} onClose={() => setScratchOpen(false)} />}
     </main>
   )
 }
