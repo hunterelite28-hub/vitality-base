@@ -22,9 +22,9 @@ scheduled (cron) session — same prompt either way.
 4. **Mirror vitals → peak:** if today's `vitals` entry has data, compute
    recovery with the EXACT shared formula — identical to the vitals tile AND to
    Peak's own client-side read, so all three agree (see docs/THE-MATH.md §5):
-     hrv:   clamp01((hrv-20)/70)·100     · weight 0.5
-     rhr:   clamp01((80-rhr)/38)·100     · weight 0.25
-     sleep: min(100, sleepPerf)  OR  clamp01(sleepHours/8)·100  · weight 0.25
+     whoopRecovery present → round(whoopRecovery)   (a device wins outright)
+     else: feel  → clamp(0..100, feel)        · weight 0.6
+           sleep → clamp01(sleepHours/8)·100   · weight 0.4
      recovery = round( Σ(partᵢ·wᵢ) / Σwᵢ ), clamped 1..99
    then `save_data` `{whoop:{recovery:<n>}}` into `peak`. Peak already
    re-derives this live on load — your write just keeps it fresh while they're

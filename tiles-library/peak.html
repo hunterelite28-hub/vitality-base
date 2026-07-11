@@ -234,14 +234,14 @@ const BRIDGE=(typeof window!=='undefined'&&window.Vitality&&typeof window.Vitali
 
 /* The vitals tile's EXACT recovery formula, copied verbatim so this hardwired
    read and the mentor's /sweep produce an IDENTICAL number — never a flip-flop.
+   whoopRecovery (a device, Episode 2) wins; else the two manual inputs.
    Change it here → change vitals.html estRecovery + docs/THE-MATH.md too. */
 function recoveryFromVitals(h){
   if(!h) return null;
+  if(typeof h.whoopRecovery==='number') return Math.max(1,Math.min(99,Math.round(h.whoopRecovery)));
   const c=x=>Math.max(0,Math.min(1,x)),parts=[],w=[];
-  if(typeof h.hrv==='number'){ parts.push(c((h.hrv-20)/(90-20))*100); w.push(0.5); }
-  if(typeof h.rhr==='number'){ parts.push(c((80-h.rhr)/(80-42))*100); w.push(0.25); }
-  if(typeof h.sleepPerf==='number'){ parts.push(Math.min(100,h.sleepPerf)); w.push(0.25); }
-  else if(typeof h.sleepHours==='number'){ parts.push(c(h.sleepHours/8)*100); w.push(0.25); }
+  if(typeof h.feel==='number'){ parts.push(Math.max(0,Math.min(100,h.feel))); w.push(0.6); }
+  if(typeof h.sleepHours==='number'){ parts.push(c(h.sleepHours/8)*100); w.push(0.4); }
   if(!parts.length) return null;
   const sw=w.reduce((a,b)=>a+b,0); let s=0; for(let i=0;i<parts.length;i++)s+=parts[i]*w[i];
   return Math.max(1,Math.min(99,Math.round(s/sw)));
@@ -290,6 +290,11 @@ function curveDetailed(){return computeCurveDetailed(D.logs,D.whoop,D.weightKg);
 function scores(){return curveDetailed().map(c=>c.score);}
 function baselineCurve(){const wm=whoopMultiplier(D.whoop);return BASELINE.map((b,h)=>Math.max(0,Math.min(100,b*(wm?wm[h]:1))));}
 
+/* enough to build? Peak only draws once real signal feeds it — a recovery from
+   Vitals, caffeine logs, events, or a feel drag. With nothing personal it would
+   just be a generic baseline, so we honestly show nothing instead. */
+function hasSignal(){ return (D.whoop&&typeof D.whoop.recovery==='number') || (D.logs&&D.logs.length>0) || (D.events&&D.events.length>0) || (D.taps&&D.taps.length>0); }
+
 const TIER_COLOR_HEX={Peak:'#6EE7B7',Solid:'#6EE7B7',Tired:'#F59E0B',Low:'#d97706',Drained:'#EF4444'};
 function fmtTick(h){if(h===0||h===24)return'12A';if(h===12)return'12P';return h<12?h+'A':(h-12)+'P';}
 function fmtHour(h){const r=Math.round(h);if(r===0||r===24)return'12 AM';if(r===12)return'12 PM';return r<12?r+' AM':(r-12)+' PM';}
@@ -314,6 +319,7 @@ function smoothPath(vals){
 }
 
 function render(){
+  if(!hasSignal()){ wrap.innerHTML='<div style="height:'+HEIGHT+'px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted,#84848c);opacity:.55">not enough data to build</div>'; return; }
   width=Math.max(320,Math.round(wrap.clientWidth||stage.clientWidth||960));
   const det=curveDetailed(),sc=det.map(c=>c.score),base=baselineCurve();
   const windows=findPeakWindows(sc,Math.floor(nowHour));
@@ -469,6 +475,7 @@ function renderFeel(){
 /* ── HoverGauge — the header ring ── */
 function renderGauge(hh){
   const el=document.getElementById('gauge');
+  if(!hasSignal()){ if(el)el.innerHTML=''; return; }
   const live=hh!=null,h=live?hh:nowHour;
   const score=scoreAtHour(scores(),h),tier=tierFor(score),color=scoreColorFor(score);
   const size=104,stroke=8,glowPad=12,r=size/2-stroke/2-glowPad,c=2*Math.PI*r;
@@ -496,6 +503,7 @@ function renderGauge(hh){
 /* ── ScheduleStrip — TODAY'S PLAN on the same x-axis ── */
 function renderStrip(){
   const host=document.getElementById('strip');
+  if(!hasSignal()){ if(host)host.innerHTML=''; return; }
   const padX=PAD.left,iw=width-padX*2,hourW=iw/24;
   const headH=18,eventLaneH=30,logLaneH=16,eventTop=headH+8,logTop=eventTop+eventLaneH+8,totalH=logTop+logLaneH+4;
   const TONE={mint:'#6EE7B7',amber:'#F59E0B',red:'#EF4444',muted:'rgba(255,255,255,0.5)'};

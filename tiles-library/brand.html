@@ -232,6 +232,7 @@ document.addEventListener('click',e=>{
 });
 
 /* boot — accounts carry over from the old brand tile's store untouched */
+if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem('v:prev:brand',JSON.stringify(d));}catch(e){}return Promise.resolve(true);},load:function(){try{return Promise.resolve(JSON.parse(localStorage.getItem('v:prev:brand')||'{}'));}catch(e){return Promise.resolve({});}},read:function(){return Promise.resolve(null);},tiktok:function(){return Promise.reject(new Error('na'));},youtube:function(){return Promise.reject(new Error('no_key'));}};}
 (async()=>{
   const d=await window.Vitality.load();
   if(d&&typeof d==='object'&&!Array.isArray(d)&&Array.isArray(d.accounts)){

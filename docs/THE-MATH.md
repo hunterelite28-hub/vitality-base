@@ -75,17 +75,19 @@ MUST agree, or the number flip-flops between refreshes:
   sweep writes the same recovery into `peak.whoop.recovery` so it's fresh even
   when the app is closed.
 
-Both use this EXACT formula (weighted average of whatever inputs exist):
+Both use this EXACT formula. A device recovery (`whoopRecovery`, from WHOOP in
+Episode 2) wins outright; otherwise it's the two bone-simple manual inputs:
 
     clamp01(x) = max(0, min(1, x))
 
-    hrv    present → clamp01((hrv - 20) / 70) · 100        weight 0.5
-    rhr    present → clamp01((80 - rhr) / 38) · 100        weight 0.25
-    sleep  present → min(100, sleepPerf)                   weight 0.25
-             else → clamp01(sleepHours / 8) · 100          weight 0.25
+    whoopRecovery present → round(whoopRecovery)          (a device wins)
+    else, weighted average of what exists:
+      feel   present → clamp(0..100, feel)                weight 0.6
+      sleep  present → clamp01(sleepHours / 8) · 100       weight 0.4
 
     recovery = round( Σ(partᵢ · wᵢ) / Σ wᵢ ),  clamped to 1..99
 
+`feel` is the 0–100 value behind the Vitals feel chips (Wrecked 25 … Great 95).
 Peak then scales its whole curve by `k = 0.55 + (recovery/100)·0.65`. The
 canonical source is `estRecovery` in `tiles-library/vitals.html`; the verbatim
 copy is `recoveryFromVitals` in `peak.html`. Change one, change all three

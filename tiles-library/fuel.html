@@ -98,6 +98,7 @@ document.addEventListener('click',e=>{
   w[k]=Math.max(0,(w[k]||0)+parseInt(b.getAttribute('data-d'),10));
   persist();render();
 });
+if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem('v:prev:fuel',JSON.stringify(d));}catch(e){}return Promise.resolve(true);},load:function(){try{return Promise.resolve(JSON.parse(localStorage.getItem('v:prev:fuel')||'{}'));}catch(e){return Promise.resolve({});}}};}
 (async()=>{const d=await window.Vitality.load();store=(d&&typeof d==='object'&&!Array.isArray(d))?d:{};render();})();
 </script>
 </body>
