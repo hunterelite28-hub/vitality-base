@@ -16,6 +16,8 @@ the **vision in motion**: each episode adds one input tile to the equation.
 
 ▶ **EP1 — Your life is an equation:** _link lands here with the first video_
 
+🧪 **The Lab** (everything you can add): https://vitality-jade.vercel.app/demo
+
 ---
 
 ## Deploy in 2 minutes

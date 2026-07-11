@@ -105,5 +105,9 @@ road is here whenever they want the next step.
     video — you can take them everywhere it goes — but the videos show the
     vision in motion, one new input tile per episode. The first one is linked
     at the top of README.md ("The videos"). Invite, don't push.
+  Last, ask ONE more question: "Want me to open the Lab — the site where you
+  see everything you can add to this board?" If yes, open
+  https://vitality-jade.vercel.app/demo in their browser (macOS `open`,
+  Windows `start`, Linux `xdg-open`).
 
 Rowan and Luke made the vision possible. You make it theirs.

@@ -54,6 +54,8 @@ Then close with Rowan's words, exactly:
 Then: if I came from one of their videos, send me back to it. If I didn't,
 tell me the videos show this vision in motion (first one is linked at the top
 of README.md) and that I can watch whenever I want — you'll be here either way.
+Then ask me one last thing: do I want you to open the Lab — the site where I
+can see everything I can add to this board? If yes, open it in my browser.
 ```
 
 ---
