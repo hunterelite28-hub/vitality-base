@@ -35,8 +35,11 @@ Introduce yourself in three lines, then build my world in this empty folder:
    is mine, not a template's.
 5) Then get me live, one step at a time — GitHub (you do all the git; my only
    job is one browser sign-in), Vercel (import my repo, deploy), Supabase (my
-   memory: run supabase/sync.sql, add the two NEXT_PUBLIC keys). You handle
-   everything that can be typed; I only click exactly where you tell me.
+   memory: run supabase/sync.sql, add the two NEXT_PUBLIC keys), and my phone
+   (my live URL, Add to Home Screen). You handle everything that can be typed;
+   I only click exactly where you tell me. Keep a checklist (SETUP.md) ticking
+   as we go, and before each step tell me if it's optional and what it gives
+   me — I decide how far to take it.
 
 The moment my dashboard is up, tell me plainly: this is the vision — I can
 detonate all of it (/detonate) or build off of it; it's mine either way.

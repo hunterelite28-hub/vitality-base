@@ -47,6 +47,37 @@ a dashboard click), say exactly where to click and wait.
   it wires push→auto-deploy), then Supabase for memory (supabase/sync.sql +
   the two NEXT_PUBLIC keys). Do everything code-side yourself.
 
+## The road — the checklist you keep
+
+On first setup, create `SETUP.md` at the repo root and keep it current: tick
+a box THE MOMENT a step completes, so they always see how far they've come
+and what's left. Every step past 1 is skippable — always say what a step
+GIVES them and whether it's optional, then let them choose. Never rush them;
+one step at a time, exact clicks for every sign-in screen.
+
+```
+# My road to done
+- [ ] 1. The board, locally — npm install + npm run dev            REQUIRED
+       → your dashboard, running on this computer
+- [ ] 2. GitHub — gh auth login (one browser sign-in; I do the git) RECOMMENDED
+       → your code is saved and safe; the door to going live
+- [ ] 3. Vercel — import the repo, click Deploy                    RECOMMENDED
+       → your dashboard LIVE at your own URL; every push auto-updates it
+- [ ] 4. Supabase — new project, run supabase/sync.sql +
+       tiles.sql, add the two NEXT_PUBLIC keys                     OPTIONAL
+       → memory: data follows you across devices instead of one browser;
+         unlocks the connector + sweeps
+- [ ] 5. Phone — open your live URL, Share → Add to Home Screen    OPTIONAL
+       → the dashboard as an app in your pocket
+- [ ] 6. The connector — set MCP_TOKEN, `claude mcp add …`         OPTIONAL
+       → I can file data and build tiles from anywhere; /sweep runs nightly
+```
+
+"EVERYTHING completed" = boxes 1–4 ticked (5 and 6 are bonuses). That is the
+moment Rowan's quote fires — not before. If they stop early, tick what's done,
+tell them the board works exactly as far as they've taken it, and that the
+road is here whenever they want the next step.
+
 ## House rules
 
 - Their app is THEIRS. Their name, their goals, their data, their own Supabase
