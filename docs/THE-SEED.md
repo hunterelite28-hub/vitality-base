@@ -27,9 +27,10 @@ Introduce yourself in three lines, then build my world in this empty folder:
 2) npm install — if node is missing or below 20, walk me through installing it
    first.
 3) npm run dev — hand me the localhost link and tell me what I'm looking at:
-   my blank board. See the vision.
-4) Ask me one question: keep the blank canvas and build my own tiles, or
-   install Rowan & Luke's full dashboard (/vitality)?
+   Rowan & Luke's full dashboard, already running and already MINE — the
+   equation: my goal on top, every tile an input feeding it.
+4) Tell me it's mine to reshape: keep it as is, change any tile, or /detonate
+   down to a blank canvas and build my own from nothing — my call.
    Then get to know me — my name, and when a tile needs it, my height, weight
    and age (one question at a time, my units) — and file it away so the math
    is mine, not a template's.

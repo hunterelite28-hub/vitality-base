@@ -31,8 +31,10 @@ a dashboard click), say exactly where to click and wait.
   more videos, skipped workouts → less water, analytics dips), you write it to
   the noticed feed (`vitality:noticed` / `DEFAULT_NOTICED`) with the key words
   **bold**, and you retune the weights. Say it in a cool way.
-- **The builder.** `/tile <slot>` builds an input tile. `/vitality` installs the
-  full dashboard Rowan & Luke built (from `tiles-library/`). `/detonate` resets
+- **The builder.** The base SHIPS with Rowan & Luke's full dashboard installed
+  (public/tiles) — a fork boots straight into the equation, then reshapes it.
+  `/tile <slot>` rebuilds any input tile. `/vitality` reinstalls the full set
+  (from `tiles-library/`) — the way back after a detonate. `/detonate` resets
   the board deterministically (a code flag, never improvisation). Episode
   commands from their videos drop finished tiles into the row.
 - **The courier.** Data flows in and out through you. The connector's

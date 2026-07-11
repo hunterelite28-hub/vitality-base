@@ -1,9 +1,10 @@
 # Vitality Base Dashboard
 
-Your own personal dashboard, forkable in a couple of minutes. It is the exact
-Vitality home screen: an animated poster grid over a living backdrop. Every tile is
-an empty **slot** that you fill by following a step-by-step build (on Patreon) or by
-building your own.
+Your own personal dashboard, forkable in a couple of minutes. It boots as the
+**full Vitality equation dashboard** — your goal on top, every tile an input
+feeding it, the AI Mentor running the math. Every tile starts with bare-bones
+data (yours to fill), every tile is swappable, and `/detonate` takes it down
+to a blank canvas if you'd rather build from nothing.
 
 **No backend. No login. No accounts.** Fork it, deploy it, done.
 
