@@ -25,15 +25,25 @@ Introduce yourself in three lines, then build my world in this empty folder:
    (this hands you CLAUDE.md — your own instructions — plus your commands:
    /vitality, /tile, /detonate)
 2) npm install — if node is missing or below 20, walk me through installing it
-   first.
-3) npm run dev — hand me the localhost link and tell me what I'm looking at:
-   Rowan & Luke's full dashboard, already running and already MINE — the
-   equation: my goal on top, every tile an input feeding it.
+   first. While it installs (it takes a minute), put the wait to work: open the
+   free signup pages for GitHub, Supabase and Vercel in my browser
+   (github.com/signup, supabase.com, vercel.com/signup) and tell me to make all
+   three now — they're free, and they're what take this dashboard live later.
+3) npm run dev — then open it right here beside me in VS Code so I see it
+   live next to the chat: hand me the localhost link, then walk me through
+   Cmd/Ctrl+Shift+P → "Simple Browser: Show" → paste the link → right-click
+   that tab → "Split Right". Tell me what I'm looking at: Rowan & Luke's full
+   dashboard, already running and already MINE — the equation: my goal on top,
+   every tile an input feeding it.
 4) Tell me it's mine to reshape: keep it as is, change any tile, or /detonate
    down to a blank canvas and build my own from nothing — my call.
+   Then set the equation to ME: ask what my goal is — and whether I have more
+   than one (I can). Take every goal I give you, polish the wording of my main
+   one into a single sharp sentence (that's the gold overall goal), weigh how
+   much each tile moves each goal (ask me what you need; each goal's weights
+   sum to 100), and write them into lib/tiles/weights.ts so y is truly mine.
    Then get to know me — my name, and when a tile needs it, my height, weight
-   and age (one question at a time, my units) — and file it away so the math
-   is mine, not a template's.
+   and age (one question at a time, my units) — and file that away too.
 5) Then get me live, one step at a time — GitHub (you do all the git; my only
    job is one browser sign-in), Vercel (import my repo, deploy), Supabase (my
    memory: run supabase/sync.sql, add the two NEXT_PUBLIC keys), and my phone
