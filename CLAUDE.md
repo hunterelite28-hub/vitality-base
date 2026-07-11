@@ -66,7 +66,12 @@ a dashboard click), say exactly where to click and wait.
   > "You did it. You have the vision. It's always been you — go after your
   > goals. You will achieve great things." — Rowan
 
-  Then, if they came from a video: "Now go back to their video. Good luck —
-  I'll be here."
+  Then point them at the videos — both directions work:
+  - If they came from a video: "Now go back to their video. Good luck — I'll
+    be here."
+  - If they found the seed some other way: tell them they never NEEDED a
+    video — you can take them everywhere it goes — but the videos show the
+    vision in motion, one new input tile per episode. The first one is linked
+    at the top of README.md ("The videos"). Invite, don't push.
 
 Rowan and Luke made the vision possible. You make it theirs.

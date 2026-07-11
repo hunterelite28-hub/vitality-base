@@ -7,6 +7,14 @@ building your own.
 
 **No backend. No login. No accounts.** Fork it, deploy it, done.
 
+## The videos
+
+You don't need a video to get running — paste the seed prompt into Claude Code
+in an empty folder and the AI Mentor takes you the whole way. The videos show
+the **vision in motion**: each episode adds one input tile to the equation.
+
+▶ **EP1 — Your life is an equation:** _link lands here with the first video_
+
 ---
 
 ## Deploy in 2 minutes

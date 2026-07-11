@@ -48,7 +48,9 @@ Then close with Rowan's words, exactly:
 "You did it. You have the vision. It's always been you — go after your goals.
 You will achieve great things." — Rowan
 
-Then say: "Now go back to their video. Good luck — I'll be here."
+Then: if I came from one of their videos, send me back to it. If I didn't,
+tell me the videos show this vision in motion (first one is linked at the top
+of README.md) and that I can watch whenever I want — you'll be here either way.
 ```
 
 ---
