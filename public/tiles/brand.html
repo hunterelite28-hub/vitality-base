@@ -106,30 +106,51 @@ function fmt(n){if(n==null)return '—';if(n>=1e6)return (n/1e6).toFixed(n>=1e7?
 function last(a){const h=a.history||[];for(let i=h.length-1;i>=0;i--)if(typeof h[i].count==='number')return h[i].count;return null}
 
 const fetching=new Set(); /* account ids mid-refresh → the … loading state */
-/* live pull — TikTok via the host bridge (keyless, zero setup). Appends one
-   snapshot; skips if the last point is <6h old and unchanged. Fails quietly:
-   the unofficial API can hiccup, and the manual tap always works as a backup. */
-async function refreshTikTok(a){
-  if(a.platform!=='tiktok')return;
-  if(!(window.Vitality&&window.Vitality.tiktok))return; /* older bridge → manual only */
+const noteById={};        /* transient per-account status (e.g. 'key' = add a key) */
+/* which platforms have a live lane, and how to pull them via the host bridge:
+   tiktok = keyless (tikwm); youtube = your free key (server-routed). ig/x have
+   no lane → manual tap only. */
+function liveFn(a){
+  const V=window.Vitality||{};
+  if(a.platform==='tiktok'&&V.tiktok)return function(){return V.tiktok(a.handle)};
+  if(a.platform==='youtube'&&V.youtube)return function(){return V.youtube(a.handle)};
+  return null;
+}
+/* live pull — appends one snapshot; skips if the last point is <6h old and
+   unchanged. Fails quietly (APIs hiccup; manual tap always works). YouTube with
+   no key set surfaces a 'key' note so the tile can tell the user. */
+async function refreshLive(a){
+  const fn=liveFn(a);
+  if(!fn)return;
   if(fetching.has(a.id))return;
-  fetching.add(a.id);render();
+  fetching.add(a.id);delete noteById[a.id];render();
   try{
-    const count=await window.Vitality.tiktok(a.handle);
+    const count=await fn();
     if(typeof count==='number'&&count>=0){
       const h=(a.history=a.history||[]);
       const prev=h[h.length-1],now=Date.now();
       if(!(prev&&prev.count===count&&now-prev.t<6*3600e3)){h.push({t:now,count});save();}
     }
-  }catch(e){/* skip quietly — manual tap still logs */}
+  }catch(e){
+    if(a.platform==='youtube'&&String(e&&e.message||'')==='no_key')noteById[a.id]='key';
+  }
   finally{fetching.delete(a.id);render();}
+}
+/* honest empty-graph copy — never promise a pull that can't happen */
+function emptyMsg(a){
+  if((a.history||[]).length)return '<b>live count in</b> — the line draws as your following moves · tap to log by hand';
+  if(a.platform==='tiktok')return 'pulling your live count…';
+  if(a.platform==='youtube')return noteById[a.id]==='key'
+    ? 'add a free <b>YouTube API key</b> to auto-pull · or tap the number to log'
+    : 'pulling your live count…';
+  return 'tap the number to log · your mentor files the rest';
 }
 
 /* smooth area graph from history (same curve style as the Peak page) */
 function graph(a){
   const h=(a.history||[]).filter(s=>typeof s.count==='number');
   const pc=(PLATFORMS[a.platform]||{}).color||'#6EE7B7';
-  if(h.length<2)return '<div class="gEmpty">'+(h.length?'<b>live count in</b> — the line draws as your following moves':'pulling your live count…')+' · tap the number to log by hand any time</div>';
+  if(h.length<2)return '<div class="gEmpty">'+emptyMsg(a)+'</div>';
   const W=560,H=120,P=8;
   const t0=h[0].t,t1=h[h.length-1].t||t0+1;
   const lo=Math.min(...h.map(s=>s.count)),hi=Math.max(...h.map(s=>s.count));
@@ -192,7 +213,7 @@ function addAccount(){
   const acct={id:'a'+Math.random().toString(36).slice(2,8),platform:asking,handle,history:[]};
   state.accounts.push(acct);
   asking=null;save();render();
-  refreshTikTok(acct); /* live pull the moment you connect (TikTok) */
+  refreshLive(acct); /* live pull the moment you connect (TikTok keyless · YouTube w/ key) */
 }
 
 document.addEventListener('click',e=>{
@@ -217,12 +238,12 @@ document.addEventListener('click',e=>{
     state.accounts=d.accounts.filter(a=>a&&a.platform&&a.handle).map(a=>({id:a.id||'a'+Math.random().toString(36).slice(2,8),platform:a.platform,handle:a.handle,history:Array.isArray(a.history)?a.history:[]}));
   }
   render();
-  /* live-refresh TikTok on load — one at a time (tikwm rate-limits ~1/sec) */
+  /* live-refresh on load — one at a time (APIs rate-limit ~1/sec) */
   for(const a of state.accounts){
-    if(a.platform!=='tiktok')continue;
+    if(a.platform!=='tiktok'&&a.platform!=='youtube')continue;
     const h=a.history||[],prev=h[h.length-1];
     if(prev&&Date.now()-prev.t<6*3600e3)continue; /* still fresh */
-    await refreshTikTok(a);
+    await refreshLive(a);
     await new Promise(r=>setTimeout(r,1200));
   }
 })();

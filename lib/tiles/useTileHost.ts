@@ -91,6 +91,51 @@ export function useTileHost(
         return
       }
 
+      // YouTube subscribers — routed through /api/youtube/subs so the API key
+      // stays server-side (YouTube is keyed, unlike TikTok). no_key → the tile
+      // tells the user to add a free key.
+      if (msg.type === 'youtube') {
+        const handle = String(msg.handle || '').replace(/^@+/, '').trim()
+        if (!handle) {
+          src.postMessage({ source: 'vitality-host', type: 'youtube:error', id: msg.id, reason: 'no_handle' }, '*')
+          return
+        }
+        try {
+          const r = await fetch('/api/youtube/subs?handle=' + encodeURIComponent(handle))
+          const j = await r.json()
+          if (typeof j?.count === 'number') {
+            src.postMessage({ source: 'vitality-host', type: 'youtube:result', id: msg.id, count: j.count }, '*')
+          } else {
+            src.postMessage({ source: 'vitality-host', type: 'youtube:error', id: msg.id, reason: String(j?.error || 'no_data') }, '*')
+          }
+        } catch {
+          src.postMessage({ source: 'vitality-host', type: 'youtube:error', id: msg.id, reason: 'fetch_failed' }, '*')
+        }
+        return
+      }
+
+      // Stock price — routed through /api/finance/quote so the Finnhub key stays
+      // server-side. Returns the latest price for one symbol.
+      if (msg.type === 'stock') {
+        const symbol = String(msg.symbol || '').toUpperCase().replace(/[^A-Z0-9.:\-]/g, '').trim()
+        if (!symbol) {
+          src.postMessage({ source: 'vitality-host', type: 'stock:error', id: msg.id, reason: 'no_symbol' }, '*')
+          return
+        }
+        try {
+          const r = await fetch('/api/finance/quote?symbol=' + encodeURIComponent(symbol))
+          const j = await r.json()
+          if (typeof j?.price === 'number') {
+            src.postMessage({ source: 'vitality-host', type: 'stock:result', id: msg.id, price: j.price }, '*')
+          } else {
+            src.postMessage({ source: 'vitality-host', type: 'stock:error', id: msg.id, reason: String(j?.error || 'no_data') }, '*')
+          }
+        } catch {
+          src.postMessage({ source: 'vitality-host', type: 'stock:error', id: msg.id, reason: 'fetch_failed' }, '*')
+        }
+        return
+      }
+
       // Cross-tile READ — the host hands a tile another slot's saved data so
       // tiles can react to each other client-side (e.g. Peak reshaping from the
       // Vitals recovery) with no /sweep and no connector. Read-only, the user's

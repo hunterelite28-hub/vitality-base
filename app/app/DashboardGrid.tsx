@@ -552,6 +552,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
   const [removed, setRemoved] = useState<string[]>([]) // slots removed from the row in edit mode
   const [goal, setGoal] = useState<Goal | undefined>(undefined) // active goal: drives %s, colors, the mentor kicker
   const [mentorAlive, setMentorAlive] = useState(false) // the mentor comes to life OVER the board — no page load
+  const [xPeek, setXPeek] = useState(true) // the `x = %s` breakdown: flashes on change, fades after 5s (the `x` stays)
   const dragId = useRef<string | null>(null)
 
   const { register, unregister } = useTileHost(userId, undefined, () => {})
@@ -645,6 +646,18 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
     const all = [...base, ...SLOT_ORDER.filter((id) => !seen.has(id))]
     return all.filter((id) => id !== 'vee' && filled[id] && !removed.includes(id))
   }, [order, filled, removed])
+
+  // The live `x =` breakdown: each tile's real-time weight toward the goal.
+  const xPercents = rowIds.map((id) => `${weights[id] ?? 0}%`).join(' · ')
+  // Flash it whenever anything changes (weights retuned, goal switched, tiles
+  // reordered/added), hold 5s, then fade. Keyed on the actual values so it only
+  // re-shows on a real change.
+  const xSignature = rowIds.map((id) => `${id}:${weights[id] ?? 0}`).join(',') + '|' + (goal?.id ?? '')
+  useEffect(() => {
+    setXPeek(true)
+    const t = setTimeout(() => setXPeek(false), 5000)
+    return () => clearTimeout(t)
+  }, [xSignature])
 
   const saveOrder = (next: string[]) => {
     setOrder(next)
@@ -744,55 +757,61 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
             <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 22, color: goal?.accent ?? 'var(--mint, #6EE7B7)', transition: 'color .8s ease' }}>y</span>
             <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--muted, #8a8f98)' }}>=</span>
 
-            {/* one segmented control: every goal visible, one tap to switch */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 4,
-                border: '1px solid var(--border, #262626)',
-                borderRadius: 999,
-                padding: 4,
-                flexWrap: 'wrap',
-              }}
-            >
-              {(mounted ? allGoals() : []).map((g) => {
+            {/* main (★) goal stands alone; the standalone goals share ONE border */}
+            {(() => {
+              const gs = mounted ? allGoals() : []
+              const mainG = gs.find((g) => g.id === 'overall')
+              const others = gs.filter((g) => g.id !== 'overall')
+              const pick = (g: Goal) => {
+                setActiveGoalId(g.id)
+                setGoal(g)
+                try {
+                  window.dispatchEvent(new CustomEvent('vitality:goal'))
+                } catch {
+                  /* ignore */
+                }
+              }
+              const btn = (g: Goal, grouped: boolean) => {
                 const on = g.id === goal?.id
+                const main = g.id === 'overall'
                 const gA = g.accent ?? '#6EE7B7'
                 return (
                   <button
                     key={g.id}
                     type="button"
-                    onClick={() => {
-                      setActiveGoalId(g.id)
-                      setGoal(g)
-                      try {
-                        window.dispatchEvent(new CustomEvent('vitality:goal'))
-                      } catch {
-                        /* ignore */
-                      }
-                    }}
+                    onClick={() => pick(g)}
                     style={{
                       fontFamily: 'ui-monospace, Menlo, monospace',
                       fontSize: 11,
                       letterSpacing: '.12em',
                       textTransform: 'uppercase',
-                      color: on ? gA : 'var(--muted, #8a8f98)',
+                      color: on || main ? gA : 'var(--muted, #8a8f98)',
                       background: on ? `${gA}1a` : 'transparent',
-                      border: 'none',
-                      boxShadow: on ? `inset 0 0 0 1px ${gA}66` : 'none',
+                      border: grouped ? 'none' : `1px solid ${on ? `${gA}88` : `${gA}44`}`,
+                      boxShadow: grouped && on ? `inset 0 0 0 1px ${gA}66` : 'none',
                       borderRadius: 999,
                       padding: '7px 15px',
                       cursor: 'pointer',
-                      transition: 'color .5s ease, background .5s ease, box-shadow .5s ease',
+                      transition: 'color .5s ease, background .5s ease, border-color .5s ease',
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {g.id === 'overall' ? '★ ' : ''}
+                    {main ? '★ ' : ''}
                     {g.title}
                   </button>
                 )
-              })}
-            </div>
+              }
+              return (
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {mainG && btn(mainG, false)}
+                  {others.length > 0 && (
+                    <div style={{ display: 'flex', gap: 4, border: '1px solid var(--border, #262626)', borderRadius: 999, padding: 4, flexWrap: 'wrap' }}>
+                      {others.map((g) => btn(g, true))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
           </div>
           <TileFace
@@ -809,8 +828,24 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <a href="/mentor" style={{ display: 'flex', alignItems: 'baseline', gap: 10, textDecoration: 'none' }}>
               <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: 22, color: goal?.accent ?? 'var(--mint, #6EE7B7)', transition: 'color .8s ease' }}>x</span>
-              <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--muted, #8a8f98)' }}>
-                = the inputs — each one feeds the goal
+              <span
+                aria-hidden
+                style={{
+                  fontFamily: 'ui-monospace, Menlo, monospace',
+                  fontSize: 11,
+                  letterSpacing: '.16em',
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                  pointerEvents: 'none',
+                  color: goal?.accent ?? 'var(--mint, #6EE7B7)',
+                  opacity: xPeek ? 0.8 : 0,
+                  transform: xPeek ? 'translateX(0)' : 'translateX(-6px)',
+                  filter: xPeek ? 'blur(0)' : 'blur(3px)',
+                  transition:
+                    'opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1), filter .9s ease',
+                }}
+              >
+                = {xPercents}
               </span>
             </a>
             <button

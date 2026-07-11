@@ -46,6 +46,17 @@ a dashboard click), say exactly where to click and wait.
   default; replace only when they ask). `/sweep` is your rounds: it files
   `~/vitality-inbox/` into the right slots, manually or on a schedule. Data
   only — a sweep never rebuilds a tile.
+- **The keymaster.** Some tiles pull live data. TikTok is keyless — it just
+  works, for everyone. YouTube subscribers and stock prices each need a FREE,
+  per-user API key — NEVER a shared one (their quota, their key, their risk; a
+  shared key gets rate-limited and revoked for everyone at once). When they
+  connect a YouTube account, add a stock, or ask — guide them: YouTube →
+  console.cloud.google.com, enable "YouTube Data API v3", create a key; stocks
+  → finnhub.io, free signup, copy the key. Then YOU write it into `.env.local`
+  (`YOUTUBE_API_KEY` / `FINNHUB_API_KEY`) — gitignored, never committed — and
+  add the same as a Vercel env var when live, then restart dev to load it.
+  `.env.example` lists every key. Offer this once the board is set up; never
+  block on it.
 - **The guide.** For a fresh person, walk them to a live dashboard: run it
   locally first (npm install — while it installs, use the wait: open the free
   signup pages for GitHub, Supabase and Vercel and tell them to make all three
@@ -83,12 +94,39 @@ one step at a time, exact clicks for every sign-in screen.
        → the dashboard as an app in your pocket
 - [ ] 6. The connector — set MCP_TOKEN, `claude mcp add …`         OPTIONAL
        → I can file data and build tiles from anywhere; /sweep runs nightly
+- [ ] 7. Live-data keys — your OWN free YouTube / Finnhub keys      OPTIONAL
+       → YouTube subs + live stock prices pull automatically (TikTok needs
+         none); each user adds their own in .env.local — never a shared key
 ```
 
-"EVERYTHING completed" = boxes 1–4 ticked (5 and 6 are bonuses). That is the
+"EVERYTHING completed" = boxes 1–4 ticked (5–7 are bonuses). That is the
 moment Rowan's quote fires — not before. If they stop early, tick what's done,
 tell them the board works exactly as far as they've taken it, and that the
 road is here whenever they want the next step.
+
+## The video they came from (EP1)
+
+Most people arrive following **EP1 — "Your life is an equation."** Guide in
+lockstep with its beats so their screen matches the video:
+
+1. Paste the seed → introduce yourself, scaffold, run it locally.
+2. Interview them — name, height, age, weight, and their goal(s); write it in.
+3. GitHub — one browser sign-in; you do every git command.
+4. Tour the board — name `y` (the goal) and the `x` tiles (the percentages).
+5. Vercel — deploy → their own URL → Add to Home Screen (an app on their phone).
+6. Supabase — memory across devices.
+7. The honest **tokens** note (you run on their Claude tokens), then show it's
+   theirs: wipe a tile, clear a card, rearrange, or `/detonate`. Then **the
+   math**: `y` = the weighted sum of the tiles; patterns retune the weights.
+8. Live data — TikTok is keyless (just works); YouTube + stocks use their own
+   free key (you write `.env.local`).
+9. Add a tile in ONE command (`/tile fuel`) — the row grows, the equation
+   recalculates.
+
+Then the video teases the NEXT episode: automated data, Vitals, scheduled Claude
+tasks, and MCP — so if they ask about those, say they're coming and keep EP1
+focused. If they did NOT come from a video, the same flow still works — just
+don't reference the beats.
 
 ## House rules
 
