@@ -21,12 +21,52 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
-  body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font-display);display:flex;justify-content:center;padding:40px 20px}
+  body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font-display);display:flex;justify-content:center;padding:40px 20px;position:relative}
+  /* ── the Vitality backdrop: aurora + stars + mountains ── */
+  body::before{content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
+    background:
+      radial-gradient(58% 44% at 50% -6%, rgba(110,231,183,.13), transparent 62%),
+      radial-gradient(40% 30% at 82% 8%, rgba(110,231,183,.05), transparent 70%),
+      radial-gradient(1.5px 1.5px at 12% 18%, rgba(255,255,255,.5), transparent 100%),
+      radial-gradient(1px 1px at 78% 12%, rgba(255,255,255,.42), transparent 100%),
+      radial-gradient(1.5px 1.5px at 55% 7%, rgba(255,255,255,.34), transparent 100%),
+      radial-gradient(1px 1px at 32% 30%, rgba(255,255,255,.3), transparent 100%),
+      radial-gradient(1px 1px at 90% 34%, rgba(255,255,255,.26), transparent 100%),
+      radial-gradient(1.5px 1.5px at 66% 24%, rgba(255,255,255,.2), transparent 100%)}
+  body::after{content:'';position:fixed;left:0;right:0;bottom:0;height:34vh;z-index:-1;pointer-events:none;
+    background:
+      linear-gradient(to top, rgba(8,19,14,.85), transparent 80%),
+      linear-gradient(115deg, transparent 42%, rgba(13,26,23,.75) 43%, rgba(13,26,23,.75) 58%, transparent 59%),
+      linear-gradient(245deg, transparent 38%, rgba(10,18,16,.9) 39%, rgba(10,18,16,.9) 62%, transparent 63%);
+    -webkit-mask-image:linear-gradient(to top,#000 55%,transparent);mask-image:linear-gradient(to top,#000 55%,transparent)}
   .shell{width:100%;max-width:640px}
   .header{margin-bottom:22px}
   .title{font-size:24px;font-weight:600;letter-spacing:-.01em;margin:0}
   .subtitle{color:var(--muted);font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:6px 0 0}
-  .card{border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);padding:18px;margin-bottom:14px}
+  .card{border:1px solid var(--border);border-radius:var(--radius-lg);background:rgba(14,14,17,.58);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:18px;margin-bottom:14px}
+
+  /* ── the daily check-in (the manual section, from Vitality) ── */
+  .ck{text-align:center;padding:26px 22px 22px}
+  .ckKick{font-family:var(--font-mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--brand)}
+  .ckTitle{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:clamp(26px,5vw,34px);color:#fff;margin:10px 0 0;letter-spacing:.01em}
+  .ckTitle i{color:var(--brand);font-style:italic}
+  .ckSub{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:10px 0 0}
+  .ckRow{margin-top:22px;text-align:left}
+  .ckRow>.fLabel{display:block;margin-bottom:10px}
+  .ckRow .fLabel em{font-style:normal;float:right;color:var(--muted);opacity:.7}
+  .stepper{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .stepBtn{width:52px;height:52px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.02);color:#fff;font-size:22px;cursor:pointer;transition:border-color .15s}
+  .stepBtn:hover{border-color:var(--brand-line)}
+  .stepVal{font-family:Georgia,serif;font-style:italic;font-size:30px;color:#fff;letter-spacing:.06em}
+  .chips{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  @media(max-width:520px){.chips{grid-template-columns:repeat(3,1fr)}}
+  .chip{padding:12px 6px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.015);color:var(--muted-strong);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:all .15s var(--ease)}
+  .chip:hover{border-color:var(--brand-line);color:#fff}
+  .chip.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand);box-shadow:0 0 14px -6px var(--brand)}
+  .ckRow.twin{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .saveBtn{margin-top:26px;padding:14px 34px;border-radius:var(--radius-pill);border:none;background:linear-gradient(180deg,#8df0c9,var(--brand));color:#04140d;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 8px 28px -10px var(--brand);transition:transform .15s}
+  .saveBtn:hover{transform:translateY(-1px)}
+  .ckFoot{font-family:var(--font-mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:14px 0 0}
   .cardName{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:14px}
 
   /* entry form */
@@ -177,16 +217,29 @@ function tips(rec,h){
 }
 
 /* ---------- render ---------- */
+/* The daily check-in — the manual section, same shape as Vitality's
+   "How did you sleep?". Restful chips map to a sleep score; HRV/RHR are
+   optional. Saving commits today's entry; the rings and trends fill from it. */
+let draft=null;
+const RESTFUL=[['Rough',42],['Light',58],['OK',70],['Solid',84],['Deep',94]];
+function initDraft(){const e=todaysEntry();draft={hrv:e.hrv!=null?e.hrv:null,rhr:e.rhr!=null?e.rhr:null,sleepHours:e.sleepHours!=null?e.sleepHours:null,sleepPerf:e.sleepPerf!=null?e.sleepPerf:null};}
 function entryHtml(){
-  const e=todaysEntry();
-  const val=k=>e[k]!=null?e[k]:'';
-  const f=(id,label,ph,step)=>'<label class="field"><span class="fLabel">'+label+'</span><input class="fieldInput" id="'+id+'" type="number" min="0" step="'+step+'" inputmode="decimal" placeholder="'+ph+'" value="'+val(id.replace('in-',''))+'" /></label>';
-  return '<section class="card"><span class="cardName">Today\'s vitals</span><div class="entryGrid">'
-    + f('in-hrv','HRV · ms','—','1')
-    + f('in-rhr','Resting HR · bpm','—','1')
-    + f('in-sleepHours','Sleep · hours','—','0.1')
-    + f('in-sleepPerf','Sleep score · %','—','1')
-    + '</div><div class="hint" id="hint">Fill in what your band or app shows — recovery is estimated from HRV, resting HR and sleep.</div></section>';
+  if(!draft)initDraft();
+  const hrs=draft.sleepHours;
+  return '<section class="card ck">'
+    +'<div class="ckKick">✦ daily check-in</div>'
+    +'<h2 class="ckTitle">How did you <i>sleep</i>?</h2>'
+    +'<p class="ckSub">fill what you know · it scores the rest</p>'
+    +'<div class="ckRow"><span class="fLabel">Sleep</span>'
+    +'<div class="stepper"><button class="stepBtn" data-step="-0.5" aria-label="Less sleep">−</button><span class="stepVal">'+(hrs!=null?(String(hrs).replace(/\.0$/,''))+'h':'— —')+'</span><button class="stepBtn" data-step="0.5" aria-label="More sleep">+</button></div></div>'
+    +'<div class="ckRow"><span class="fLabel">Restful?</span><div class="chips">'+RESTFUL.map(function(r){return '<button class="chip'+(draft.sleepPerf===r[1]?' on':'')+'" data-perf="'+r[1]+'">'+r[0]+'</button>';}).join('')+'</div></div>'
+    +'<div class="ckRow twin">'
+    +'<label class="field"><span class="fLabel">Resting HR <em>optional · bpm</em></span><input class="fieldInput" id="in-rhr" type="number" min="0" inputmode="numeric" placeholder="—" value="'+(draft.rhr!=null?draft.rhr:'')+'"/></label>'
+    +'<label class="field"><span class="fLabel">HRV <em>optional · ms</em></span><input class="fieldInput" id="in-hrv" type="number" min="0" inputmode="numeric" placeholder="—" value="'+(draft.hrv!=null?draft.hrv:'')+'"/></label>'
+    +'</div>'
+    +'<button class="saveBtn" data-save-ck>Save to Vitals →</button>'
+    +'<p class="ckFoot">feeds your vitals score and today\'s numbers</p>'
+    +'</section>';
 }
 function outputHtml(){
   const h=todaysEntry();
@@ -225,17 +278,23 @@ function render(){
   renderOutput();
 }
 
-/* entry inputs stay mounted (never re-rendered) so focus is preserved */
+/* optional HRV / RHR type into the draft only (no re-render → focus kept) */
 document.addEventListener('input',e=>{
-  if(e.target && e.target.id && e.target.id.indexOf('in-')===0){
-    const e2={};
-    ['hrv','rhr','sleepHours','sleepPerf'].forEach(k=>{const v=num($('in-'+k).value); if(v!=null)e2[k]=v;});
-    store[todayKey()]=e2;
-    persist();
-    renderOutput();
-  }
+  if(!e.target||!e.target.id)return;
+  if(e.target.id==='in-hrv')draft.hrv=num(e.target.value);
+  if(e.target.id==='in-rhr')draft.rhr=num(e.target.value);
 });
+function refreshCk(){const out=$('out');const keep=out?out.innerHTML:null;$('app').querySelector('.ck').outerHTML=entryHtml();if(keep!=null)$('out').innerHTML=keep;}
 document.addEventListener('click',e=>{
+  const st=e.target.closest('[data-step]');
+  if(st){const d=parseFloat(st.getAttribute('data-step'));const cur=draft.sleepHours!=null?draft.sleepHours:(d>0?6.5:7.5);draft.sleepHours=Math.max(0,Math.min(14,Math.round((cur+d)*2)/2));refreshCk();return;}
+  const ch=e.target.closest('[data-perf]');
+  if(ch){const v=parseInt(ch.getAttribute('data-perf'),10);draft.sleepPerf=(draft.sleepPerf===v?null:v);refreshCk();return;}
+  if(e.target.closest('[data-save-ck]')){
+    draft.hrv=num(($('in-hrv')||{}).value);draft.rhr=num(($('in-rhr')||{}).value);
+    const e2={};['hrv','rhr','sleepHours','sleepPerf'].forEach(k=>{if(draft[k]!=null)e2[k]=draft[k];});
+    store[todayKey()]=e2;persist();draft=null;render();return;
+  }
   const b=e.target.closest('[data-range]');
   if(b){ range=parseInt(b.getAttribute('data-range'),10)||14; renderOutput(); }
 });
