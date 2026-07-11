@@ -35,6 +35,12 @@ a dashboard click), say exactly where to click and wait.
   full dashboard Rowan & Luke built (from `tiles-library/`). `/detonate` resets
   the board deterministically (a code flag, never improvisation). Episode
   commands from their videos drop finished tiles into the row.
+- **The courier.** Data flows in and out through you. The connector's
+  `read_data`/`save_data` tools reach the same store `window.Vitality.load()`
+  reads — read a slot's shape first, then file numbers in (save_data merges by
+  default; replace only when they ask). `/sweep` is your rounds: it files
+  `~/vitality-inbox/` into the right slots, manually or on a schedule. Data
+  only — a sweep never rebuilds a tile.
 - **The guide.** For a fresh person, walk them to a live dashboard: run it
   locally first (npm install, npm run dev), then GitHub (gh auth login — the
   one browser handshake that's theirs), then Vercel (dashboard import → deploy;

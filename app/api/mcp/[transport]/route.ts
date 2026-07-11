@@ -37,6 +37,41 @@ export const dynamic = 'force-dynamic'
 const SLOTS = ['train', 'fuel', 'vitals', 'vee', 'brand', 'peak', 'finance'] as const
 
 const MAX_TILE_HTML = 1024 * 1024 // 1MB — one tile can never be pathological
+const MAX_TILE_DATA = 512 * 1024 // 512KB — mirrors tileStore's cap so a tile can always load what we save
+
+/** The dashboard's constant per-browser user id (app/page.tsx renders
+ *  <Dashboard userId="me">).
+ *
+ *  A tile's saved data lives under TWO tile_data keys, mirroring the browser:
+ *  tileStore.saveData writes `me:<slot>` and useTileHost also writes the bare
+ *  `<slot>` via lib/sync.ts — and on LOAD the bare row wins when present
+ *  (useTileHost prefers syncLoad). So the data lane must dual-write both keys
+ *  and read with the same precedence, or a sweep's write would be silently
+ *  shadowed by any past browser save. */
+const USER_ID = 'me'
+const dataKey = (slot: string) => `${USER_ID}:${slot}`
+
+/** Slots whose tiles actually persist data. `vee` is the Mentor — it opens the
+ *  mentor page, hosts no sealed tile, and reads no tile_data row; writing there
+ *  would land nowhere, so the data tools refuse it up front. */
+const DATA_SLOTS = ['train', 'fuel', 'vitals', 'brand', 'peak', 'finance'] as const
+
+/** The board's own load precedence: bare `<slot>` row first, else `me:<slot>`. */
+async function loadTileData(
+  c: SupabaseClient,
+  slot: string,
+): Promise<{ ok: true; value: unknown } | { ok: false }> {
+  const { data, error } = await c
+    .from('tile_data')
+    .select('tile_id, data')
+    .in('tile_id', [slot, dataKey(slot)])
+  if (error) return { ok: false }
+  const rows = data ?? []
+  const bare = rows.find((r: { tile_id: string }) => r.tile_id === slot)
+  const scoped = rows.find((r: { tile_id: string }) => r.tile_id === dataKey(slot))
+  const row = bare ?? scoped
+  return { ok: true, value: row ? (row.data ?? null) : undefined }
+}
 
 type ToolResult = { content: { type: 'text'; text: string }[]; isError?: boolean }
 const text = (t: string): ToolResult => ({ content: [{ type: 'text', text: t }] })
@@ -134,8 +169,110 @@ const mcpHandler = createMcpHandler(
         return text(`Cleared the "${slot}" slot.`)
       },
     )
+
+    // ── The data lane (BUILD: the sweep pipe). These two tools touch ONLY the
+    //    tile_data table — never a tile's HTML — so nothing here can break a
+    //    tile. save_data merges by default so an automated sweep can never
+    //    clobber history it didn't read first.
+
+    server.registerTool(
+      'read_data',
+      {
+        title: "Read a tile's saved data",
+        description:
+          "READ. Return the JSON a slot's tile has saved — resolved with the board's own precedence, so this is exactly what the tile renders. Use this BEFORE save_data when you need to append to history. Empty slots return a note.",
+        inputSchema: { slot: z.enum(DATA_SLOTS) },
+      },
+      async ({ slot }): Promise<ToolResult> => {
+        const c = db()
+        if (!c) return NO_DB
+        const res = await loadTileData(c, slot)
+        if (!res.ok) return fail('Could not read tile_data. Did you run supabase/sync.sql?')
+        if (res.value === undefined) return text(`No saved data for "${slot}" yet.`)
+        return text(JSON.stringify(res.value, null, 2))
+      },
+    )
+
+    server.registerTool(
+      'save_data',
+      {
+        title: "Write data into a tile's store",
+        description:
+          'WRITE (data only — never touches tile HTML). File JSON into a slot\'s saved store: the exact data window.Vitality.load() hands the tile, so it renders on next reload. `data` is a JSON string. By default it SHALLOW-MERGES into what\'s already saved (existing keys you don\'t send survive — safe for sweeps that add a day to a date-keyed store). Pass merge:false only when you intend to replace the whole store. Payload capped at 512KB, matching what a tile is allowed to load.',
+        inputSchema: {
+          slot: z.enum(DATA_SLOTS),
+          data: z
+            .string()
+            .min(1)
+            .max(MAX_TILE_DATA)
+            .describe('The JSON to save, as a string — e.g. {"2026-07-11":{"hrv":110}}'),
+          merge: z
+            .boolean()
+            .optional()
+            .describe(
+              'Default true: shallow-merge into the existing object; refuses shape mismatches (e.g. the tile stores an array) instead of clobbering. false = replace the whole store deliberately.',
+            ),
+        },
+      },
+      async ({ slot, data, merge }): Promise<ToolResult> => {
+        const c = db()
+        if (!c) return NO_DB
+
+        let incoming: unknown
+        try {
+          incoming = JSON.parse(data)
+        } catch {
+          return fail('`data` is not valid JSON. Send a JSON string, e.g. {"2026-07-11":{"hrv":110}}.')
+        }
+
+        const doMerge = merge !== false
+        let next: unknown = incoming
+        if (doMerge) {
+          const res = await loadTileData(c, slot)
+          if (!res.ok) return fail('Could not read tile_data before merging. Did you run supabase/sync.sql?')
+          const existing = res.value
+          const isObj = (v: unknown): v is Record<string, unknown> =>
+            !!v && typeof v === 'object' && !Array.isArray(v)
+          if (existing === undefined || existing === null) {
+            next = incoming // nothing saved yet — nothing to protect
+          } else if (isObj(existing) && isObj(incoming)) {
+            next = { ...existing, ...incoming }
+          } else {
+            // ANY shape mismatch over existing data (array store + object payload,
+            // object store + array payload, scalars…) would mean losing history on
+            // a default save. Refuse; replacing must be said out loud.
+            return fail(
+              `"${slot}" already holds ${Array.isArray(existing) ? 'an array' : typeof existing} data and the payload doesn't shallow-merge into it. read_data first, send the full updated value, and pass merge:false to replace deliberately.`,
+            )
+          }
+        }
+
+        const json = JSON.stringify(next)
+        if (json.length > MAX_TILE_DATA) {
+          return fail('Merged payload exceeds the 512KB tile-data cap; trim old entries before saving.')
+        }
+
+        // Dual-write, mirroring the browser (tileStore → me:<slot>, sync → <slot>).
+        // The bare row wins on load, so writing only one key would let the other
+        // shadow it. Bare row first: it's the one the board renders.
+        const stamp = new Date().toISOString()
+        const { error } = await c
+          .from('tile_data')
+          .upsert(
+            [
+              { tile_id: slot, data: next, updated_at: stamp },
+              { tile_id: dataKey(slot), data: next, updated_at: stamp },
+            ],
+            { onConflict: 'tile_id' },
+          )
+        if (error) return fail('Could not save tile data. Did you run supabase/sync.sql?')
+        return text(
+          `Filed into "${slot}" (${doMerge ? 'merged' : 'replaced'}). The tile renders it on next dashboard load.`,
+        )
+      },
+    )
   },
-  { serverInfo: { name: 'vitality-base', version: '0.1.0' } },
+  { serverInfo: { name: 'vitality-base', version: '0.2.0' } },
   { basePath: '/api/mcp', sessionIdGenerator: undefined, disableSse: true },
 )
 
