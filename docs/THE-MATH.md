@@ -62,6 +62,36 @@ Never jump a weight; glide it. When a tile that had no weight shows real
 signal, it ENTERS the goal (that's the seeded example: Train entered the
 YouTuber goal at 8% because workouts predicted output).
 
+## 5 · Recovery (vitals → peak) — one formula, two runners
+
+Poor sleep must reshape the Peak curve. Two things compute recovery and they
+MUST agree, or the number flip-flops between refreshes:
+
+- **The tile, client-side (hardwired).** Peak reads the vitals slot on load
+  (`window.Vitality.read('vitals')`) and derives today's recovery itself — no
+  connector, no sweep. This is why a bad night shows up the instant they
+  refresh.
+- **The mentor, server-side (/sweep).** When the connector is on, the nightly
+  sweep writes the same recovery into `peak.whoop.recovery` so it's fresh even
+  when the app is closed.
+
+Both use this EXACT formula (weighted average of whatever inputs exist):
+
+    clamp01(x) = max(0, min(1, x))
+
+    hrv    present → clamp01((hrv - 20) / 70) · 100        weight 0.5
+    rhr    present → clamp01((80 - rhr) / 38) · 100        weight 0.25
+    sleep  present → min(100, sleepPerf)                   weight 0.25
+             else → clamp01(sleepHours / 8) · 100          weight 0.25
+
+    recovery = round( Σ(partᵢ · wᵢ) / Σ wᵢ ),  clamped to 1..99
+
+Peak then scales its whole curve by `k = 0.55 + (recovery/100)·0.65`. The
+canonical source is `estRecovery` in `tiles-library/vitals.html`; the verbatim
+copy is `recoveryFromVitals` in `peak.html`. Change one, change all three
+(both tiles + this doc + the /sweep step). Never round differently or add a
+term — matching is the whole point.
+
 ## House rules
 
 - One proxy metric per goal — more makes progress unfalsifiable.

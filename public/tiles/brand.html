@@ -9,14 +9,15 @@
   BRAND — bare minimum, built to be built on.
   One screen: CONNECT buttons. Connected: a graph. That's the whole tile.
 
-  Sealed: no network (tiles can't fetch). "Connect" = your handle, saved
-  through window.Vitality. The GRAPH fills from history the mentor files in
-  on its rounds (/sweep → save_data): TikTok via the public endpoint,
-  YouTube via a free API key, anything via screenshots. Tap a count to log
-  it by hand any time.
+  Sealed tile — it can't reach the network itself. TWO ways data lands:
+   • TikTok: LIVE, zero setup. window.Vitality.tiktok(handle) asks the host
+     to fetch the public keyless endpoint (tikwm) and returns the follower
+     count. Pulled on connect + on load. No API key, no /sweep, no backend.
+   • Everything else (YouTube, IG, X): the mentor files snapshots on its
+     rounds (/sweep → save_data), or tap a count to log it by hand any time.
 
   Store: { accounts:[{id,platform,handle,history:[{t,count}]}] }
-  (/sweep appends {t,count} snapshots; everything renders from history.)
+  (append-only {t,count} snapshots; everything renders from history.)
 -->
 <style>
   :root{
@@ -104,11 +105,31 @@ function save(){window.Vitality.save(state)}
 function fmt(n){if(n==null)return '—';if(n>=1e6)return (n/1e6).toFixed(n>=1e7?0:1)+'M';if(n>=1e4)return Math.round(n/1e3)+'K';return n.toLocaleString()}
 function last(a){const h=a.history||[];for(let i=h.length-1;i>=0;i--)if(typeof h[i].count==='number')return h[i].count;return null}
 
+const fetching=new Set(); /* account ids mid-refresh → the … loading state */
+/* live pull — TikTok via the host bridge (keyless, zero setup). Appends one
+   snapshot; skips if the last point is <6h old and unchanged. Fails quietly:
+   the unofficial API can hiccup, and the manual tap always works as a backup. */
+async function refreshTikTok(a){
+  if(a.platform!=='tiktok')return;
+  if(!(window.Vitality&&window.Vitality.tiktok))return; /* older bridge → manual only */
+  if(fetching.has(a.id))return;
+  fetching.add(a.id);render();
+  try{
+    const count=await window.Vitality.tiktok(a.handle);
+    if(typeof count==='number'&&count>=0){
+      const h=(a.history=a.history||[]);
+      const prev=h[h.length-1],now=Date.now();
+      if(!(prev&&prev.count===count&&now-prev.t<6*3600e3)){h.push({t:now,count});save();}
+    }
+  }catch(e){/* skip quietly — manual tap still logs */}
+  finally{fetching.delete(a.id);render();}
+}
+
 /* smooth area graph from history (same curve style as the Peak page) */
 function graph(a){
   const h=(a.history||[]).filter(s=>typeof s.count==='number');
   const pc=(PLATFORMS[a.platform]||{}).color||'#6EE7B7';
-  if(h.length<2)return '<div class="gEmpty">the graph draws itself as data lands — <b>your mentor files it on its rounds</b>, or tap the number to log today</div>';
+  if(h.length<2)return '<div class="gEmpty">'+(h.length?'<b>live count in</b> — the line draws as your following moves':'pulling your live count…')+' · tap the number to log by hand any time</div>';
   const W=560,H=120,P=8;
   const t0=h[0].t,t1=h[h.length-1].t||t0+1;
   const lo=Math.min(...h.map(s=>s.count)),hi=Math.max(...h.map(s=>s.count));
@@ -140,7 +161,7 @@ function render(){
     html+='<div class="acct" style="--pc:'+P2.color+'">'
       +'<div class="aHead">'
       +'<span class="aChip"><span class="lg" style="color:'+P2.color+'">'+(LOGOS[a.platform]||'')+'</span>'+esc(P2.label)+' · '+esc(a.handle)+'</span>'
-      +'<span class="aCount" data-log="'+a.id+'" title="Tap to log today\'s count">'+fmt(last(a))+'</span>'
+      +'<span class="aCount" data-log="'+a.id+'" title="Tap to log today\'s count">'+(fetching.has(a.id)?'…':fmt(last(a)))+'</span>'
       +'<span class="aUnit">'+P2.unit+'</span>'
       +'<button class="aX" data-del="'+a.id+'" title="Disconnect">&times;</button>'
       +'</div><div class="gwrap">'+graph(a)+'</div></div>';
@@ -168,8 +189,10 @@ function render(){
 function addAccount(){
   const i=$('#handleIn');if(!i)return;
   const handle=i.value.trim();if(!handle)return;
-  state.accounts.push({id:'a'+Math.random().toString(36).slice(2,8),platform:asking,handle,history:[]});
+  const acct={id:'a'+Math.random().toString(36).slice(2,8),platform:asking,handle,history:[]};
+  state.accounts.push(acct);
   asking=null;save();render();
+  refreshTikTok(acct); /* live pull the moment you connect (TikTok) */
 }
 
 document.addEventListener('click',e=>{
@@ -194,6 +217,14 @@ document.addEventListener('click',e=>{
     state.accounts=d.accounts.filter(a=>a&&a.platform&&a.handle).map(a=>({id:a.id||'a'+Math.random().toString(36).slice(2,8),platform:a.platform,handle:a.handle,history:Array.isArray(a.history)?a.history:[]}));
   }
   render();
+  /* live-refresh TikTok on load — one at a time (tikwm rate-limits ~1/sec) */
+  for(const a of state.accounts){
+    if(a.platform!=='tiktok')continue;
+    const h=a.history||[],prev=h[h.length-1];
+    if(prev&&Date.now()-prev.t<6*3600e3)continue; /* still fresh */
+    await refreshTikTok(a);
+    await new Promise(r=>setTimeout(r,1200));
+  }
 })();
 </script>
 </body>

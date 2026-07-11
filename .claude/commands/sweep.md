@@ -19,9 +19,16 @@ scheduled (cron) session — same prompt either way.
    NEVER rewrite or trim history — append only. Skip the append if the last
    snapshot is under 12h old (one point a day is the rhythm).
 3. `save_data` the updated `{accounts:[...]}` back to `brand` (default merge).
-4. **Mirror vitals → peak:** if today's `vitals` entry has data, estimate a
-   recovery (same weighting the vitals tile shows) and `save_data`
-   `{whoop:{recovery:<n>}}` into `peak` — the curve reshapes to their day.
+4. **Mirror vitals → peak:** if today's `vitals` entry has data, compute
+   recovery with the EXACT shared formula — identical to the vitals tile AND to
+   Peak's own client-side read, so all three agree (see docs/THE-MATH.md §5):
+     hrv:   clamp01((hrv-20)/70)·100     · weight 0.5
+     rhr:   clamp01((80-rhr)/38)·100     · weight 0.25
+     sleep: min(100, sleepPerf)  OR  clamp01(sleepHours/8)·100  · weight 0.25
+     recovery = round( Σ(partᵢ·wᵢ) / Σwᵢ ), clamped 1..99
+   then `save_data` `{whoop:{recovery:<n>}}` into `peak`. Peak already
+   re-derives this live on load — your write just keeps it fresh while they're
+   away. Never round differently or add a term: matching the tile is the point.
 
 ## The routine
 

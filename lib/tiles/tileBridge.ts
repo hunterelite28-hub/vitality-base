@@ -20,6 +20,10 @@ const SHIM = `<script>
     if (m.type === 'load:result') p.resolve(m.data);
     else if (m.type === 'save:ok') p.resolve(true);
     else if (m.type === 'save:error') p.reject(new Error(m.reason || 'save_failed'));
+    else if (m.type === 'tiktok:result') p.resolve(m.count);
+    else if (m.type === 'tiktok:error') p.reject(new Error(m.reason || 'tiktok_failed'));
+    else if (m.type === 'read:result') p.resolve(m.data);
+    else if (m.type === 'read:error') p.reject(new Error(m.reason || 'read_failed'));
   });
   function call(type, extra) {
     return new Promise(function (resolve, reject) {
@@ -33,6 +37,7 @@ const SHIM = `<script>
         if (!pending[id]) return;
         delete pending[id];
         if (type === 'load') resolve([]);
+        else if (type === 'read') resolve(null);
         else reject(new Error('vitality_timeout'));
       }, 8000);
     });
@@ -40,6 +45,8 @@ const SHIM = `<script>
   window.Vitality = {
     save: function (data) { return call('save', { data: data }); },
     load: function () { return call('load', {}); },
+    tiktok: function (handle) { return call('tiktok', { handle: handle }); },
+    read: function (slot) { return call('read', { slot: slot }); },
     report: function (stream) {
       parent.postMessage({ source: 'vitality-tile', type: 'report', stream: stream }, '*');
     }

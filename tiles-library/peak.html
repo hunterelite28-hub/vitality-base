@@ -231,6 +231,21 @@ const DEMO={
 };
 let D=JSON.parse(JSON.stringify(DEMO));
 const BRIDGE=(typeof window!=='undefined'&&window.Vitality&&typeof window.Vitality.load==='function')?window.Vitality:null;
+
+/* The vitals tile's EXACT recovery formula, copied verbatim so this hardwired
+   read and the mentor's /sweep produce an IDENTICAL number — never a flip-flop.
+   Change it here → change vitals.html estRecovery + docs/THE-MATH.md too. */
+function recoveryFromVitals(h){
+  if(!h) return null;
+  const c=x=>Math.max(0,Math.min(1,x)),parts=[],w=[];
+  if(typeof h.hrv==='number'){ parts.push(c((h.hrv-20)/(90-20))*100); w.push(0.5); }
+  if(typeof h.rhr==='number'){ parts.push(c((80-h.rhr)/(80-42))*100); w.push(0.25); }
+  if(typeof h.sleepPerf==='number'){ parts.push(Math.min(100,h.sleepPerf)); w.push(0.25); }
+  else if(typeof h.sleepHours==='number'){ parts.push(c(h.sleepHours/8)*100); w.push(0.25); }
+  if(!parts.length) return null;
+  const sw=w.reduce((a,b)=>a+b,0); let s=0; for(let i=0;i<parts.length;i++)s+=parts[i]*w[i];
+  return Math.max(1,Math.min(99,Math.round(s/sw)));
+}
 async function boot(){
   if(BRIDGE){try{
     const s=await BRIDGE.load();
@@ -242,6 +257,22 @@ async function boot(){
       if(Array.isArray(s.taps))D.taps=s.taps;
     }
   }catch(e){}}
+  // vitals → peak, HARDWIRED: read the vitals tile and derive today's recovery
+  // with the shared formula, so poor sleep reshapes the curve on the very next
+  // refresh — no /sweep, no connector. (The mentor's sweep writes the same
+  // number via the same formula, so the two never disagree.)
+  try{
+    if(BRIDGE&&typeof BRIDGE.read==='function'){
+      const v=await BRIDGE.read('vitals');
+      if(v&&typeof v==='object'&&!Array.isArray(v)){
+        const nd=new Date(),tk=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0')+'-'+String(nd.getDate()).padStart(2,'0');
+        const days=Object.keys(v).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+        const useKey=v[tk]?tk:days[days.length-1];
+        const rec=useKey?recoveryFromVitals(v[useKey]):null;
+        if(typeof rec==='number')D.whoop=Object.assign({},D.whoop,{recovery:rec});
+      }
+    }
+  }catch(e){}
   render(); renderStrip(); renderGauge(null);
 }
 /* save the WHOLE store — a feel drag must never wipe what the mentor filed */
