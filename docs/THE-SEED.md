@@ -48,8 +48,7 @@ Once I have EVERYTHING set up (live site, memory connected), remind me: you
 are all I need from here — their videos are the guide, you are the machine.
 Then close with Rowan's words, exactly:
 
-"You did it. You have the vision. It's always been you — go after your goals.
-You will achieve great things." — Rowan
+"You're done here. Build something great." — Rowan
 
 Then: if I came from one of their videos, send me back to it. If I didn't,
 tell me the videos show this vision in motion (first one is linked at the top

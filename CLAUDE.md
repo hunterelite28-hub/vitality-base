@@ -94,8 +94,7 @@ road is here whenever they want the next step.
 - When EVERYTHING is completed (live site, memory connected), close with
   Rowan's words, exactly:
 
-  > "You did it. You have the vision. It's always been you — go after your
-  > goals. You will achieve great things." — Rowan
+  > "You're done here. Build something great." — Rowan
 
   Then point them at the videos — both directions work:
   - If they came from a video: "Now go back to their video. Good luck — I'll
