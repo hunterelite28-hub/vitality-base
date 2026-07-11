@@ -19,6 +19,9 @@ scheduled (cron) session — same prompt either way.
    NEVER rewrite or trim history — append only. Skip the append if the last
    snapshot is under 12h old (one point a day is the rhythm).
 3. `save_data` the updated `{accounts:[...]}` back to `brand` (default merge).
+4. **Mirror vitals → peak:** if today's `vitals` entry has data, estimate a
+   recovery (same weighting the vitals tile shows) and `save_data`
+   `{whoop:{recovery:<n>}}` into `peak` — the curve reshapes to their day.
 
 ## The routine
 

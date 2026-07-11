@@ -124,10 +124,13 @@
   .tipText{font-size:13.5px;line-height:1.5;color:var(--muted-strong)}
   .tipText b{color:var(--fg)}
   @media (prefers-reduced-motion:reduce){.recRing::before{animation:none}.recFill{transition:none}}
+  .starterTag{width:max-content;max-width:92%;margin:0 auto 20px;padding:6px 14px;border:1px solid rgba(110,231,183,.25);border-radius:999px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#84848c;text-align:center}
+  .starterTag,.starterTag *{line-height:1.6}
 </style>
 </head>
 <body>
-<main><div class="shell" id="app"></div></main>
+<main><div class="starterTag">✦ starter — the value is what you build · the videos show how</div>
+<div class="shell" id="app"></div></main>
 <script>
 /* Vitals — daily recovery & sleep tracker. Ported from the Patron "Recovery"
    standalone: reskinned to Vitality mint, sealed (no external assets), and

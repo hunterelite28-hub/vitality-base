@@ -88,9 +88,12 @@
   @media (prefers-reduced-motion:reduce){
     .piChartCard,.piChartStage,.piLineDraw,.piAreaFade,.piWindowFade,.piNowFade,.piNowPulse,.piBarRise{animation:none !important;opacity:1;stroke-dashoffset:0}
   }
+  .starterTag{width:max-content;max-width:92%;margin:0 auto 20px;padding:6px 14px;border:1px solid rgba(110,231,183,.25);border-radius:999px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#84848c;text-align:center}
+  .starterTag,.starterTag *{line-height:1.6}
 </style>
 </head>
 <body>
+<div class="starterTag">✦ starter — the value is what you build · the videos show how</div>
 <div class="piChartCard" id="card">
   <div class="piChartHead">
     <div class="piChartHeadLeft">
@@ -231,12 +234,18 @@ const BRIDGE=(typeof window!=='undefined'&&window.Vitality&&typeof window.Vitali
 async function boot(){
   if(BRIDGE){try{
     const s=await BRIDGE.load();
-    if(s&&typeof s==='object'&&Array.isArray(s.logs)){D={...DEMO,...s};}
-    else if(s&&typeof s==='object'&&Array.isArray(s.taps)){D.taps=s.taps;}
+    if(s&&typeof s==='object'&&!Array.isArray(s)){
+      if(typeof s.weightKg==='number')D.weightKg=s.weightKg;
+      if(s.whoop&&typeof s.whoop==='object')D.whoop=s.whoop;
+      if(Array.isArray(s.logs))D.logs=s.logs;
+      if(Array.isArray(s.events))D.events=s.events;
+      if(Array.isArray(s.taps))D.taps=s.taps;
+    }
   }catch(e){}}
   render(); renderStrip(); renderGauge(null);
 }
-function persistTaps(){ if(BRIDGE&&typeof BRIDGE.save==='function'){try{BRIDGE.save({taps:D.taps});}catch(e){}} }
+/* save the WHOLE store — a feel drag must never wipe what the mentor filed */
+function persistTaps(){ if(BRIDGE&&typeof BRIDGE.save==='function'){try{BRIDGE.save({weightKg:D.weightKg,whoop:D.whoop,logs:D.logs,events:D.events,taps:D.taps});}catch(e){}} }
 
 /* ═══ CurveChart.tsx — ported render ═══ */
 const PAD={top:18,right:24,bottom:32,left:24},RANGE=24,HEIGHT=320;
