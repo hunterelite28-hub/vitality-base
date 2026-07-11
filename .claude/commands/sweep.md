@@ -4,6 +4,22 @@ You are the mentor doing your rounds. Sweep `~/vitality-inbox/` and file
 everything into the dashboard's data stores. Works manually or from a
 scheduled (cron) session — same prompt either way.
 
+## Socials first — the auto-updates (best-effort, skip quietly on failure)
+
+1. `read_data` on `brand`. For each account in `accounts`:
+   - **tiktok** — fetch the public endpoint (no key):
+     `curl -s "https://www.tikwm.com/api/user/info?unique_id=<handle-without-@>" -H "User-Agent: Mozilla/5.0"`
+     → `data.stats.followerCount`. It's unofficial: any error, missing field,
+     or nonsense number (0 when they had thousands) → skip it, say so, move on.
+   - **youtube** — only if they've given you a YouTube Data API key (it may be
+     in `.env.local` as `YOUTUBE_API_KEY`): channels endpoint →
+     `statistics.subscriberCount`.
+   - other platforms: no auto lane — screenshots in the inbox cover them.
+2. Append a snapshot to that account's `history`: `{t:<now ms>,count:<n>}`.
+   NEVER rewrite or trim history — append only. Skip the append if the last
+   snapshot is under 12h old (one point a day is the rhythm).
+3. `save_data` the updated `{accounts:[...]}` back to `brand` (default merge).
+
 ## The routine
 
 1. List `~/vitality-inbox/`. If it doesn't exist or is empty, say so and stop —
