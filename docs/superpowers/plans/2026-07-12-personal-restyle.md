@@ -602,11 +602,25 @@ New: `--mint:#D97757; --mint-cool:#E8B5A0; --mint-hover:#E8916D; --amber:#F59E0B
 
 (identifiers `--mint`, `--mint-cool`, `--mint-hover` unchanged; `--amber`/`--rose`/`--gold` are distinct hues, untouched)
 
-- [ ] **Step 1: Apply the table to `code/the-living-logger.html`** (all ~170 matching lines from the earlier full-file scan — every occurrence is one of the 4 old values above; the class name `.btn-mint` and comment wording like "turns mint" stay as literal text, not colors, and are unaffected by this substitution)
+Confirmed exact-value inventory for these 2 files (no other old-palette values are present in either): `#6EE7B7`, `#5dd6a6`, `rgba(110,231,183,X)` (no-space comma form throughout), `#042a1c`, and the `--mint-cool:#A7F3D0` declaration. This is a uniform substitution with no exceptions in these two files, so it's applied as a scripted replace rather than hand-transcribing ~170 individual lines per file.
 
-- [ ] **Step 2: Apply the identical table to `code/the-living-logger.tile.html`**
+- [ ] **Step 1: Apply the substitution table to both files**
 
-- [ ] **Step 3: Verify**
+```bash
+for f in code/the-living-logger.html code/the-living-logger.tile.html; do
+  sed -i '' \
+    -e 's/#6EE7B7/#D97757/g' \
+    -e 's/#5dd6a6/#E8916D/g' \
+    -e 's/rgba(110,231,183,/rgba(217,119,87,/g' \
+    -e 's/#042a1c/#241505/g' \
+    -e 's/--mint-cool:#A7F3D0/--mint-cool:#E8B5A0/g' \
+    "$f"
+done
+```
+
+(identifiers `--mint`, `--mint-cool`, `--mint-hover`, the `.btn-mint` class name, and comment wording like "turns mint" are plain text, not hex/rgba values — the patterns above only match colors, so none of these names are touched.)
+
+- [ ] **Step 2: Verify**
 
 Run: `grep -n "6EE7B7\|5dd6a6\|042a1c\|110,\s*231,\s*183\|A7F3D0" code/the-living-logger.html code/the-living-logger.tile.html`
 Expected: no output.
