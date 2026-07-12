@@ -103,3 +103,56 @@ grep for the old mint hex values (`#6EE7B7`, `#5dd6a6`, `#1f4d3d`,
 - Any change to `SETUP.md` structure or the onboarding flow.
 - Any change to non-visual code paths (API logic, MCP auth logic itself,
   only its page's color styling).
+
+## Addendum (confirmed before implementation)
+
+A deeper pass over the codebase turned up real gaps in the file list above,
+plus two correctness issues in the execution order. Resolved with the user
+before planning:
+
+- **PWA / browser theme color** — `app/manifest.ts` (`background_color`,
+  `theme_color`) and `app/layout.tsx` (`themeColor`) hardcode the old base
+  background `#04060a`. **In scope**: update to the new charcoal `#141414`.
+- **`lib/tiles/dashboardChrome.ts`** — not in the original file list, but it
+  hardcodes the mint hex as the default World wallpaper accent
+  (`DEFAULT_CHROME.background.accent`), the default gem tint
+  (`DEFAULT_CHROME.gem.tint: 'mint'`), and the `backgroundAccent()` fallback
+  for gradient/solid modes. It also holds `WALLPAPER_ACCENTS`, a 6-swatch
+  color *picker* (Mint, Azure, Ice, Amber, Violet, Rose) a user can choose
+  for their own wallpaper. **In scope**: update the three hardcoded defaults
+  to the new accent; **remove** the `Mint` entry from `WALLPAPER_ACCENTS`
+  (user chose to drop it from the picker entirely, not keep it as an
+  option).
+- **Logger tile template** — `code/the-living-logger.html` and
+  `code/the-living-logger.tile.html` (~2700 lines each) are the `/logger`
+  skill's bundled source, not currently installed anywhere on the board (no
+  file references them). **In scope** — user chose to recolor now rather
+  than wait for install.
+- **`tiles-library` vs `public/tiles` are NOT identical for `finance` and
+  `fuel`** — `diff` shows both differ from their `tiles-library` source.
+  `public/tiles/fuel.html` in particular has its own custom gold/black
+  palette (`--gold`, `--gold-cool`, `--gold-deep`, pure black `--bg:#000`)
+  from the recent living-stack integration — **zero mint references**, so it
+  needs **no changes**. Corrected execution order: recolor each of the 14
+  `tiles-library`/`public/tiles` files **independently in place** (apply the
+  substitution table to whatever old-palette values exist in that specific
+  file); do **not** copy `tiles-library` over `public/tiles` as the original
+  step 4 described — that would destroy the fuel/finance feature work
+  already live in `public/tiles`.
+- **Role-based exception, not a blind hex swap** — in
+  `app/api/mcp/oauth/authorize/route.ts:106`, `.allow { color:#04060a }` is
+  the *dark text color drawn on top of the accent-filled button*, not the
+  page background, even though it happens to reuse the same old hex. It
+  maps to the new **accent-ink** (`#241505`), not the new base background
+  (`#141414`) — same treatment as `--mint-ink` elsewhere in the app.
+- **Do not rename internal identifiers** — `tiles-library/peak.html` /
+  `public/tiles/peak.html` use `mint` as an object key in tier-lookup maps
+  (`BAND`, `TONE`, `TONE_BG`) and `components/veeTilesAnim.ts` has a local
+  `const MINT = '#6EE7B7'`. Per "pure re-skin, no structural changes,"
+  update only the **hex values** these hold — leave the key/identifier names
+  (`mint`, `MINT`) untouched, since renaming them means updating every call
+  site that indexes by that key (a logic change, not a recolor).
+- **Multi-color arrays** — `components/veeTilesAnim.ts`'s `COLORS` array has
+  6 distinct hues for multi-series charts; only the entry matching the old
+  mint hex (`#6EE7B7`) changes. The other 5 are deliberate distinct colors,
+  not the accent, and stay as-is.
