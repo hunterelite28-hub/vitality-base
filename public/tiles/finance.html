@@ -215,7 +215,7 @@ async function refreshStock(h){
   if(!h.symbol||!V.stock)return;
   if(fetchingS.has(h.id))return;
   fetchingS.add(h.id);render();
-  try{const price=await V.stock(h.symbol);if(typeof price==='number'&&price>0){h.price=price;snapshot();persist();}}
+  try{const price=await V.stock(h.symbol);if(typeof price==='number'&&price>0){h.price=price*FX_USD_SGD;snapshot();persist();}}
   catch(e){if(String(e&&e.message||'')==='no_key')finNote=true;}
   finally{fetchingS.delete(h.id);render();}
 }
@@ -550,6 +550,17 @@ if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem(
   if(!Array.isArray(store.subs))store.subs=[];
   if(!Array.isArray(store.history))store.history=[];
   store.subs=store.subs.map(ensureSubShape);
+  if(store.currency!=='SGD'){
+    for(const ac of accts())if(typeof ac.balance==='number')ac.balance*=FX_USD_SGD;
+    for(const hd of holds())if(typeof hd.price==='number')hd.price*=FX_USD_SGD;
+    for(const sb of subs()){
+      if(typeof sb.amount==='number')sb.amount*=FX_USD_SGD;
+      if(typeof sb.prevAmount==='number')sb.prevAmount*=FX_USD_SGD;
+    }
+    for(const s of hist())if(typeof s.value==='number')s.value*=FX_USD_SGD;
+    store.currency='SGD';
+    persist();
+  }
   render();
   for(const hd of holds()){ if(!hd.symbol)continue; await refreshStock(hd); await new Promise(r=>setTimeout(r,1200)); }
 })();
