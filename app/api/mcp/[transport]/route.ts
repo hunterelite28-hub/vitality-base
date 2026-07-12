@@ -34,7 +34,7 @@ import { MCP_SCOPE, mcpResourceUrl, oauthSecret, originOf, resourceMetadataUrl }
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const SLOTS = ['train', 'fuel', 'vitals', 'vee', 'brand', 'peak', 'finance'] as const
+const SLOTS = ['train', 'fuel', 'vitals', 'vee', 'brand', 'peak', 'finance', 'study'] as const
 
 const MAX_TILE_HTML = 1024 * 1024 // 1MB — one tile can never be pathological
 const MAX_TILE_DATA = 512 * 1024 // 512KB — mirrors tileStore's cap so a tile can always load what we save
@@ -54,7 +54,7 @@ const dataKey = (slot: string) => `${USER_ID}:${slot}`
 /** Slots whose tiles actually persist data. `vee` is the Mentor — it opens the
  *  mentor page, hosts no sealed tile, and reads no tile_data row; writing there
  *  would land nowhere, so the data tools refuse it up front. */
-const DATA_SLOTS = ['train', 'fuel', 'vitals', 'brand', 'peak', 'finance'] as const
+const DATA_SLOTS = ['train', 'fuel', 'vitals', 'brand', 'peak', 'finance', 'study'] as const
 
 /** The board's own load precedence: bare `<slot>` row first, else `me:<slot>`. */
 async function loadTileData(
@@ -96,7 +96,7 @@ const mcpHandler = createMcpHandler(
       {
         title: 'List dashboard slots',
         description:
-          'READ. List the seven dashboard tile slots (train, fuel, vitals, vee, brand, peak, finance) and whether each currently holds a tile.',
+          'READ. List the eight dashboard tile slots (train, fuel, vitals, vee, brand, peak, finance, study) and whether each currently holds a tile.',
         inputSchema: {},
       },
       async (): Promise<ToolResult> => {

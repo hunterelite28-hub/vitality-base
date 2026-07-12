@@ -382,7 +382,7 @@ function NewTileOverlay({ onClose }: { onClose: () => void; onSaved?: (slot: str
           </p>
           <p style={{ margin: '12px auto 0', maxWidth: 380, textAlign: 'center', color: 'var(--muted)', fontSize: 13.5, lineHeight: 1.65 }}>
             In Claude Code, run <code style={{ color: 'var(--mint)' }}>/tile train</code> (or any slot:
-            fuel, vitals, brand, peak, finance). It builds the tile and drops it straight onto your board.
+            fuel, vitals, brand, peak, finance, study). It builds the tile and drops it straight onto your board.
           </p>
           <div
             style={{

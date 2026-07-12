@@ -27,6 +27,7 @@ export type CoreTileId =
   | 'peak'
   | 'brand'
   | 'finance'
+  | 'study'
 
 /** A single live metric to surface on a tile (Train day, Fuel kcal). */
 export interface CoreStat {
@@ -191,6 +192,28 @@ export const CORE_TILES: Record<CoreTileId, CoreTile> = {
       </svg>
     ),
   },
+  study: {
+    id: 'study',
+    href: '/app/starter',
+    index: '08',
+    label: 'Study',
+    orb: { mode: 'wander' },
+    defaultSize: 'tall',
+    // A bookmark ribbon — distinct from the Library's open-book glyph.
+    glyph: (
+      <svg viewBox="-12 -12 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round">
+        <path d="M-6 -9 L6 -9 L6 9 L0 3 L-6 9 Z" />
+      </svg>
+    ),
+    art: (
+      <svg className="art" viewBox="0 0 210 250">
+        <path className="motd" d="M50 92 H160" />
+        <path className="motd" d="M50 128 H160" />
+        <path className="motd" d="M50 164 H160" />
+        <g className="orb"><circle className="glow" r="10" /><circle className="node" r="3.4" /></g>
+      </svg>
+    ),
+  },
 }
 
 /**
@@ -261,6 +284,7 @@ export const DEFAULT_HOME_ORDER: HomeTileId[] = [
   'brand',
   'peak',
   'finance',
+  'study',
 ]
 
 /** Is this id one of the pre-installed core tiles (incl. Vee)? */

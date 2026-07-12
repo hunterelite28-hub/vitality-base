@@ -72,9 +72,9 @@ export const DEFAULT_GOALS: Goal[] = [
     id: 'finance',
     title: 'Build real finance & investing knowledge',
     accent: '#6EE7B7',
-    // Third priority. Finance is the only tile tracking this so far — it
-    // carries the full weight until a Study tile exists to split it with.
-    weights: { finance: 100 },
+    // Third priority. Finance tracks the money side; Study tracks the
+    // knowledge going IN — lessons learnt + the reading list.
+    weights: { finance: 85, study: 15 },
   },
 ]
 
@@ -86,9 +86,9 @@ export const OVERALL_GOAL: Goal = {
   accent: '#E8C878',
   // Blend of the three ranked goals (jacked > charismatic > knowledgeable):
   // train carries lifting from "jacked" AND the physique share of "charisma",
-  // so it lands highest; brand and finance follow in priority order; fuel/peak
-  // are jacked's smaller levers.
-  weights: { train: 37, brand: 21, finance: 20, fuel: 15, peak: 7 },
+  // so it lands highest; brand and finance/study follow in priority order;
+  // fuel/peak are jacked's smaller levers.
+  weights: { train: 37, brand: 21, finance: 17, fuel: 15, peak: 7, study: 3 },
 }
 
 /** Overall first, then the individual goals. */
@@ -130,13 +130,6 @@ export const DEFAULT_IDEAS: Record<string, TileIdea[]> = {
       why: 'Charisma is half the goal but nothing tracks the accent/speaking work itself — Brand only sees the page, not the skill behind it.',
       estWeight: 8,
     },
-    {
-      word: 'Study',
-      title: 'Study log',
-      tracks: 'hours against your finance/investing plan',
-      why: '"Knowledgeable" needs its own evidence — Finance tracks money moving, not knowledge going in.',
-      estWeight: 10,
-    },
   ],
   charisma: [
     {
@@ -144,15 +137,6 @@ export const DEFAULT_IDEAS: Record<string, TileIdea[]> = {
       title: 'Speaking / accent practice',
       tracks: 'practice reps or recordings, per week',
       why: 'Brand tracks the page; this would track the actual skill — the accent and delivery work you named as the goal.',
-      estWeight: 15,
-    },
-  ],
-  finance: [
-    {
-      word: 'Study',
-      title: 'Study log',
-      tracks: 'hours against your finance/investing plan',
-      why: 'Finance tracks money moving, not knowledge going in — right now it carries the whole goal alone.',
       estWeight: 15,
     },
   ],

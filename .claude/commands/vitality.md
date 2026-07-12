@@ -11,8 +11,9 @@ Tone: warm, plain-language. Explain what you're doing in a sentence, do it, then
 ## What "the full dashboard" is
 
 The complete set of ready-made tiles ships bundled with this project in the **`tiles-library/`** folder
-(Train, Fuel, Vitals, Vee, Peak, Brand, Finance). Installing = copying them into `public/tiles/`, which
-is the folder the board reads. A fresh board is blank because that folder starts empty; this fills it.
+(whatever's currently in there — Train, Fuel, Vitals, Vee, Peak, Brand, Finance, plus any tile built for
+this fork since, like Study). Installing = copying them into `public/tiles/`, which is the folder the
+board reads. A fresh board is blank because that folder starts empty; this fills it.
 
 ## Step 1 — Install the tiles
 
@@ -30,7 +31,7 @@ instead — same result:
 npx --yes degit RowanThistlebrooke/vitality-base/tiles-library public/tiles --force
 ```
 
-Then confirm what landed: `ls public/tiles` should list the seven `.html` tiles.
+Then confirm what landed: `ls public/tiles` should list every `.html` tile from `tiles-library/`.
 
 ## Step 2 — Look at it
 
@@ -44,7 +45,7 @@ Say it plainly: this is a starting point, not a cage.
 - **Don't want a tile?** Delete its file in `public/tiles/` (e.g. `rm public/tiles/finance.html`) and it
   disappears from the board on reload.
 - **Want to change one?** Rebuild it your way with `/tile <slot>` (slots: `train, fuel, vitals, vee, brand,
-  peak, finance`), or just ask me to edit `public/tiles/<slot>.html`.
+  peak, finance, study`), or just ask me to edit `public/tiles/<slot>.html`.
 
 ## Step 4 — Put it live (if their dashboard is already on GitHub)
 
