@@ -27,7 +27,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--sans);-webkit-font-s
 .atmos::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(110,231,183,0.045) 1px,transparent 1px),linear-gradient(90deg,rgba(110,231,183,0.045) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(ellipse 85% 60% at 50% 22%,#000,transparent 74%);mask-image:radial-gradient(ellipse 85% 60% at 50% 22%,#000,transparent 74%);opacity:.6;animation:gridDrift 50s linear infinite}
 @keyframes gridDrift{to{background-position:46px 46px}}
 
-.lab{position:relative;z-index:5;max-width:740px;margin:0 auto;padding:clamp(26px,5vw,48px) clamp(18px,5vw,34px) 96px}
+.lab{position:relative;z-index:5;max-width:1200px;margin:0 auto;padding:clamp(26px,5vw,48px) clamp(18px,5vw,34px) 96px}
 .lab-head{text-align:center;margin-bottom:6px}
 .eyebrow{font-family:var(--mono);font-size:.62rem;text-transform:uppercase;letter-spacing:.24em;color:var(--mint);margin-bottom:11px;opacity:0;animation:fade .7s var(--ease-premium) .05s forwards}
 .lab-title{font-family:var(--serif);font-weight:400;font-size:clamp(2.4rem,8vw,3.3rem);line-height:.98;letter-spacing:-.01em;opacity:0;animation:rise .8s var(--ease-premium) .12s forwards}
@@ -538,25 +538,166 @@ pre .cc{color:rgba(255,255,255,0.32);font-style:italic}
 .deck-link svg{width:13px;height:13px}
 @media(prefers-reduced-motion:reduce){.ars-item.legendary{animation:none}.ars-item.legendary::after{animation:none}.prem.legend{animation:none}}
 </style>
+<style>
+/* ═══ arsenal declutter pass: quieter, uniform, centered ═══ */
+.ars-grid{gap:16px}
+.ars-item{padding:18px 18px 16px}
+.ars-hd .nm{font-size:1.18rem}
+.ars-d{font-size:.8rem;color:rgba(255,255,255,.44);margin:4px 0 14px;line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em}
+.ars-stage{min-height:200px;justify-content:center}
+.ars-actions .copy-btn,.ars-actions .fi-btn{margin-top:12px;padding:9px;font-size:.56rem;
+  border-color:var(--border);background:transparent;color:var(--muted-strong)}
+.ars-actions .copy-btn:hover,.ars-actions .fi-btn:hover{border-color:rgba(110,231,183,.4);color:var(--mint);background:rgba(110,231,183,.05)}
+.season-head{justify-content:center;margin:22px 0 6px}
+.season-head::before{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(110,231,183,.3))}
+.season-head:after{background:linear-gradient(90deg,rgba(110,231,183,.3),transparent)}
+.ars-note{margin-bottom:26px}
+</style>
 
 <div class="atmos"></div>
+
+<!-- ═══ THE HERO — 1:1 port of the real Vitality landing (scoped vh-) ═══ -->
+<style>
+  .vhero{position:relative;height:100vh;min-height:680px;width:100%;overflow:hidden;
+    background:linear-gradient(180deg,#04060a,#07100e);
+    --ink:#e9efe9;--ink-dim:rgba(233,239,233,.62);--ink-faint:rgba(233,239,233,.34);--rule:rgba(233,239,233,.14);--mint-soft:#a7f3d0}
+  .vhero .vh-aurora{position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(ellipse 70% 52% at 50% 44%,rgba(110,231,183,.13),transparent 68%),radial-gradient(ellipse 90% 60% at 50% 108%,rgba(110,231,183,.08),transparent 70%);
+    animation:vhBreathe 12s ease-in-out infinite}
+  @keyframes vhBreathe{0%,100%{opacity:.8}50%{opacity:1}}
+  .vhero .vh-mountains{position:absolute;left:0;right:0;bottom:0;z-index:1;pointer-events:none}
+  .vhero .vh-mountains svg{display:block;width:100%;height:min(42vh,420px)}
+  .vhero .vh-mist{position:absolute;left:0;right:0;bottom:12vh;height:22vh;z-index:2;pointer-events:none;
+    background:linear-gradient(180deg,transparent,rgba(110,231,183,.045) 45%,transparent);filter:blur(6px)}
+  .vhero .vh-stage{position:absolute;inset:0;z-index:3;display:grid;place-items:center;pointer-events:none}
+  .vhero .vh-gem{width:min(54vh,600px);height:min(54vh,600px);display:grid;place-items:center;
+    -webkit-mask-image:radial-gradient(closest-side,rgba(0,0,0,1) 72%,rgba(0,0,0,0) 100%);
+    mask-image:radial-gradient(closest-side,rgba(0,0,0,1) 72%,rgba(0,0,0,0) 100%);animation:vhGemIn 1.6s var(--ease-premium) .2s both}
+  .vhero .vh-halo{position:absolute;width:min(46vh,520px);height:min(46vh,520px);border-radius:50%;
+    background:radial-gradient(circle,rgba(110,231,183,.16),transparent 62%);animation:vhHalo 7s ease-in-out infinite}
+  @keyframes vhGemIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+  @keyframes vhHalo{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+  @media(max-width:760px){.vhero .vh-gem{width:60vw;height:60vw}.vhero .vh-halo{width:52vw;height:52vw}}
+  .vhero .vh-particle{position:absolute;z-index:4;width:2px;height:2px;border-radius:50%;background:var(--mint);opacity:0;pointer-events:none;animation:vhDrift linear infinite}
+  @keyframes vhDrift{0%{opacity:0;transform:translateY(14px)}12%{opacity:.38}85%{opacity:.28}100%{opacity:0;transform:translateY(-130px)}}
+  .vhero .vh-top{position:absolute;left:0;right:0;top:16.5vh;z-index:6;text-align:center;padding:0 22px;pointer-events:none}
+  .vhero .vh-eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint);
+    display:inline-flex;align-items:center;gap:14px;margin-bottom:22px;white-space:nowrap;opacity:0;animation:vhRise 1s var(--ease-premium) .25s forwards}
+  .vhero .vh-eyebrow::before,.vhero .vh-eyebrow::after{content:'';width:34px;height:1px;background:var(--rule)}
+  .vhero .vh-headline{font-family:var(--serif);font-weight:400;font-size:clamp(36px,4.6vw,64px);line-height:1.04;letter-spacing:-.015em;color:var(--ink);
+    margin:0 auto;max-width:880px;text-wrap:balance;opacity:0;animation:vhRise 1.1s var(--ease-premium) .45s forwards}
+  .vhero .vh-headline em{font-style:italic;color:var(--mint-soft);text-shadow:0 0 24px rgba(110,231,183,.25)}
+  .vhero .vh-bottom{position:absolute;left:0;right:0;bottom:13vh;z-index:6;text-align:center;padding:0 22px}
+  .vhero .vh-sub{font-size:13px;line-height:1.6;color:var(--ink-dim);max-width:460px;margin:0 auto;opacity:0;animation:vhRise 1s var(--ease-premium) .75s forwards}
+  .vhero .vh-cta{display:inline-flex;align-items:center;gap:10px;margin-top:18px;padding:11px 20px;border:1px solid var(--rule);border-radius:999px;
+    color:var(--ink);text-decoration:none;font-size:12.5px;letter-spacing:.04em;white-space:nowrap;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    transition:border-color .3s,background .3s,color .3s;opacity:0;animation:vhRise 1s var(--ease-premium) .9s forwards}
+  .vhero .vh-cta:hover{border-color:rgba(110,231,183,.5);background:rgba(110,231,183,.07);color:#fff}
+  .vhero .vh-cta .vh-arrow{transition:transform .3s}
+  .vhero .vh-cta:hover .vh-arrow{transform:translateX(3px)}
+  .vhero .vh-caption{position:absolute;top:50%;transform:translateY(-50%);z-index:7;max-width:200px;pointer-events:none;opacity:0;animation:vhFade 1.4s var(--ease-premium) 1.2s forwards}
+  .vhero .vh-capL{left:clamp(22px,5vw,72px);text-align:left}
+  .vhero .vh-capR{right:clamp(22px,5vw,72px);text-align:right}
+  .vhero .vh-capNum{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:10px}
+  .vhero .vh-capTitle{color:var(--ink);font-style:italic;font-family:var(--serif);font-size:17px;line-height:1.2;margin-bottom:8px}
+  .vhero .vh-capMeta{font-size:11.5px;line-height:1.55;color:var(--ink-dim)}
+  .vhero .vh-capRule{position:relative;width:44px;height:1px;background:var(--rule);margin-top:14px}
+  .vhero .vh-capRule::after{content:'';position:absolute;right:-2px;top:-1.5px;width:4px;height:4px;border-radius:50%;background:var(--mint);box-shadow:0 0 6px var(--mint)}
+  .vhero .vh-capR .vh-capRule{margin-left:auto}
+  .vhero .vh-capR .vh-capRule::after{right:auto;left:-2px}
+  @media(max-width:1020px){.vhero .vh-caption{display:none}}
+  .vhero .vh-chrome{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;
+    padding:26px clamp(22px,4vw,44px);opacity:0;animation:vhFade 1.2s var(--ease-premium) 1s forwards}
+  .vhero .vh-wordmark{font-family:var(--serif);font-style:italic;font-size:28px;letter-spacing:-.01em;color:var(--ink);line-height:1;
+    display:inline-flex;align-items:baseline;gap:10px;text-decoration:none}
+  .vhero .vh-wordmark::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint)}
+  .vhero .vh-nav{display:flex;align-items:center;gap:22px;font-size:12px;letter-spacing:.04em}
+  .vhero .vh-nav a{text-decoration:none;color:var(--ink-dim);transition:color .25s}
+  .vhero .vh-nav a:hover{color:var(--ink)}
+  .vhero .vh-nav .vh-member{padding:9px 18px;border:1px solid var(--rule);border-radius:999px;color:var(--ink)}
+  .vhero .vh-nav .vh-member:hover{border-color:rgba(110,231,183,.5);background:rgba(110,231,183,.07)}
+  .vhero .vh-strip{position:absolute;left:0;right:0;bottom:0;z-index:11;display:flex;align-items:center;justify-content:space-between;
+    padding:16px clamp(22px,4vw,44px);font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
+    opacity:0;animation:vhFade 1.4s var(--ease-premium) 1.5s forwards}
+  @keyframes vhRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes vhFade{to{opacity:1}}
+  @media(prefers-reduced-motion:reduce){.vhero *{animation-duration:.01s !important;animation-delay:0s !important}}
+
+  /* ── the minimal seed card ── */
+  .seedcard{position:relative;max-width:640px;margin:64px auto 10px;text-align:center;border:1px solid var(--border);
+    border-radius:var(--radius-card);background:var(--card);padding:38px 34px 34px;overflow:hidden}
+  .seedcard::before{content:'';position:absolute;left:50%;top:0;width:280px;height:1px;transform:translateX(-50%);
+    background:linear-gradient(90deg,transparent,rgba(110,231,183,.55),transparent)}
+  .seed-eyebrow{font-family:var(--mono);font-size:.58rem;letter-spacing:.26em;text-transform:uppercase;color:var(--mint);margin-bottom:14px}
+  .seed-line{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(24px,3.4vw,31px);color:#fff;letter-spacing:-.01em}
+  .seed-steps{display:flex;justify-content:center;gap:9px;margin:22px 0 26px;flex-wrap:wrap}
+  .seed-step{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted-strong);border:1px solid var(--border);border-radius:999px;padding:8px 14px}
+  .seed-step i{font-style:normal;font-family:var(--serif);color:var(--mint);font-size:.8rem}
+  .seed-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 36px;border-radius:999px;border:none;cursor:pointer;
+    background:linear-gradient(180deg,#8df0c9,var(--mint));color:#04140d;font-weight:600;font-size:14.5px;font-family:var(--sans);
+    box-shadow:0 14px 40px -18px rgba(110,231,183,.5);transition:filter .2s,transform .3s var(--ease-premium)}
+  .seed-btn:hover{filter:brightness(1.05);transform:translateY(-1px)}
+  .seed-btn:active{transform:scale(.98)}
+  .seed-foot{margin-top:14px;font-family:var(--mono);font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+</style>
+
+<section class="vhero" id="top">
+  <div class="vh-aurora" aria-hidden="true"></div>
+  <div class="vh-mountains" aria-hidden="true">
+    <svg viewBox="0 0 1600 420" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="vh-far" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0d1a17" stop-opacity="0"/><stop offset="55%" stop-color="#0d1a17" stop-opacity=".55"/><stop offset="100%" stop-color="#0d1a17" stop-opacity=".95"/></linearGradient>
+        <linearGradient id="vh-near" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050a09" stop-opacity=".4"/><stop offset="60%" stop-color="#050a09" stop-opacity=".95"/><stop offset="100%" stop-color="#050a09" stop-opacity="1"/></linearGradient>
+      </defs>
+      <path d="M0,300 L120,230 L210,260 L320,180 L430,220 L560,150 L680,210 L820,170 L960,220 L1100,180 L1240,240 L1380,200 L1500,250 L1600,220 L1600,420 L0,420 Z" fill="url(#vh-far)"/>
+      <path d="M0,360 L100,320 L220,340 L340,290 L460,330 L590,300 L720,340 L860,310 L1000,350 L1140,310 L1280,355 L1420,320 L1540,360 L1600,340 L1600,420 L0,420 Z" fill="url(#vh-near)"/>
+    </svg>
+  </div>
+  <div class="vh-mist" aria-hidden="true"></div>
+  <div class="vh-stage" aria-hidden="true">
+    <div class="vh-halo"></div>
+    <div class="vh-gem">
+      <canvas id="vhGemCanvas" style="width:100%;height:100%;display:block"></canvas>
+      <svg id="vhGemFallback" viewBox="-1.2 -1.2 2.4 2.4" style="display:none;width:44%;height:44%">
+        <defs><linearGradient id="vh-ico" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#A7F3D0"/><stop offset="100%" stop-color="#3a8a6a"/></linearGradient></defs>
+        <polygon points="0,-1 0.95,-0.31 0.59,0.81 -0.59,0.81 -0.95,-0.31" fill="url(#vh-ico)" stroke="#6EE7B7" stroke-width=".01" stroke-opacity=".4"/>
+      </svg>
+    </div>
+  </div>
+  <nav class="vh-chrome">
+    <a class="vh-wordmark" href="#top">Vitality</a>
+    <div class="vh-nav">
+      <a href="#seed">the seed</a>
+      <a class="vh-member" href="https://www.patreon.com/RowanTBK/membership" target="_blank" rel="noopener">Become a member</a>
+    </div>
+  </nav>
+  
+  
+  <div class="vh-top">
+    
+    <h1 class="vh-headline">Your life is an <em>equation</em>.</h1>
+  </div>
+  <div class="vh-bottom">
+    
+    <a class="vh-cta" href="#seed">Copy the seed <span class="vh-arrow">&rarr;</span></a>
+  </div>
+  
+</section>
+
 <main class="lab">
 
-  <header class="lab-head">
-    <p class="eyebrow">Vitality · Patreon Design Lab</p>
-    <h1 class="lab-title">The Lab, every brick</h1>
-    <p class="lab-idea">Commands that <span class="hl">grow every video</span>. See every feature, its code, and its backend. Then pull it into your build.</p>
-    <span class="season" id="seasonPill"><span class="dot"></span>EP 3 · Finance · the arsenal grows every day</span>
-  </header>
-
-  <!-- ═══ START HERE — THE SEED ═══ -->
-  <section style="width:min(880px,calc(100vw - 36px));margin:26px auto 8px;border:1px solid rgba(110,231,183,.4);border-radius:20px;background:rgba(4,20,13,.35);overflow:hidden">
-    <div style="padding:20px 22px 0;text-align:center">
-      <p style="margin:0;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.2em;color:#6EE7B7">START HERE · THE SEED</p>
-      <h2 style="margin:10px 0 0;font-family:Georgia,serif;font-style:italic;font-weight:400;font-size:26px;color:#fff">One paste starts everything.</h2>
-      <p style="margin:10px auto 0;max-width:52ch;color:#9fb4ab;font-size:13.5px;line-height:1.6">Install <b style="color:#e7fff4">Claude Code</b>, make an <b style="color:#e7fff4">empty folder</b>, open it in VS Code — and paste this. The AI Mentor builds your whole dashboard and walks you live, step by step.</p>
+  <!-- ═══ THE SEED — one paste starts everything ═══ -->
+  <section class="seedcard" id="seed">
+    <p class="seed-eyebrow">Start here &middot; The Seed</p>
+    <h2 class="seed-line">One paste starts everything.</h2>
+    <div class="seed-steps">
+      <span class="seed-step"><i>1</i> Claude Code</span>
+      <span class="seed-step"><i>2</i> empty folder</span>
+      <span class="seed-step"><i>3</i> paste</span>
     </div>
-    <pre id="seedbox" style="margin:16px 18px 0;padding:14px 16px;max-height:180px;overflow:auto;background:#020604;border:1px solid rgba(110,231,183,.18);border-radius:12px;white-space:pre-wrap;text-align:left;color:#cfe8dc;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.55">You are my AI Mentor. Rowan and Luke created you to show me their vision — a
+    <pre id="seedbox" style="display:none;margin:16px 18px 0;padding:14px 16px;max-height:180px;overflow:auto;background:#020604;border:1px solid rgba(110,231,183,.18);border-radius:12px;white-space:pre-wrap;text-align:left;color:#cfe8dc;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.55">You are my AI Mentor. Rowan and Luke created you to show me their vision — a
 personal, automated, almost Jarvis-like life operating system that I own. From
 this moment, speak as the mentor: warm, brutally straightforward, one step at a
 time. I might be a total beginner.
@@ -603,206 +744,26 @@ Then close with Rowan&#x27;s words, exactly:
 Then: if I came from one of their videos, send me back to it. If I didn&#x27;t,
 tell me the videos show this vision in motion (first one is linked at the top
 of README.md) and that I can watch whenever I want — you&#x27;ll be here either way.</pre>
-    <div style="padding:14px 18px 20px;text-align:center">
-      <button type="button" id="seedcopy" style="padding:13px 38px;border-radius:999px;border:none;background:linear-gradient(180deg,#8df0c9,#6EE7B7);color:#04140d;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 10px 30px -12px #6EE7B7">Copy the seed</button>
-      <p style="margin:10px 0 0;font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.16em;color:#8a8f98">FREE · YOURS FOREVER · THE LAB BELOW IS WHAT YOU CAN ADD</p>
-    </div>
+    <button type="button" id="seedcopy" class="seed-btn">Copy the seed</button>
+    <p class="seed-foot">Free &middot; yours forever &middot; your mentor takes it from there</p>
   </section>
 
   <nav class="tabs">
-    <button class="tab is-active" data-p="command"><span class="dot"></span>This episode</button>
-    <button class="tab" data-p="episodes"><span class="dot"></span>Community builds</button>
-    <button class="tab" data-p="arsenal"><span class="dot"></span>Arsenal</button>
+    <button class="tab is-active" data-p="builds"><span class="dot"></span>The builds</button>
+    <button class="tab" data-p="arsenal"><span class="dot"></span>Features</button>
     <button class="tab" data-p="addons"><span class="dot"></span>Add-ons</button>
-    <button class="tab" data-p="usecases"><span class="dot"></span>Use cases</button>
+    <button class="tab" data-p="episodes"><span class="dot"></span>Community</button>
   </nav>
 
-  <!-- ===== COMMAND ===== -->
-  <section class="panel is-active" id="command">
-    <div class="chamber" id="chamber"></div>
-    <div class="revolver" id="revolver" aria-label="Episodes">
-      <div class="rev-stars"></div>
-      <div class="rev-ring" id="revRing"></div>
-      <div class="rev-marker"></div>
-    </div>
 
-    <div class="exhibit">
-      <p class="exhibit-cap" id="exCap"><span class="live"></span>This is what /fuel installs · starts clean, you make it yours · play with it</p>
-      <a class="ex-full" id="exFull" href="/lab/subs.html" target="_blank" rel="noopener">open full screen</a>
-      <iframe class="demo-frame" id="demoFrame" src="/lab/subs.html" title="The living build, playable"></iframe>
-    </div>
-  </section>
 
   <!-- ===== FUNCTIONS ===== -->
   
 
-  <section class="panel" id="functions">
-    <p class="tab-intro">Every feature, shown for real: <b>the visual, the code, and an Add button</b> to pull just that file into your VS Code.</p>
-    <div class="fn-grid">
 
-      <!-- rest timer -->
-      <article class="fn-card" style="--i:0">
-        <div class="fn-hd"><div class="fn-name">Rest timer</div><div class="fn-cmd">/addclock</div></div>
-        <div class="fn-tag">Episode 4 · arms itself</div>
-        <div class="fn-vis"><div class="v-timer">
-          <div class="row"><span class="kg">kg × <b>6</b></span><button class="cta v-hit" id="vrcHit" type="button">hit it → <i>miss</i></button></div>
-          <div class="v-pill" id="vrcPill">
-            <button class="v-step" id="vrcMinus" type="button">−15</button>
-            <div class="v-mid"><div class="v-time" id="vrcTime">2:12</div><div class="v-ex">Close grip bench press</div></div>
-            <button class="v-step" id="vrcPlus" type="button">+15</button>
-            <button class="v-x" id="vrcX" type="button" aria-label="Dismiss">×</button>
-          </div>
-          <p class="v-try">It is real. Tap <b>hit it</b> and rest.</p>
-        </div></div>
-        <div class="fn-code"><code><span class="cc">// real app code · logger.html @episode:rest-timer</span>
-function restCoachStart(lift, set){
-  if (!rcEl) return;
-  const restSec = lift.rest ?? 150;   <span class="cc">// each lift remembers its own rest</span>
-  if (restSec <= 0){ rcDismiss(); return; }
-  rcLift = lift; rcSet = set; rcOver = false;
-  rcTotal = restSec; rcRemain = rcTotal;
-  document.body.classList.add('rc-open');
-  rcEl.hidden = false;
-  requestAnimationFrame(() => rcEl.classList.add('on'));
-  rcPaint();
-  rcInt = setInterval(rcTick, 1000);  <span class="cc">// 2:12 → 2:11 …</span>
-}</code></div>
-        <button class="fn-expand">Show code</button>
-        <div class="fn-actions">
-          <button class="copy-btn add-btn" data-file="addclock"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>Install · free</button>
-          <button class="copy-btn" data-copy="/addclock"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy cmd</button>
-        </div>
-      </article>
-
-      <!-- overload chart -->
-      <article class="fn-card" style="--i:1">
-        <div class="fn-hd"><div class="fn-name">Overload chart</div><div class="fn-cmd">/addchart</div></div>
-        <div class="fn-tag">Episode 1 · proof</div>
-        <div class="fn-vis"><div class="v-chart">
-          <svg viewBox="0 0 200 88" preserveAspectRatio="none">
-            <line x1="0" y1="70" x2="200" y2="70" stroke="rgba(255,255,255,.08)"/>
-            <polyline points="8,64 44,58 80,48 116,40 152,26 188,14" fill="none" stroke="#6EE7B7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="188" cy="14" r="4" fill="#6EE7B7"/><circle cx="188" cy="14" r="8" fill="none" stroke="#6EE7B7" stroke-opacity=".4"/>
-          </svg><div class="v-cap">top set over time · session to beat</div>
-        </div></div>
-        <div class="fn-code"><code><span class="cc">// real app code · logger.html @episode:chart</span>
-function beatsPrevBest(lift, set){
-  const best = prevBestOf(lift);
-  if (!best || best.weight <= 0) return false;
-  if (set.weight > best.weight) return true;
-  <span class="cc">// same weight, more reps still wins</span>
-  return set.weight === best.weight && set.reps > best.reps;
-}</code></div>
-        <button class="fn-expand">Show code</button>
-        <div class="fn-actions">
-          <button class="copy-btn add-btn" data-file="addchart"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>Install · free</button>
-          <button class="copy-btn" data-copy="/addchart"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy cmd</button>
-        </div>
-      </article>
-
-      <!-- grading logger -->
-      <article class="fn-card" style="--i:2">
-        <div class="fn-hd"><div class="fn-name">Grading logger</div><div class="fn-cmd">/logger</div></div>
-        <div class="fn-tag">Episode 2 · the spine</div>
-        <div class="fn-vis"><div class="v-grade">
-          <div class="vg"><span><b>80</b>kg × 8</span><span class="vg-badge vg-a">A · beat it</span></div>
-          <div class="vg"><span><b>82.5</b>kg × 8</span><span class="vg-badge vg-pr">PR</span></div>
-        </div></div>
-        <div class="fn-code"><code><span class="cc">// real app code · logger.html @episode:logger</span>
-function gradeSet(lift, set){
-  if (set.failed) return 'failed';
-  if (!set.done) return 'empty';
-  const beatWeight = set.weight > lift.weight;
-  const beatReps   = set.reps   > lift.targetReps;
-  const metWeight  = set.weight >= lift.weight;
-  const metReps    = set.reps   >= lift.targetReps;
-  if (metWeight && metReps)
-    return (beatWeight || beatReps) ? 'over' : 'clean';
-  return 'partial';   <span class="cc">// never shamed, never red</span>
-}</code></div>
-        <button class="fn-expand">Show code</button>
-        <div class="fn-actions">
-          <button class="copy-btn add-btn" data-file="logger"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>Install · free</button>
-          <button class="copy-btn" data-copy="/logger"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy cmd</button>
-        </div>
-      </article>
-
-      <!-- exercise library -->
-      <article class="fn-card" style="--i:3">
-        <div class="fn-hd"><div class="fn-name">Exercise library</div><div class="fn-cmd">/addlibrary</div></div>
-        <div class="fn-tag">Episode 3 · teaches</div>
-        <div class="fn-vis"><div class="v-lib">
-          <div class="v-search">Search moves...</div>
-          <div class="v-move"><span class="v-musc"><svg viewBox="0 0 24 24"><path d="M6.5 6.5h11v11h-11z"/><path d="M3 10h3.5M17.5 10H21M3 14h3.5M17.5 14H21"/></svg></span><span class="nm"><b>Bench Press</b><i>Chest</i></span><span class="pl">+</span></div>
-        </div></div>
-        <div class="fn-code"><code><span class="cc">// real app code · logger.html @episode:library</span>
-function addFromLibrary(e){
-  const existing = LIFTS.find(l =>
-    l.libKey === e.key || l.name === e.name);
-  if (existing){ <span class="cc">// unhide, never duplicate</span>
-    if (existing.hidden){ existing.hidden = false;
-      saveLog(); render(); } return; }
-  const d = tierDefaults(e.tier);
-  addLift({ name:e.name, tier:e.tier, muscle:e.group,
-    libKey:e.key, targetSets:d.targetSets,
-    targetReps:d.targetReps, weight:d.weight,
-    history:[], sets:blankSets(d.targetSets) });
-  render();
-}</code></div>
-        <button class="fn-expand">Show code</button>
-        <div class="fn-actions">
-          <button class="copy-btn add-btn" data-file="addlibrary"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>Install · free</button>
-          <button class="copy-btn" data-copy="/addlibrary"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy cmd</button>
-        </div>
-      </article>
-
-      <!-- tiles (soon) -->
-      <article class="fn-card soon" style="--i:4">
-        <div class="fn-hd"><div class="fn-name">Dashboard tile</div><div class="fn-cmd">/addtile</div></div>
-        <div class="fn-tag">Next · the board</div>
-        <div class="fn-vis"><div class="v-tile"><span class="big">72</span><span class="lb">This week</span></div></div>
-        <div class="fn-code"><code>report({ key:'workout', label:'Sessions',
-  value: weekCount, kind:'count' });
-<span class="cc">// lands on your dashboard, feeds the score</span></code></div>
-        <button class="fn-expand">Show code</button>
-        <div class="fn-actions">
-          <button class="copy-btn add-btn" data-file="addtile"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>Install · free</button>
-          <button class="copy-btn" data-copy="/addtile"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy cmd</button>
-        </div>
-      </article>
-
-      <!-- streaks (soon) -->
-      <article class="fn-card soon" style="--i:5">
-        <div class="fn-hd"><div class="fn-name">Streaks</div><div class="fn-cmd">/addstreak</div></div>
-        <div class="fn-tag">Next · the habit</div>
-        <div class="fn-vis"><div class="v-streak"><span class="v-flame"><svg viewBox="0 0 24 24"><path d="M12 2c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 1-3 1 2 2 2 2 2 0-3-2-4 2-9z"/></svg></span><span class="txt"><b>12</b><i>day streak</i></span></div></div>
-        <div class="fn-code"><code><span class="cc">// a streak on top of any brick</span>
-const streak = daysInARow(log);</code></div>
-        <button class="fn-expand">Show code</button>
-        <div class="fn-actions">
-          <button class="copy-btn add-btn" data-file="addstreak"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>Install · free</button>
-          <button class="copy-btn" data-copy="/addstreak"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy cmd</button>
-        </div>
-      </article>
-
-    </div>
-  </section>
 
   <!-- ===== BACKEND ===== -->
-  <section class="panel" id="backend">
-    <p class="tab-intro">One table the whole app grows on. <b>Additive, safe to re-run.</b> Row-level security means each person only sees their own data.</p>
-
-    <div class="how-save">
-      <h4>How saving works, in plain words</h4>
-      <div class="hs-row"><span class="n">1</span><span>Your data lives in <b>your own Supabase</b> (free), not ours. You own it, forever.</span></div>
-      <div class="hs-row"><span class="n">2</span><span>You never write SQL. When you run <code>/logger</code>, <b>Claude sets it up for you</b>: it takes the backend file below and applies it to your Supabase. If yours is connected it runs it directly; if not, it hands you one paste for the Supabase SQL editor and waits.</span></div>
-      <div class="hs-row"><span class="n">3</span><span>The file is <b>additive and safe to re-run</b>. Every episode only ever adds. Nothing you saved is touched.</span></div>
-      <div class="hs-row"><span class="n">4</span><span><b>Row-level security</b> is built in: every row is stamped with your account, and only your account can read it.</span></div>
-      <div class="hs-row"><span class="n">5</span><span>No Supabase? Everything still works <b>on your device</b>. Add the cloud whenever you want, nothing is lost.</span></div>
-    </div>
-    <div class="be-card">
-      <h3><span style="width:6px;height:6px;border-radius:50%;background:var(--mint);display:inline-block"></span>workout_log · the one store</h3>
-<pre><span class="cc">-- Ep 2 lays the one table everything rides on</span>
+  <div id="backend" hidden><pre><span class="cc">-- Ep 2 lays the one table everything rides on</span>
 create table if not exists workout_log (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null default auth.uid(),
@@ -818,72 +779,130 @@ create policy "own" on workout_log using (auth.uid() = user_id);
 <span class="cc">-- Ep 3 adds ONE column (no new table)</span>
 alter table workout_log add column if not exists lib_key text;
 <span class="cc">-- Ep 4 adds ONE more</span>
-alter table workout_log add column if not exists rest_sec int not null default 150;</pre>
-      <button class="copy-btn" data-copy="BACKEND"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy the whole backend</button>
-    </div>
-
-    <div class="be-card" style="margin-top:14px">
-      <h3><span style="width:6px;height:6px;border-radius:50%;background:var(--mint);display:inline-block"></span>How every function ties in · one doorway</h3>
-<pre><span class="cc">// straight from logger.html: ONE store, never one-per-feature.
-// Five functions are the only doorway to disk: getLift, addLift,
-// updateLift, saveLog, loadLog. Everything goes through them.
-// Point saveLog/loadLog at Supabase instead of localStorage and
-// EVERY feature syncs across devices, untouched (backend.sql).</span>
-
-gradeSet()        reads  weight, target_reps      <span class="cc">-- the grade</span>
-beatsPrevBest()   reads  sets jsonb (history)     <span class="cc">-- the chart's win</span>
-addFromLibrary()  writes lib_key                  <span class="cc">-- the library link</span>
-restCoachStart()  reads  rest_sec                 <span class="cc">-- the 2:12 timer</span>
-finishSession()   writes sets jsonb, updated_at   <span class="cc">-- the day, saved</span></pre>
-    </div>
-  </section>
+alter table workout_log add column if not exists rest_sec int not null default 150;</pre></div>
 
       <!-- ===== COMMUNITY BUILDS (visible to all · installs ship from Patreon) ===== -->
   <section class="panel" id="episodes">
-    <p class="tab-intro">The builds we make in the dark, extracted from the real Vitality. <b>See everything.</b> Installing them is how you support the launch.</p>
-
-    <div style="position:relative;width:min(760px,calc(100vw - 36px));margin:0 auto 26px;border:1px solid rgba(110,231,183,.16);border-radius:20px;padding:30px 28px;background:rgba(4,20,13,.28);text-align:center">
-      <span style="position:absolute;top:14px;right:14px"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#fff"/></svg></span>
-      <p style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.18em;color:#6EE7B7;margin:0 0 12px">● COMMUNITY BUILD · THE SUBSCRIPTION RADAR</p>
-      <h3 style="font-family:ui-monospace,Menlo,monospace;font-weight:400;font-size:clamp(30px,5vw,44px);color:#6EE7B7;margin:0 0 14px">/finance</h3>
-      <p style="color:#b9c4be;font-size:15px;line-height:1.6;max-width:46ch;margin:0 auto 20px">The one command for the Finance tile. It carries every money brick shipped so far, wired to one saved store. Re-run it any time and it connects straight to your tile.</p>
-      <div style="text-align:left;max-width:46ch;margin:0 auto 22px;color:#e7fff4;font-size:14px;line-height:1.7">
-        <p style="margin:6px 0"><span style="display:inline-grid;place-items:center;width:22px;height:22px;border:1px solid #6EE7B7;border-radius:999px;font-size:11px;color:#6EE7B7;margin-right:9px">1</span>Copy <b>the one paste</b></p>
-        <p style="margin:6px 0"><span style="display:inline-grid;place-items:center;width:22px;height:22px;border:1px solid #6EE7B7;border-radius:999px;font-size:11px;color:#6EE7B7;margin-right:9px">2</span>Drop it into Claude Code, inside your project</p>
-        <p style="margin:6px 0"><span style="display:inline-grid;place-items:center;width:22px;height:22px;border:1px solid #6EE7B7;border-radius:999px;font-size:11px;color:#6EE7B7;margin-right:9px">3</span>That is it. The full radar installs itself and connects to your Finance tile.</p>
-      </div>
-      <a href="https://www.patreon.com/RowanTBK/membership" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:#fff;color:#111;border-radius:14px;padding:18px 22px;font-weight:700;font-size:15px;letter-spacing:.03em;text-decoration:none;box-shadow:0 8px 30px rgba(255,255,255,.12)"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg> Support our launch! Copy all of these commands in your arsenal!</a>
-      <p style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#8a8f98;margin:14px 0 0">EVERYTHING VISIBLE · THE INSTALL SHIPS FROM PATREON</p>
-    </div>
-
-    <div style="position:relative;width:min(760px,calc(100vw - 36px));margin:0 auto 26px;border:1px solid rgba(110,231,183,.16);border-radius:20px;padding:30px 28px;background:rgba(4,20,13,.28);text-align:center">
-      <span style="position:absolute;top:14px;right:14px"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#fff"/></svg></span>
-      <p style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.18em;color:#6EE7B7;margin:0 0 12px">● COMMUNITY BUILD · THE LIVING LOGGER</p>
-      <h3 style="font-family:ui-monospace,Menlo,monospace;font-weight:400;font-size:clamp(30px,5vw,44px);color:#6EE7B7;margin:0 0 14px">/logger</h3>
-      <p style="color:#b9c4be;font-size:15px;line-height:1.6;max-width:46ch;margin:0 auto 20px">The one command for the Train tile. Every workout brick shipped so far — day tabs, set pills, PR celebration — wired to one saved table.</p>
-      <div style="text-align:left;max-width:46ch;margin:0 auto 22px;color:#e7fff4;font-size:14px;line-height:1.7">
-        <p style="margin:6px 0"><span style="display:inline-grid;place-items:center;width:22px;height:22px;border:1px solid #6EE7B7;border-radius:999px;font-size:11px;color:#6EE7B7;margin-right:9px">1</span>Copy <b>the one paste</b></p>
-        <p style="margin:6px 0"><span style="display:inline-grid;place-items:center;width:22px;height:22px;border:1px solid #6EE7B7;border-radius:999px;font-size:11px;color:#6EE7B7;margin-right:9px">2</span>Drop it into Claude Code, inside your project</p>
-        <p style="margin:6px 0"><span style="display:inline-grid;place-items:center;width:22px;height:22px;border:1px solid #6EE7B7;border-radius:999px;font-size:11px;color:#6EE7B7;margin-right:9px">3</span>That is it. The full logger installs itself and connects to your Train tile.</p>
-      </div>
-      <a href="https://www.patreon.com/RowanTBK/membership" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:#fff;color:#111;border-radius:14px;padding:18px 22px;font-weight:700;font-size:15px;letter-spacing:.03em;text-decoration:none;box-shadow:0 8px 30px rgba(255,255,255,.12)"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg> Support our launch! Copy all of these commands in your arsenal!</a>
-      <p style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#8a8f98;margin:14px 0 0">EVERYTHING VISIBLE · THE INSTALL SHIPS FROM PATREON</p>
+    <div style="max-width:520px;margin:46px auto;text-align:center">
+      <p style="font-family:var(--mono);font-size:.58rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin:0 0 14px">Community</p>
+      <h3 style="font-family:var(--serif);font-style:italic;font-weight:400;font-size:26px;color:#fff;margin:0 0 12px">The first build lands soon.</h3>
+      <p style="color:var(--muted-strong);font-size:13.5px;line-height:1.6;margin:0">Tiles built by people like you, shared back to the Lab.</p>
     </div>
   </section>
 
 
+
+
+<style>
+  .bld-stack{display:flex;flex-direction:column;gap:22px;max-width:1160px;margin:6px auto 0}
+  .bld{position:relative;border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);
+    padding:26px 28px 22px;overflow:hidden;transition:border-color .35s,box-shadow .35s}
+  .bld:hover{border-color:rgba(110,231,183,.24);box-shadow:0 0 44px rgba(110,231,183,.06)}
+  .bld::before{content:'';position:absolute;left:50%;top:0;width:220px;height:1px;transform:translateX(-50%);
+    background:linear-gradient(90deg,transparent,rgba(110,231,183,.45),transparent)}
+  .bld-head{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+  .bld-ep{font-family:var(--mono);font-size:.56rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .bld-name{font-family:var(--serif);font-weight:400;font-size:1.45rem;letter-spacing:-.01em;color:#fff;margin-bottom:10px}
+  .bld-cmd{display:inline-flex;align-items:center;font-family:var(--mono);font-size:1.6rem;color:var(--mint);min-height:1.2em}
+  .bld-cmd .caret{display:inline-block;width:.6em;height:1.05em;margin-left:3px;background:var(--mint);
+    animation:bldBlink 1.06s steps(1) infinite;border-radius:2px}
+  @keyframes bldBlink{0%,49%{opacity:1}50%,100%{opacity:0}}
+  .bld-side{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+  .bld .copy-btn{margin-top:0;max-width:250px;border:none;background:linear-gradient(180deg,#8df0c9,var(--mint));
+    color:#04140d;font-weight:600;font-size:.66rem}
+  .bld .copy-btn:hover{filter:brightness(1.05)}
+  .bld-foot{font-family:var(--mono);font-size:.5rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .bld-live{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .bld-cue{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .bld-cue .live{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 9px var(--mint);animation:livePulse 2.4s ease-in-out infinite}
+  .bld-full{font-family:var(--mono);font-size:.52rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mint-cool);
+    border:1px solid rgba(110,231,183,.35);border-radius:999px;padding:6px 12px;text-decoration:none;transition:background .25s}
+  .bld-full:hover{background:rgba(110,231,183,.08)}
+  .bld-frame{width:100%;height:520px;border:1px solid var(--border);border-radius:12px;background:#000;display:block}
+  @media(max-width:640px){.bld-frame{height:460px}.bld-side{align-items:flex-start}}
+</style>
+
+  <!-- ===== THE BUILDS: one paste per episode, the real thing playable under it ===== -->
+  <section class="panel is-active" id="builds">
+    <div class="bld-stack">
+
+      <article class="bld">
+        <div class="bld-head">
+          <div>
+            <p class="bld-ep">EP 1 &middot; Train</p>
+            <h3 class="bld-name">The workout logger</h3>
+            <p class="bld-cmd"><span class="bld-type" data-cmd="/logger"></span><span class="caret"></span></p>
+          </div>
+          <div class="bld-side">
+            <button class="copy-btn" data-copy="ONEPASTE"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy the one paste</button>
+            <p class="bld-foot">paste it in Claude Code &middot; /update upgrades it</p>
+          </div>
+        </div>
+        <div class="bld-live">
+          <span class="bld-cue"><span class="live"></span>Live &middot; play with it</span>
+          <a class="bld-full" href="/lab/logger.html" target="_blank" rel="noopener">Open full screen</a>
+        </div>
+        <iframe class="bld-frame" src="/lab/logger.html" loading="lazy" title="The workout logger, playable"></iframe>
+      </article>
+
+      <article class="bld">
+        <div class="bld-head">
+          <div>
+            <p class="bld-ep">EP 2 &middot; Fuel</p>
+            <h3 class="bld-name">The supplement stack</h3>
+            <p class="bld-cmd"><span class="bld-type" data-cmd="/fuel"></span><span class="caret"></span></p>
+          </div>
+          <div class="bld-side">
+            <button class="copy-btn" data-copy="FUELPASTE"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy the one paste</button>
+            <p class="bld-foot">paste it in Claude Code &middot; /update upgrades it</p>
+          </div>
+        </div>
+        <div class="bld-live">
+          <span class="bld-cue"><span class="live"></span>Live &middot; play with it</span>
+          <a class="bld-full" href="/lab/stack.html" target="_blank" rel="noopener">Open full screen</a>
+        </div>
+        <iframe class="bld-frame" src="/lab/stack.html" loading="lazy" title="The supplement stack, playable"></iframe>
+      </article>
+
+      <article class="bld">
+        <div class="bld-head">
+          <div>
+            <p class="bld-ep">EP 3 &middot; Finance</p>
+            <h3 class="bld-name">The finance radar</h3>
+            <p class="bld-cmd"><span class="bld-type" data-cmd="/finance"></span><span class="caret"></span></p>
+          </div>
+          <div class="bld-side">
+            <button class="copy-btn" data-copy="FINPASTE"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy the one paste</button>
+            <p class="bld-foot">paste it in Claude Code &middot; /update upgrades it</p>
+          </div>
+        </div>
+        <div class="bld-live">
+          <span class="bld-cue"><span class="live"></span>Live &middot; play with it</span>
+          <a class="bld-full" href="/lab/subs.html" target="_blank" rel="noopener">Open full screen</a>
+        </div>
+        <iframe class="bld-frame" src="/lab/subs.html" loading="lazy" title="The finance radar, playable"></iframe>
+      </article>
+
+    </div>
+  </section>
+<script>
+  /* the slash types itself, staggered per card; the block caret keeps blinking */
+  (function(){
+    var els=document.querySelectorAll('.bld-type');
+    els.forEach(function(el,idx){
+      var cmd=el.getAttribute('data-cmd'),i=0;
+      setTimeout(function type(){
+        el.textContent=cmd.slice(0,++i);
+        if(i<cmd.length)setTimeout(type,110);
+      }, 500+idx*650);
+    });
+  })();
+</script>
 
   <!-- ===== ARSENAL ===== -->
   <section class="panel" id="arsenal">
   
-    <p class="ars-note">Every command ever shipped, in one place. <b>It only grows.</b> Every piece below starts as its real control. <b>Tap it and it opens into the real thing.</b></p>
-
-    <div class="usecase" style="margin:0 0 22px">
-      <h4>Get the whole arsenal</h4>
-      <p>One zip. Unzip it at the root of your repo: every command lands in <b style="font-family:var(--mono);color:var(--mint-cool);font-weight:500">.claude/commands/</b>, the backend rides along. Then run <b style="font-family:var(--mono);color:var(--mint-cool);font-weight:500">/logger</b> once. That is the whole install.</p>
-      <div class="flow"><span class="box">download zip</span><span class="arw">→</span><span class="box">unzip in your repo</span><span class="arw">→</span><span class="box">/logger</span></div>
-      <a href="https://www.patreon.com/RowanTBK/membership" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:#fff;color:#111;border-radius:14px;padding:18px 22px;font-weight:700;font-size:15px;letter-spacing:.03em;text-decoration:none;box-shadow:0 8px 30px rgba(255,255,255,.12)"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg> Support our launch! Copy all of these commands in your arsenal!</a>
-    </div>
+    
 
     <div class="ars-grid">
     <div class="season-head"><span>EP 1 · The workout logger</span></div>
@@ -1241,186 +1260,38 @@ YouTube Premium 13.99 monthly</div>
       <button class="copy-btn" data-copy="BACKEND" style="max-width:300px"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy the backend SQL</button>
     </div>
 
-    <div class="usecase" style="margin-top:22px">
-      <h4>Point it at anything</h4>
-      <p>This is where the arsenal earns its name. One sentence retargets every brick. Water, savings, reading, anything.</p>
-      <button class="copy-btn" data-goto="usecases" style="max-width:260px"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>See the use cases</button>
-    </div>
-  </section>
+    </section>
 
   <!-- ===== USE CASES ===== -->
     <!-- ===== ADD-ONS: pieces of Vitality, pulled pixel for pixel ===== -->
   <section class="panel" id="addons">
-    <p class="tab-intro">Pieces of the real Vitality, extracted <b>pixel for pixel</b> — designs, backdrops, the gem, and full functions that <b>plug into data you already track</b>. Some free. The best are for members.</p>
+    <p class="tab-intro">Pieces of the real Vitality, <b>pixel for pixel</b>. Play with it. It&rsquo;s live.</p>
 
-    <!-- THE HERO: the Peak Graph, as a PLUG -->
-    <div style="width:min(980px,calc(100vw - 36px));margin:0 auto 30px;border:1px solid rgba(232,200,120,.35);border-radius:20px;overflow:hidden;background:rgba(20,16,4,.25)">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(232,200,120,.2)">
+    <!-- THE HERO: the Peak Page, as a LIVING PLUG (·01 Your day + ·02 Your schedule) -->
+    <div style="width:min(1040px,calc(100vw - 36px));margin:0 auto 30px;border:1px solid rgba(232,200,120,.35);border-radius:20px;overflow:hidden;background:rgba(20,16,4,.25)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(232,200,120,.2);flex-wrap:wrap">
         <div>
-          <p style="margin:0 0 4px;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.16em;color:#E8C878">★ ADD-ON · A PLUG</p>
-          <strong style="color:#fff;font-size:18px;font-family:Georgia,serif;font-style:italic">The Peak Graph</strong>
-          <p style="margin:6px 0 0;color:#9fb4ab;font-size:13px;max-width:52ch;line-height:1.55">The real Peak page&rsquo;s energy curve — ring, scrub, feel line, plan strip — <b style="color:#E8C878">pixel for pixel, math and all</b>. It plugs into data you already track and shows a new output for your goals. <b style="color:#E8C878">Tap the ⚙ on the tile</b> to see how it&rsquo;s wired into each panel.</p>
+          <p style="margin:0 0 4px;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.16em;color:#E8C878">★ ADD-ON · A LIVING PLUG</p>
+          <strong style="color:#fff;font-size:18px;font-family:Georgia,serif;font-style:italic">The Peak Page</strong>
+          <p style="margin:6px 0 0;color:#9fb4ab;font-size:13px;max-width:58ch;line-height:1.55">The real Peak page, rebuilt <b style="color:#E8C878">pixel for pixel</b> and lifted a level. A one-tap stimulant stack that <b style="color:#E8C878">actually feeds the curve</b>, hour-by-hour energy math, plain-words day planning, and your Open block schedule. Tap <b style="color:#E8C878">Log now</b> and the whole graph rises. Tap the gear to see how it wires into data you already track.</p>
         </div>
         <div style="flex:0 0 auto;display:flex;flex-direction:column;gap:10px;align-items:flex-end">
           <a href="https://www.patreon.com/RowanTBK/membership" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:9px;background:#fff;color:#111;border-radius:999px;padding:9px 16px;font-weight:700;font-size:12.5px;text-decoration:none"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg> Plug it into your data</a>
         </div>
       </div>
-      <iframe src="./tiles/peak.html" style="width:100%;height:660px;border:0;display:block;background:#050505" title="The Peak Graph — live"></iframe>
-      <p style="margin:0;padding:10px 16px 14px;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#8a8f98;text-align:center">● LIVE · THIS IS THE REAL FUNCTION, PIXEL FOR PIXEL · PLAY WITH IT</p>
+      <iframe id="peakFrame" src="./tiles/peak.html" scrolling="no" style="width:100%;height:1640px;border:0;display:block;background:#050505" title="The Peak Page — live"></iframe>
+      <p style="margin:0;padding:10px 16px 14px;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#8a8f98;text-align:center">● LIVE · THE REAL FUNCTION, PIXEL FOR PIXEL · LOG A COFFEE AND WATCH IT LIFT</p>
     </div>
-
-    <!-- PLUG №2: the Vitals Score — circle + Today's Numbers + the manual check-in jack -->
-    <div style="width:min(980px,calc(100vw - 36px));margin:0 auto 30px;border:1px solid rgba(138,180,255,.35);border-radius:20px;overflow:hidden;background:rgba(6,12,22,.3)">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(138,180,255,.2)">
-        <div>
-          <p style="margin:0 0 4px;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.16em;color:#8AB4FF">★ ADD-ON · A PLUG · <span style="color:#f0c987">MEMBER</span></p>
-          <strong style="color:#fff;font-size:18px;font-family:Georgia,serif;font-style:italic">The Vitals Score</strong>
-          <p style="margin:6px 0 0;color:#9fb4ab;font-size:13px;max-width:56ch;line-height:1.55">The animated <b style="color:#8AB4FF">score circle</b>, Today's Numbers, and the whole tied-together design — exact function, exact pixels. It <b style="color:#8AB4FF">plugs into your own WHOOP API — or the manual check-in</b>. No device needed: <i style="color:#dbe7ff">"How did you sleep?"</i> feeds the same circle.</p>
-        </div>
-        <div style="flex:0 0 auto;display:flex;flex-direction:column;gap:10px;align-items:flex-end">
-          <a href="https://www.patreon.com/RowanTBK/membership" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:9px;background:#fff;color:#111;border-radius:999px;padding:9px 16px;font-weight:700;font-size:12.5px;text-decoration:none"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg> Plug it into your data</a>
-          <button type="button" class="wire-btn" data-wire="wiring2" style="background:transparent;border:1px solid rgba(138,180,255,.4);color:#8AB4FF;border-radius:999px;padding:8px 16px;font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.12em;cursor:pointer">SEE THE WIRING</button>
-        </div>
-      </div>
-
-      <div id="wiring2" hidden style="padding:20px 20px 6px">
-        <svg viewBox="0 0 960 250" style="width:100%;display:block">
-          <style>
-            .vl { stroke:#8AB4FF; stroke-width:1.5; fill:none; stroke-dasharray:6 7; animation:vflow 1.4s linear infinite }
-            @keyframes vflow { to { stroke-dashoffset: -13 } }
-            .vt { font-family:ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.08em; fill:#9fb4ab }
-            .vb { fill:#8AB4FF } .vg { fill:#6EE7B7 }
-          </style>
-          <text class="vt" x="20" y="24">YOUR WHOOP API (BYO KEYS)</text>
-          <rect x="20" y="36" width="205" height="28" rx="8" fill="none" stroke="#22314d"/><text class="vt vb" x="34" y="54">whoop · recovery</text>
-          <rect x="20" y="72" width="205" height="28" rx="8" fill="none" stroke="#22314d"/><text class="vt vb" x="34" y="90">whoop · hrv + rhr</text>
-          <rect x="20" y="108" width="205" height="28" rx="8" fill="none" stroke="#22314d"/><text class="vt vb" x="34" y="126">whoop · sleep + strain</text>
-          <text class="vt" x="20" y="176">OR NO DEVICE AT ALL</text>
-          <rect x="20" y="188" width="205" height="28" rx="8" fill="none" stroke="#243c32"/><text class="vt vg" x="34" y="206">manual · "how did you sleep?"</text>
-          <path class="vl" d="M225 50 C 380 50, 420 62, 560 62"/>
-          <path class="vl" d="M225 86 C 380 86, 420 100, 560 100"/>
-          <path class="vl" d="M225 122 C 380 122, 430 138, 560 138"/>
-          <path class="vl" d="M225 202 C 420 202, 460 146, 560 142" stroke="#6EE7B7"/>
-          <text class="vt" x="560" y="24">SAME JACK · SAME FACE</text>
-          <rect x="560" y="46" width="220" height="28" rx="8" fill="none" stroke="#22314d"/><text class="vt vb" x="574" y="64">Score circle · 74 / 100</text>
-          <rect x="560" y="86" width="220" height="28" rx="8" fill="none" stroke="#22314d"/><text class="vt vb" x="574" y="104">Today's numbers</text>
-          <rect x="560" y="126" width="220" height="28" rx="8" fill="none" stroke="#22314d"/><text class="vt vb" x="574" y="144">Score history · 7d</text>
-          <path class="vl" d="M780 60 C 850 60, 870 100, 900 100"/>
-          <path class="vl" d="M780 100 H 900"/>
-          <path class="vl" d="M780 140 C 850 140, 870 104, 900 104"/>
-          <rect x="900" y="84" width="40" height="34" rx="10" fill="none" stroke="#8AB4FF"/><text class="vt vb" x="909" y="106">y</text>
-        </svg>
-        <p style="margin:8px 0 14px;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.12em;color:#8a8f98;text-align:center">WHOOP OR HANDS — BOTH FEED THE SAME JACK · THE FACE NEVER KNOWS THE DIFFERENCE</p>
-      </div>
-
-      <iframe src="./tiles/vitals.html" style="width:100%;height:480px;border:0;display:block;background:#000" title="The Vitals Score — live"></iframe>
-      <p style="margin:0;padding:10px 16px 14px;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#8a8f98;text-align:center">● LIVE · TAP THROUGH IT — THE MANUAL CHECK-IN IS INSIDE, IT SHIPS WITH THE PLUG</p>
-    </div>
-
-    <!-- designs / backdrops / avatar -->
-    <div style="width:min(980px,calc(100vw - 36px));margin:0 auto">
-      <p style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.16em;color:#6EE7B7;margin:0 0 12px">TILE DESIGNS · FROM “DESIGN YOUR TILE”</p>
-      <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
-
-      <div style="position:relative;border:1px solid rgba(110,231,183,.16);border-radius:14px;padding:14px;background:rgba(4,20,13,.28)">
-        
-        <svg viewBox="0 0 200 70" style="width:100%;height:64px;display:block"><path stroke="#6EE7B7" stroke-width="2" fill="none" stroke-linecap="round" d="M15 55 L60 42 L105 46 L150 24 L185 15"/><circle cx="150" cy="24" r="3.5" fill="#6EE7B7"/></svg>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-          <span style="font-family:Georgia,serif;font-style:italic;color:#e7fff4;font-size:14px">Ascent</span>
-          <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:#6EE7B7">FREE</span>
-        </div>
-      </div>
-
-      <div style="position:relative;border:1px solid rgba(110,231,183,.16);border-radius:14px;padding:14px;background:rgba(4,20,13,.28)">
-        
-        <svg viewBox="0 0 200 70" style="width:100%;height:64px;display:block"><path stroke="#6EE7B7" stroke-width="2" fill="none" stroke-linecap="round" d="M10 38 H70 L84 20 L98 52 L110 38 H190"/><circle cx="98" cy="52" r="3.5" fill="#6EE7B7"/></svg>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-          <span style="font-family:Georgia,serif;font-style:italic;color:#e7fff4;font-size:14px">Pulse</span>
-          <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:#6EE7B7">FREE</span>
-        </div>
-      </div>
-
-      <div style="position:relative;border:1px solid rgba(110,231,183,.16);border-radius:14px;padding:14px;background:rgba(4,20,13,.28)">
-        <span style="position:absolute;top:10px;right:10px"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg></span>
-        <svg viewBox="0 0 200 70" style="width:100%;height:64px;display:block"><g stroke="#6EE7B7" stroke-width="2" fill="none" stroke-linecap="round"><path d="M30 58 V46"/><path d="M60 58 V40"/><path d="M90 58 V32"/><path d="M120 58 V24"/><path d="M150 58 V16"/></g></svg>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-          <span style="font-family:Georgia,serif;font-style:italic;color:#e7fff4;font-size:14px">Rep Bars</span>
-          <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:#f0c987">MEMBER</span>
-        </div>
-      </div>
-
-      <div style="position:relative;border:1px solid rgba(110,231,183,.16);border-radius:14px;padding:14px;background:rgba(4,20,13,.28)">
-        <span style="position:absolute;top:10px;right:10px"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg></span>
-        <svg viewBox="0 0 200 70" style="width:100%;height:64px;display:block"><circle cx="100" cy="35" r="22" stroke="#6EE7B7" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="100" cy="13" r="3.5" fill="#6EE7B7"/></svg>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-          <span style="font-family:Georgia,serif;font-style:italic;color:#e7fff4;font-size:14px">Effort Ring</span>
-          <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:#f0c987">MEMBER</span>
-        </div>
-      </div>
-
-      <div style="position:relative;border:1px solid rgba(110,231,183,.16);border-radius:14px;padding:14px;background:rgba(4,20,13,.28)">
-        <span style="position:absolute;top:10px;right:10px"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg></span>
-        <svg viewBox="0 0 200 70" style="width:100%;height:64px;display:block"><path stroke="#6EE7B7" stroke-width="2" fill="none" stroke-linecap="round" d="M15 30 Q55 18 95 30 T175 30"/><path stroke="#6EE7B7" stroke-width="2" fill="none" stroke-linecap="round" opacity=".5" d="M15 44 Q55 32 95 44 T175 44"/></svg>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-          <span style="font-family:Georgia,serif;font-style:italic;color:#e7fff4;font-size:14px">Tide</span>
-          <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:#f0c987">MEMBER</span>
-        </div>
-      </div>
-
-      <div style="position:relative;border:1px solid rgba(110,231,183,.16);border-radius:14px;padding:14px;background:rgba(4,20,13,.28)">
-        <span style="position:absolute;top:10px;right:10px"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg></span>
-        <svg viewBox="0 0 200 70" style="width:100%;height:64px;display:block"><path stroke="#6EE7B7" stroke-width="2" fill="none" stroke-linecap="round" d="M120 15 a20 20 0 1 0 14 34 a16 16 0 1 1 -14 -34"/><path stroke="#6EE7B7" stroke-width="2" fill="none" stroke-linecap="round" opacity=".5" d="M20 52 Q60 42 100 52 T180 52"/></svg>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-          <span style="font-family:Georgia,serif;font-style:italic;color:#e7fff4;font-size:14px">Crescent</span>
-          <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:#f0c987">MEMBER</span>
-        </div>
-      </div>
-      </div>
-
-      <p style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.16em;color:#6EE7B7;margin:26px 0 12px">BACKDROPS &amp; THE AVATAR</p>
-      <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
-
-      <div style="position:relative;border:1px solid rgba(110,231,183,.16);border-radius:14px;padding:14px;background:rgba(4,20,13,.28)">
-        
-        <svg viewBox="0 0 200 70" style="width:100%;height:64px;display:block"><rect x="10" y="10" width="180" height="50" rx="8" fill="#07130e"/><path d="M10 46 L50 30 L90 42 L130 24 L190 40 L190 60 L10 60 Z" fill="#0d1a17"/><circle cx="60" cy="22" r="1.5" fill="#6EE7B7"/><circle cx="150" cy="18" r="1.5" fill="#6EE7B7"/></svg>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-          <span style="font-family:Georgia,serif;font-style:italic;color:#e7fff4;font-size:14px">Aurora world</span>
-          <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:#6EE7B7">FREE</span>
-        </div>
-      </div>
-
-      <div style="position:relative;border:1px solid rgba(110,231,183,.16);border-radius:14px;padding:14px;background:rgba(4,20,13,.28)">
-        <span style="position:absolute;top:10px;right:10px"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg></span>
-        <svg viewBox="0 0 200 70" style="width:100%;height:64px;display:block"><rect x="10" y="10" width="180" height="50" rx="8" fill="#0f0c04"/><path d="M10 48 L60 34 L110 44 L160 28 L190 42 L190 60 L10 60 Z" fill="#1a1408"/><circle cx="120" cy="20" r="1.5" fill="#E8C878"/></svg>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-          <span style="font-family:Georgia,serif;font-style:italic;color:#e7fff4;font-size:14px">Gold dusk</span>
-          <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:#f0c987">MEMBER</span>
-        </div>
-      </div>
-
-      <div style="position:relative;border:1px solid rgba(110,231,183,.16);border-radius:14px;padding:14px;background:rgba(4,20,13,.28)">
-        <span style="position:absolute;top:10px;right:10px"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg></span>
-        <svg viewBox="0 0 200 70" style="width:100%;height:64px;display:block"><path d="M100 12 L128 28 L128 48 L100 62 L72 48 L72 28 Z" fill="none" stroke="#9be8c4" stroke-width="2"/><path d="M92 32 L100 44 L108 32" stroke="#6EE7B7" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-          <span style="font-family:Georgia,serif;font-style:italic;color:#e7fff4;font-size:14px">The gem · pulse</span>
-          <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:#f0c987">MEMBER</span>
-        </div>
-      </div>
-      </div>
-
-      <p style="margin:26px auto 0;max-width:64ch;text-align:center;color:#9fb4ab;font-size:13px;line-height:1.6">Members plug any of these into their board with one line to the mentor: <i style="color:#fff">“wire the peak graph into my data.”</i></p>
-      <div style="text-align:center;margin:16px 0 8px"><a href="https://www.patreon.com/RowanTBK/membership" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:9px;background:#fff;color:#111;border-radius:999px;padding:9px 16px;font-weight:700;font-size:12.5px;text-decoration:none"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.5" cy="9.5" r="6.5" fill="#FF424D"/><rect x="2" y="3" width="4" height="18" rx="1" fill="#111"/></svg> Support our launch! Get every add-on</a></div>
-    </div>
+    <script>(function(){var f=document.getElementById('peakFrame');if(!f)return;
+      function fit(){try{if(!f.offsetParent)return;var b=f.contentWindow.document.body,h=Math.max(b.scrollHeight,b.offsetHeight);if(h>240)f.style.height=(h+2)+'px';}catch(e){}}
+      function burst(){[0,120,320,650,1100].forEach(function(d){setTimeout(fit,d);});}
+      f.addEventListener('load',function(){burst();try{new f.contentWindow.ResizeObserver(fit).observe(f.contentWindow.document.body);}catch(e){}});
+      var tab=document.querySelector('.tab[data-p="addons"]');if(tab)tab.addEventListener('click',burst);
+      window.addEventListener('resize',fit);
+    })();</script>
   </section>
 
-  <section class="panel" id="usecases">
-    <div style="max-width:560px;margin:30px auto;text-align:center;border:1px dashed rgba(110,231,183,.3);border-radius:16px;padding:36px 28px">
-      <p style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.16em;color:#f0c987;margin:0 0 10px">🚧 UNDER CONSTRUCTION</p>
-      <h4 style="color:#e7fff4;margin:0 0 10px">Use cases are being rebuilt</h4>
-      <p style="color:#9fb4ab;font-size:13.5px;line-height:1.6;margin:0 0 18px">The free ones live in <b style="color:#6EE7B7">Episodes</b> — every command retargets with one sentence (<i>/logger for my reading</i>). The full retargeting playbook ships to members first.</p>
-      <a href="https://www.patreon.com/RowanTBK/membership" target="_blank" rel="noopener" style="display:inline-block;background:#6EE7B7;color:#042a1c;border-radius:999px;padding:11px 20px;font-weight:600;font-size:14px;text-decoration:none">Get it on Patreon →</a>
-    </div>
-  </section>
+
 
   <footer class="lab-foot">
     <div class="foot-rule"></div>
@@ -1433,11 +1304,12 @@ YouTube Premium 13.99 monthly</div>
 <script>
   var ONEPASTE = "Install the Vitality arsenal in this project. Run: curl -sL https://vitality-jade.vercel.app/lab/the-arsenal.zip -o /tmp/arsenal.zip && unzip -o /tmp/arsenal.zip -d .  Then follow .claude/commands/logger.md and install the logger as built. Finish by telling me in one line where it landed and what to tap first.";
   var FUELPASTE = "Install the Vitality arsenal in this project. Run: curl -sL https://vitality-jade.vercel.app/lab/the-arsenal.zip -o /tmp/arsenal.zip && unzip -o /tmp/arsenal.zip -d .  Then follow .claude/commands/fuel.md and install the supplement stack as built. Finish by telling me in one line where it landed and what to tap first.";
-  var FINPASTE = "Install the Vitality arsenal in this project. Run: curl -sL https://vitality-jade.vercel.app/lab/the-arsenal.zip -o /tmp/arsenal.zip && unzip -o /tmp/arsenal.zip -d .  Then follow .claude/commands/fuel.md and install the supplement stack as built. Finish by telling me in one line where it landed and what to tap first.";
+  var FINPASTE = "Install the Vitality arsenal in this project. Run: curl -sL https://vitality-jade.vercel.app/lab/the-arsenal.zip -o /tmp/arsenal.zip && unzip -o /tmp/arsenal.zip -d .  Then follow .claude/commands/finance.md and install the finance radar as built. Finish by telling me in one line where it landed and what to tap first.";
   var FUELMASTER = "---\ndescription: Install the whole finished supplement stack into your app in one command. Adapts to anything you take daily. Run \"/fuel update\" any time to pull the newest version.\n---\n\nYou are installing THE STACK: the Fuel tile's tracker, every fuel brick shipped so far, wired to one saved store.\n\nTHE REAL CODE: the complete, tested stack ships beside this command at\ncode/the-living-stack.html.\n\nDEFAULT INSTALL IS A COPY, NOT A REBUILD. Save the user's tokens: when\ninstalling as built, do NOT read that file into context. Copy the right\nvariant directly into place:\n- Vitality base fork (dashboard): copy code/the-living-stack.tile.html to\n  public/tiles/fuel.html. It is the same stack with saving routed through\n  the dashboard bridge, so it works sealed. NEVER put the plain variant in a\n  tile slot: sealed tiles block localStorage and it would silently lose data.\n- Anywhere else (their own app or page): copy code/the-living-stack.html.\nThen do the small wiring below. Only open the file and extract its marked\nregions (@episode-start:checklist, blocks, search, loader, suggest) when\nadapting to a target or a different stack. It is real product code from a\nshipped app: keep its logic.\n\nDASHBOARD FRESHNESS (vitality-base forks only, check BEFORE the copy): open\napp/app/DashboardGrid.tsx and look for the string openFull. If it is missing,\nthe fork is old and tiles open as a small popup card instead of full screen.\nFix it first: add https://github.com/RowanThistlebrooke/vitality-base as a\nremote called upstream, merge its main branch (on conflict keep the user's\npublic/tiles/ and content/site.ts), then push it together with the tile.\nTell the user in one line: your dashboard was updated too, tiles now open\nfull screen.\n\nThe target is: $ARGUMENTS\n- No target: install as built (the copy above). In a Vitality repo, wire the\n  tile to report progress to the bridge after each check-off:\n  report({ key:'supplements', label:'Stack', value: takenTodayCount, date: todayKey, kind:'count' })\n- \"update\": pull the newest arsenal and refresh everything. Do this:\n  1. curl -sL https://vitality-jade.vercel.app/lab/the-arsenal.zip -o /tmp/arsenal.zip && unzip -o /tmp/arsenal.zip -d .\n     (refreshes code/, backend.sql and every command in .claude/commands/)\n  2. Re-copy the right variant into place, same as install (tile.html for a\n     dashboard tile, plain for an app).\n  3. Re-apply backend.sql (additive, safe to re-run). The user's data is never touched.\n  4. Tell them in one line what is new.\n- A target (\"for my meds\"): keep the shape and rules, adapt the data, units and labels to it.\n\nRULE: add only, one saved store, nothing already there breaks.\n\nSAVING (do this for them, never make them write SQL):\n1. If this repo already has Supabase wired (env keys or supabase/ folder), apply backend.sql to it directly (CLI if linked, else their dashboard SQL editor: hand them the one paste and wait).\n2. If not, offer two paths: a free Supabase project (walk them through it, ~2 minutes) then apply backend.sql, or keep the on-device version that already works and add the cloud later.\n3. backend.sql is additive and safe to re-run. It stamps every row with their account (row-level security), so each person only ever sees their own data.\n\nDO: place the code (copy by default, adapt only when needed); set up saving as above; wire the tile; show it working with one real supplement checked off.\n\nGUARDRAILS (do these every run):\n\nINSTALL FIRST, DO NOT ASK. On the first run, install as built right away. Do not ask what they want, do not survey options, do not explore the repo. Copy, wire, and show it working. One clear result lands before any question.\n\nSTAY ON TASK. This is what keeps their cost tiny. Touch only what this install needs. Do not refactor, tidy, rename, or read unrelated files. The only things you read into context are this command and the few wiring targets.\n\nSAFE TO RE-RUN. This command is idempotent. If anything looks off, the fix is always to run /fuel again. Tell them that. Never leave a beginner stuck debugging.\n\nTHEN HAND THEM THE WHEEL. After it works, report in one line what landed and what to tap. Then offer at most three concrete next steps as a numbered menu, like: Want to (1) log a supplement, (2) change the look, or (3) leave it as is? Just say the number. Never ask an open \"what would you like to do\", always give a bounded choice they can answer in one tap.\n\nCOST HONESTY. When you finish, state the rough spend in one plain line, like: that used about 60 cents of credits. It builds trust and shows the tool is cheap.\n\nVOICE: no em dashes, no emojis, short human sentences, calm premium feel.";
   var FINMASTER = "Members only. This build ships from Patreon — the code is not on this page.";
   var MASTER = "---\ndescription: Install the whole finished workout logger into your app in one command. Adapts to anything you track. Run \"/logger update\" any time to pull the newest version.\n---\n\nYou are installing THE LOGGER: every workout brick shipped so far, wired to one saved table.\n\nTHE REAL CODE: the complete, tested logger ships beside this command at\ncode/the-living-logger.html.\n\nDEFAULT INSTALL IS A COPY, NOT A REBUILD. Save the user's tokens: when\ninstalling as built, do NOT read that file into context. Copy the right\nvariant directly into place:\n- Vitality base fork (dashboard): copy code/the-living-logger.tile.html to\n  public/tiles/train.html. It is the same logger with saving routed through\n  the dashboard bridge, so it works sealed. NEVER put the plain variant in a\n  tile slot: sealed tiles block localStorage and it would silently lose data.\n- Anywhere else (their own app or page): copy code/the-living-logger.html.\nThen do the small wiring below. Only open the file and\nextract its marked regions (@episode-start:chart, logger, library, rest-timer,\nsession) when adapting to a target or a different stack. It is months of\nbacktested code: keep its logic.\n\nDASHBOARD FRESHNESS (vitality-base forks only, check BEFORE the copy): open\napp/app/DashboardGrid.tsx and look for the string openFull. If it is missing,\nthe fork is old and tiles open as a small popup card instead of full screen.\nFix it first: add https://github.com/RowanThistlebrooke/vitality-base as a\nremote called upstream, merge its main branch (on conflict keep the user's\npublic/tiles/ and content/site.ts), then push it together with the tile.\nTell the user in one line: your dashboard was updated too, tiles now open\nfull screen.\n\nThe target is: $ARGUMENTS\n- No target: install as built (the copy above). In a Vitality repo, wire the\n  tile to report progress to the bridge after each finished session:\n  report({ key:'workout', label:'Sessions', value: countThisWeek, date: todayKey, kind:'count' })\n- \"update\": pull the newest arsenal and refresh everything. Do this:\n  1. curl -sL https://vitality-jade.vercel.app/lab/the-arsenal.zip -o /tmp/arsenal.zip && unzip -o /tmp/arsenal.zip -d .\n     (refreshes code/, backend.sql and every command in .claude/commands/)\n  2. Re-copy the right variant into place, same as install (tile.html for a\n     dashboard tile, plain for an app).\n  3. Re-apply backend.sql (additive, safe to re-run). The user's data is never touched.\n  4. Tell them in one line what is new.\n- A target (\"for my water\"): keep the shape and rules, adapt the data, units and labels to it.\n\nRULE: add only, one saved store, nothing already there breaks.\n\nSAVING (do this for them, never make them write SQL):\n1. If this repo already has Supabase wired (env keys or supabase/ folder), apply backend.sql to it directly (CLI if linked, else their dashboard SQL editor: hand them the one paste and wait).\n2. If not, offer two paths: a free Supabase project (walk them through it, ~2 minutes) then apply backend.sql, or keep the on-device version that already works and add the cloud later.\n3. backend.sql is additive and safe to re-run. It stamps every row with their account (row-level security), so each person only ever sees their own data.\n\nDO: place the code (copy by default, adapt only when needed); set up saving as above; wire the tile; show it working with one real entry logged.\n\nGUARDRAILS (do these every run):\n\nINSTALL FIRST, DO NOT ASK. On the first run, install as built right away. Do not ask what they want, do not survey options, do not explore the repo. Copy, wire, and show it working. One clear result lands before any question.\n\nSTAY ON TASK. This is what keeps their cost tiny. Touch only what this install needs. Do not refactor, tidy, rename, or read unrelated files. The only things you read into context are this command and the few wiring targets.\n\nSAFE TO RE-RUN. This command is idempotent. If anything looks off, the fix is always to run /logger again. Tell them that. Never leave a beginner stuck debugging.\n\nTHEN HAND THEM THE WHEEL. After it works, report in one line what landed and what to tap. Then offer at most three concrete next steps as a numbered menu, like: Want to (1) log today's workout, (2) change the look, or (3) leave it as is? Just say the number. Never ask an open \"what would you like to do\", always give a bounded choice they can answer in one tap.\n\nCOST HONESTY. When you finish, state the rough spend in one plain line, like: that used about 60 cents of credits. It builds trust and shows the tool is cheap.\n\nVOICE: no em dashes, no emojis, short human sentences, mint on black, premium Apple Health feel.";
-  var BACKEND = document.querySelector('#backend pre').textContent;
+  var BACKENDEL = document.querySelector('#backend pre');
+  var BACKEND = BACKENDEL ? BACKENDEL.textContent : '';
 
   function fileFor(id){
     var M = {
@@ -1496,7 +1368,7 @@ YouTube Premium 13.99 monthly</div>
         spark(b); return;
       }
       if (!b.dataset.copy) return;   // buttons with their own handler (the zip)
-      var v = b.dataset.copy; var text = v==='MASTER'?MASTER : v==='BACKEND'?BACKEND : v==='ONEPASTE'?ONEPASTE : v==='FUELPASTE'?FUELPASTE : v==='FUELMASTER'?FUELMASTER : v;
+      var v = b.dataset.copy; var text = v==='MASTER'?MASTER : v==='BACKEND'?BACKEND : v==='ONEPASTE'?ONEPASTE : v==='FUELPASTE'?FUELPASTE : v==='FUELMASTER'?FUELMASTER : v==='FINPASTE'?FINPASTE : v;
       navigator.clipboard.writeText(text); spark(b);
     });
   });
@@ -2013,4 +1885,115 @@ YouTube Premium 13.99 monthly</div>
   })();
 </script><script>(function(){document.querySelectorAll('.wire-btn').forEach(function(b){var w=document.getElementById(b.getAttribute('data-wire'));if(!w)return;b.addEventListener('click',function(){w.hidden=!w.hidden;b.textContent=w.hidden?'SEE THE WIRING':'HIDE THE WIRING'})})})()</script>
 
-<script>(function(){var b=document.getElementById("seedcopy"),x=document.getElementById("seedbox");if(!b||!x)return;b.addEventListener("click",function(){navigator.clipboard.writeText(x.textContent).then(function(){b.textContent="Copied \u2713 \u2014 paste it in Claude Code";setTimeout(function(){b.textContent="Copy the seed"},2200)})})})()</script>
+<script>(function(){var b=document.getElementById("seedcopy"),x=document.getElementById("seedbox");if(!b||!x)return;b.addEventListener("click",function(){navigator.clipboard.writeText(x.textContent).then(function(){b.textContent="Copied \u2713 · paste it in Claude Code";setTimeout(function(){b.textContent="Copy the seed"},2200)})})})()</script>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+const canvas=document.getElementById('vhGemCanvas');
+function fallback(){canvas.style.display='none';document.getElementById('vhGemFallback').style.display='block';}
+try{
+  const PARAMS={rotationSpeed:0.08,wobbleAmplitude:0.10,cursorTilt:0.18,spring:0.06,mintTint:0.12,roughness:0.08,transmission:0.82,thickness:1.8,ior:1.55,keyWarmth:0.55};
+  const MINT=new THREE.Color('#6EE7B7'),WARM=new THREE.Color('#FFE2B5'),COOL_MINT=new THREE.Color('#A7F3D0'),NEUTRAL=new THREE.Color('#F2FFF8');
+  const pal={atten:'#6EE7B7',emissive:'#0d4a36',wire:0xa7f3d0,
+    env1:['rgba(180,255,220,1)','rgba(110,231,183,0.45)','rgba(110,231,183,0)'],
+    env3:['rgba(140,220,190,0.9)','rgba(140,220,190,0)']};
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setClearColor(0x000000,0);renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(28,1,0.1,100);
+  camera.position.set(0,0.05,4.6);camera.lookAt(0,0,0);
+  const ec=document.createElement('canvas');ec.width=1024;ec.height=512;
+  const c=ec.getContext('2d');
+  c.fillStyle='#0a1a18';c.fillRect(0,0,1024,512);
+  const g1=c.createRadialGradient(280,170,0,280,170,520);
+  g1.addColorStop(0,pal.env1[0]);g1.addColorStop(0.4,pal.env1[1]);g1.addColorStop(1,pal.env1[2]);
+  c.fillStyle=g1;c.fillRect(0,0,1024,512);
+  const g2=c.createRadialGradient(760,200,0,760,200,500);
+  g2.addColorStop(0,'rgba(255, 235, 195, 1)');g2.addColorStop(0.4,'rgba(255, 220, 170, 0.42)');g2.addColorStop(1,'rgba(255, 220, 170, 0)');
+  c.fillStyle=g2;c.fillRect(0,0,1024,512);
+  const g3=c.createRadialGradient(512,470,0,512,470,380);
+  g3.addColorStop(0,pal.env3[0]);g3.addColorStop(1,pal.env3[1]);
+  c.fillStyle=g3;c.fillRect(0,0,1024,512);
+  const g4=c.createRadialGradient(420,90,0,420,90,80);
+  g4.addColorStop(0,'rgba(255,255,255,.85)');g4.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=g4;c.fillRect(0,0,1024,512);
+  const envSource=new THREE.CanvasTexture(ec);
+  envSource.mapping=THREE.EquirectangularReflectionMapping;
+  envSource.colorSpace=THREE.SRGBColorSpace;envSource.needsUpdate=true;
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  scene.environment=pmrem.fromEquirectangular(envSource).texture;
+  envSource.dispose();
+  const geo=new THREE.IcosahedronGeometry(1,0);
+  const glass=NEUTRAL.clone().lerp(MINT,PARAMS.mintTint);
+  const mat=new THREE.MeshPhysicalMaterial({
+    color:glass,transmission:PARAMS.transmission,thickness:PARAMS.thickness,ior:PARAMS.ior,
+    roughness:PARAMS.roughness,metalness:0,
+    attenuationColor:new THREE.Color(pal.atten),attenuationDistance:1.0,
+    clearcoat:0.7,clearcoatRoughness:0.04,envMapIntensity:2.8,
+    transparent:true,side:THREE.DoubleSide,
+    emissive:new THREE.Color(pal.emissive),emissiveIntensity:0.5});
+  const mesh=new THREE.Mesh(geo,mat);scene.add(mesh);
+  const wire=new THREE.LineSegments(new THREE.EdgesGeometry(geo,1),
+    new THREE.LineBasicMaterial({color:pal.wire,transparent:true,opacity:0.7,depthTest:false}));
+  wire.renderOrder=2;wire.scale.setScalar(1.001);mesh.add(wire);
+  const vc=document.createElement('canvas');vc.width=256;vc.height=256;
+  const v=vc.getContext('2d');
+  v.lineCap='round';v.lineJoin='round';
+  v.strokeStyle='rgba(234,255,245,0.95)';v.lineWidth=8;
+  v.shadowColor='#6EE7B7';v.shadowBlur=16;
+  v.beginPath();v.moveTo(80,88);v.lineTo(128,180);v.lineTo(176,88);v.stroke();
+  const vTex=new THREE.CanvasTexture(vc);vTex.colorSpace=THREE.SRGBColorSpace;
+  const vSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:vTex,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthTest:false}));
+  vSprite.scale.setScalar(0.62);vSprite.renderOrder=3;
+  scene.add(vSprite);
+  scene.add(new THREE.AmbientLight(0x1a3a2c,0.15));
+  const keyCol=NEUTRAL.clone().lerp(WARM,PARAMS.keyWarmth);
+  const key=new THREE.DirectionalLight(keyCol.getHex(),4.0);key.position.set(2.6,1.8,2.2);scene.add(key);
+  const rim=new THREE.DirectionalLight(COOL_MINT.getHex(),2.2);rim.position.set(-2.8,1.2,-2.0);scene.add(rim);
+  const fill=new THREE.DirectionalLight(0x88c4b0,0.6);fill.position.set(0,-2.5,1);scene.add(fill);
+  function resize(){
+    const w=canvas.clientWidth,h=canvas.clientHeight;
+    if(!w||!h)return;
+    renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;camera.updateProjectionMatrix();
+  }
+  resize();new ResizeObserver(resize).observe(canvas);
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let tx=0,ty=0,cx=0,cy=0;
+  window.addEventListener('pointermove',e=>{
+    cx=(e.clientX/window.innerWidth-0.5)*2;
+    cy=(e.clientY/window.innerHeight-0.5)*2;
+  });
+  const clock=new THREE.Clock();
+  (function tick(){
+    requestAnimationFrame(tick);
+    const t=clock.getElapsedTime();
+    if(!reduced){
+      tx+=((cy*PARAMS.cursorTilt)-tx)*PARAMS.spring;
+      ty+=((cx*PARAMS.cursorTilt)-ty)*PARAMS.spring;
+      mesh.rotation.y=t*PARAMS.rotationSpeed+ty;
+      mesh.rotation.x=Math.sin(t*0.35)*PARAMS.wobbleAmplitude+tx;
+      /* character-mode breath: gentle scale + emissive swell on an organic ~2s beat */
+      const breath=0.5+0.5*Math.sin(t*(Math.PI*2/2.0)+Math.sin(t*0.7)*0.35);
+      mesh.scale.setScalar(1+0.018*breath);
+      mat.emissiveIntensity=0.46+0.28*breath;
+      vSprite.material.opacity=0.55+0.35*breath;
+    }
+    renderer.render(scene,camera);
+  })();
+  /* drifting hero particles */
+  const hero=document.querySelector('.vhero');
+  for(let i=0;i<14;i++){
+    const p=document.createElement('div');p.className='vh-particle';
+    p.style.left=((i*67+11)%100)+'%';
+    p.style.top=(30+((i*37)%60))+'%';
+    p.style.animationDuration=(9+(i*5)%9)+'s';
+    p.style.animationDelay='-'+((i*1.9)%9)+'s';
+    hero.appendChild(p);
+  }
+}catch(e){fallback();}
+</script>
+

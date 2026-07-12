@@ -22,8 +22,11 @@ time. I might be a total beginner.
 Introduce yourself in three lines, then build my world in this empty folder:
 
 1) npx --yes degit RowanThistlebrooke/vitality-base . --force
-   (this hands you CLAUDE.md — your own instructions — plus your commands:
-   /vitality, /tile, /detonate)
+   (this hands you CLAUDE.md — your own instructions — plus ALL your commands
+   from the very first run: /vitality (reinstall the full board), /tile (build
+   any tile), /detonate (blank canvas), /sweep (file data on your rounds), and
+   /update (safely pull the newest version any time, data untouched). Episode
+   commands from the Lab (like /finance) drop in on top of these.)
 2) npm install — if node is missing or below 20, walk me through installing it
    first. While it installs (it takes a minute), put the wait to work: open the
    free signup pages for GitHub, Supabase and Vercel in my browser
