@@ -5,11 +5,11 @@
   --bg: #000000;
   --bg-elevated: #0a0a0a;
   --fg: #ffffff;
-  --mint: #6EE7B7;
-  --mint-hover: #5dd6a6;
-  --mint-deep: #1f4d3d;       /* dark teal partner to mint */
-  --mint-glow: rgba(110, 231, 183, 0.4);
-  --mint-ink: #042a1c;        /* dark foreground for text/icons on a mint fill */
+  --accent: #D97757;
+  --accent-hover: #E8916D;
+  --accent-deep: #3D2B22;     /* dark warm partner to accent */
+  --accent-glow: rgba(217, 119, 87, 0.4);
+  --accent-ink: #241505;      /* dark foreground for text/icons on an accent fill */
   --amber: #F59E0B;
   --amber-warm: #d97706;      /* deeper amber for duotone gradients */
   --wine: #7c2d12;            /* deep red-brown, partners with amber */
@@ -71,9 +71,9 @@ html, body {
   height: 100%;
   /* Rubber-band / overscroll past the top of any page must show the app's
      near-black, never a pure-black band. Tint the root the editorial
-     atmosphere's darkest stop (#04060a) so the reveal is seamless, and damp the
+     atmosphere's darkest stop (#141414) so the reveal is seamless, and damp the
      bounce so it barely shows at all. body keeps var(--bg) below. */
-  background: #04060a;
+  background: #141414;
   overscroll-behavior-y: none;
 }
 
@@ -87,27 +87,27 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   /* Retint every native control accent (form widgets, iOS cursor/selection
-     grab-handles) to the brand mint so nothing renders the OS default blue. */
-  accent-color: var(--mint);
+     grab-handles) to the brand accent so nothing renders the OS default blue. */
+  accent-color: var(--accent);
 }
 
-/* The text caret ("classic line") is brand mint, never the iOS blue.
+/* The text caret ("classic line") is brand accent, never the iOS blue.
    On iOS the selection grab-handles follow this tint too. */
 input,
 textarea,
 select,
 [contenteditable] {
-  caret-color: var(--mint);
+  caret-color: var(--accent);
 }
 
 /* Text selection — never the OS blue (reads as unprofessional). A subtle
-   on-brand mint wash, applied site-wide. Inputs are never auto-select()ed
+   on-brand accent wash, applied site-wide. Inputs are never auto-select()ed
    either, so editing shows the caret line, not a highlighted block. */
 ::selection {
-  background: rgba(110, 231, 183, 0.25);
+  background: rgba(217, 119, 87, 0.25);
 }
 ::-moz-selection {
-  background: rgba(110, 231, 183, 0.25);
+  background: rgba(217, 119, 87, 0.25);
 }
 
 /* App-like selection: UI text can't be accidentally highlighted by a drag or
@@ -222,7 +222,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 44px;
   height: 44px;
   border-radius: var(--radius-md);
-  background: var(--mint);
+  background: var(--accent);
   color: #000000;
   font-weight: 700;
   font-size: var(--text-xl);
@@ -302,12 +302,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary {
-  background: var(--mint);
+  background: var(--accent);
   color: #000000;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--mint-hover);
+  background: var(--accent-hover);
 }
 
 .btn-primary:active:not(:disabled) {
@@ -373,19 +373,19 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .input:focus {
-  border-color: var(--mint);
-  background: rgba(110, 231, 183, 0.04);
+  border-color: var(--accent);
+  background: rgba(217, 119, 87, 0.04);
 }
 
 /* ----- Links ----- */
 
 .link {
-  color: var(--mint);
+  color: var(--accent);
   font-weight: 500;
 }
 
 .link:hover {
-  color: var(--mint-hover);
+  color: var(--accent-hover);
 }
 
 /* ----- Status text ----- */
@@ -449,11 +449,11 @@ h1, h2, h3, h4, h5, h6 {
   width: 60px;
   height: 60px;
   margin: -30px 0 0 -30px;
-  border: 1.5px solid var(--mint);
+  border: 1.5px solid var(--accent);
   border-radius: 50%;
   pointer-events: none;
   z-index: 3;
-  box-shadow: 0 0 14px rgba(110, 231, 183, 0.45);
+  box-shadow: 0 0 14px rgba(217, 119, 87, 0.45);
   animation: pkSurgeRing 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 @keyframes pkSurgeRing {
@@ -468,8 +468,8 @@ h1, h2, h3, h4, h5, h6 {
   height: 3px;
   margin: -1.5px 0 0 -1.5px;
   border-radius: 50%;
-  background: var(--mint);
-  box-shadow: 0 0 7px rgba(110, 231, 183, 0.9);
+  background: var(--accent);
+  box-shadow: 0 0 7px rgba(217, 119, 87, 0.9);
   pointer-events: none;
   z-index: 3;
   animation: pkSpark 1.05s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
