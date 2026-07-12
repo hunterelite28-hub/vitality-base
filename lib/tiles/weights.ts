@@ -4,8 +4,8 @@
  *   y = the Mentor (the overseer, where the math lives)
  *   x = each input tile · w = that tile's share of the ACTIVE goal
  *
- * Each goal carries its own weights (sum ≈ 100): "charisma" leans on Brand;
- * body/finance stay pending until their specifics land. The row badges show
+ * Each goal carries its own weights (sum ≈ 100): "jacked" leans on Train,
+ * "charisma" leans on Brand, "finance" leans on Finance. The row badges show
  * the active goal's weights; the Mentor lists every goal with its full breakdown.
  *
  * WHO DOES THE MATH: Claude Code, at build time — not an Anthropic key, not
@@ -49,29 +49,32 @@ export interface Notice {
 
 export const DEFAULT_GOALS: Goal[] = [
   {
+    id: 'jacked',
+    title: 'Build a jacked, strong physique',
+    accent: '#FF6B4A',
+    // Top priority. Train drives the lifting itself; Fuel is what feeds the
+    // gains; Peak (supplements) is the smaller lever. No specific target
+    // (weight/bodyfat) set yet — current: 71kg, 179cm, 20yo, see profile.ts —
+    // but the tiles that move this goal are clear, so it's weighed now.
+    weights: { train: 55, fuel: 30, peak: 15 },
+  },
+  {
     id: 'charisma',
     title: 'Build an aesthetic, charismatic personal brand',
     accent: '#E1306C',
-    // Brand carries the Instagram page itself; Train carries the physique that
-    // makes it aesthetic. Nothing yet tracks the accent/speaking work — flagged
-    // as a tile idea below instead of force-fit into these weights.
+    // Second priority. Brand carries the Instagram page itself; Train carries
+    // the physique that makes it aesthetic. Nothing yet tracks the
+    // accent/speaking work — flagged as a tile idea below instead of
+    // force-fit into these weights.
     weights: { brand: 70, train: 30 },
   },
   {
-    id: 'body',
-    title: 'Body composition — target TBD',
-    accent: '#8AB4FF',
-    // Waiting on a specific target (current: 71kg, 179cm, 20yo — see profile.ts).
-    pending: true,
-    weights: {},
-  },
-  {
     id: 'finance',
-    title: 'Finance & investing knowledge — study plan incoming',
+    title: 'Build real finance & investing knowledge',
     accent: '#6EE7B7',
-    // Waiting on the study plan to weigh this against real coverage.
-    pending: true,
-    weights: {},
+    // Third priority. Finance is the only tile tracking this so far — it
+    // carries the full weight until a Study tile exists to split it with.
+    weights: { finance: 100 },
   },
 ]
 
@@ -81,9 +84,11 @@ export const OVERALL_GOAL: Goal = {
   id: 'overall',
   title: 'A jacked, charismatic, knowledgeable finance bro',
   accent: '#E8C878',
-  // train/fuel/peak carry "jacked"; brand carries "charismatic"; finance
-  // carries "knowledgeable finance bro" — the differentiator, weighed heaviest.
-  weights: { finance: 30, train: 25, brand: 20, fuel: 15, peak: 10 },
+  // Blend of the three ranked goals (jacked > charismatic > knowledgeable):
+  // train carries lifting from "jacked" AND the physique share of "charisma",
+  // so it lands highest; brand and finance follow in priority order; fuel/peak
+  // are jacked's smaller levers.
+  weights: { train: 37, brand: 21, finance: 20, fuel: 15, peak: 7 },
 }
 
 /** Overall first, then the individual goals. */
@@ -139,6 +144,15 @@ export const DEFAULT_IDEAS: Record<string, TileIdea[]> = {
       title: 'Speaking / accent practice',
       tracks: 'practice reps or recordings, per week',
       why: 'Brand tracks the page; this would track the actual skill — the accent and delivery work you named as the goal.',
+      estWeight: 15,
+    },
+  ],
+  finance: [
+    {
+      word: 'Study',
+      title: 'Study log',
+      tracks: 'hours against your finance/investing plan',
+      why: 'Finance tracks money moving, not knowledge going in — right now it carries the whole goal alone.',
       estWeight: 15,
     },
   ],

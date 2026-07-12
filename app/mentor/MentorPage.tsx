@@ -125,6 +125,28 @@ export default function MentorPage({
     setDraft('')
   }
 
+  // Remove one goal pill (never the synthesized "overall"). Switches active
+  // off it first if it was selected, so the board never points at a ghost id.
+  const removeGoal = (id: string) => {
+    const remaining = goals().filter((g) => g.id !== id)
+    saveGoals(remaining)
+    if (active === id) switchGoal(remaining[0]?.id ?? 'overall')
+    setList(allGoals())
+  }
+
+  // Wipe the saved override entirely and fall back to the code defaults in
+  // weights.ts — the escape hatch when the saved goals no longer match reality.
+  const resetGoals = () => {
+    try {
+      window.localStorage.removeItem('vitality:goals')
+      window.localStorage.removeItem('vitality:goal:active')
+    } catch {
+      /* ignore */
+    }
+    setList(allGoals())
+    setActive(activeGoalId())
+  }
+
   const mono: React.CSSProperties = {
     fontFamily: 'ui-monospace, Menlo, monospace',
     letterSpacing: '.16em',
@@ -213,27 +235,81 @@ export default function MentorPage({
             const on = g.id === active
             const gA = g.accent ?? '#6EE7B7'
             return (
-              <button
+              <span
                 key={g.id}
-                type="button"
-                onClick={() => switchGoal(g.id)}
                 style={{
-                  ...mono,
-                  fontSize: 11,
-                  color: on ? gA : 'var(--muted, #8a8f98)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 2,
                   background: on ? `${gA}12` : 'transparent',
                   border: `1px solid ${on ? gA + '59' : 'var(--border, #262626)'}`,
                   borderRadius: 999,
-                  padding: '8px 16px',
-                  cursor: 'pointer',
+                  padding: '3px 3px 3px 16px',
                   transition: 'color .6s ease, border-color .6s ease, background .6s ease',
                 }}
               >
-                {g.id === 'overall' ? '★ ' : ''}
-                {g.title}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => switchGoal(g.id)}
+                  style={{
+                    ...mono,
+                    fontSize: 11,
+                    color: on ? gA : 'var(--muted, #8a8f98)',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '5px 0',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {g.id === 'overall' ? '★ ' : ''}
+                  {g.title}
+                </button>
+                {/* the overall goal is a synthesis, not a saved entry — nothing to delete */}
+                {g.id !== 'overall' && (
+                  <button
+                    type="button"
+                    onClick={() => removeGoal(g.id)}
+                    aria-label={`Remove goal: ${g.title}`}
+                    title="Remove this goal"
+                    style={{
+                      width: 20,
+                      height: 20,
+                      display: 'grid',
+                      placeItems: 'center',
+                      borderRadius: 999,
+                      border: 'none',
+                      background: 'transparent',
+                      color: 'var(--muted, #8a8f98)',
+                      fontSize: 13,
+                      lineHeight: 1,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </span>
             )
           })}
+        </div>
+        <div style={{ marginTop: 10, animation: 'fadeUp .8s ease .3s both' }}>
+          <button
+            type="button"
+            onClick={resetGoals}
+            style={{
+              ...mono,
+              fontSize: 9.5,
+              color: 'var(--muted, #8a8f98)',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              textUnderlineOffset: 3,
+              opacity: 0.7,
+            }}
+          >
+            reset goals to defaults
+          </button>
         </div>
 
         {/* x + x + x — the tiles, no borders, just the numbers */}
