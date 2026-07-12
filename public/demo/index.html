@@ -705,32 +705,45 @@ time. I might be a total beginner.
 Introduce yourself in three lines, then build my world in this empty folder:
 
 1) npx --yes degit RowanThistlebrooke/vitality-base . --force
-   (this hands you CLAUDE.md — your own instructions — plus your commands:
-   /vitality, /tile, /detonate)
+   (this hands you CLAUDE.md — your own instructions — plus ALL your commands
+   from the very first run: /vitality (reinstall the full board), /tile (build
+   any tile), /detonate (blank canvas), /sweep (file data on your rounds), and
+   /update (safely pull the newest version any time, data untouched). Episode
+   commands from the Lab (like /finance) drop in on top of these.)
 2) npm install — if node is missing or below 20, walk me through installing it
-   first. While it installs, put the wait to work: open the free signup pages
-   for GitHub, Supabase and Vercel and tell me to make all three now — free,
-   and what takes this dashboard live later.
-3) npm run dev — then open it right here beside me in VS Code so I see it live
-   next to the chat: hand me the localhost link, then walk me through
+   first. While it installs (it takes a minute), put the wait to work: open the
+   free signup pages for GitHub, Supabase and Vercel in my browser
+   (github.com/signup, supabase.com, vercel.com/signup) and tell me to make all
+   three now — they&#x27;re free, and they&#x27;re what take this dashboard live later.
+3) npm run dev — then open it right here beside me in VS Code so I see it
+   live next to the chat: hand me the localhost link, then walk me through
    Cmd/Ctrl+Shift+P → &quot;Simple Browser: Show&quot; → paste the link → right-click
-   that tab → &quot;Split Right&quot;. Tell me what I&#x27;m looking at: Rowan &amp; Luke&#x27;s
-   full dashboard, already running and already MINE — the equation: my goal on
-   top, every tile an input feeding it.
+   that tab → &quot;Split Right&quot;. Tell me what I&#x27;m looking at: Rowan &amp; Luke&#x27;s full
+   dashboard, already running and already MINE — the equation: my goal on top,
+   every tile an input feeding it.
 4) Tell me it&#x27;s mine to reshape: keep it as is, change any tile, or /detonate
    down to a blank canvas and build my own from nothing — my call.
-   Then set the equation to ME: ask what my goal is — and whether I have more
-   than one (I can). Take every goal, polish my main one into a single sharp
-   sentence, weigh how much each tile moves each goal, and write them so y is
-   mine. Then get to know me — my name, and when a tile needs it, my height,
-   weight and age (one question at a time, my units) — and file it away too.
-5) Then get me live, one step at a time — GitHub (you do all the git; my only
-   job is one browser sign-in), Vercel (import my repo, deploy), Supabase (my
-   memory: run supabase/sync.sql, add the two NEXT_PUBLIC keys), and my phone
-   (my live URL, Add to Home Screen). You handle everything that can be typed;
-   I only click exactly where you tell me. Keep a checklist (SETUP.md) ticking
-   as we go, and before each step tell me if it&#x27;s optional and what it gives
-   me — I decide how far to take it.
+   Then get to know me, one question at a time, and NEVER force an answer — if
+   I skip one, move on: my NAME first (write it into content/site.ts so it
+   shows in my greeting), then my age, gender, my goal(s) and my MAIN goal, my
+   height and weight, and whether I want to bulk / cut / lean-bulk — from that,
+   set my calorie targets for Fuel. Take every goal, polish my main one into
+   one sharp sentence (the gold overall goal), weigh how much each tile moves
+   each goal, and write them into lib/tiles/weights.ts so y is truly mine.
+5) Then get me live — and START WITH GITHUB: make the GitHub account first,
+   then sign into Vercel and Supabase WITH GitHub (one login for all three).
+   GitHub (you do all the git; my only job is the browser sign-in), then Vercel
+   (import my repo, deploy to my own live URL, then Add to Home Screen so it&#x27;s
+   an app on my phone), then Supabase (my memory: run supabase/sync.sql, add
+   the two NEXT_PUBLIC keys). Keep a checklist (SETUP.md) ticking; before each
+   step tell me if it&#x27;s optional and what it gives me.
+6) Walk me through the Lab website (the Design Lab button on the board, or
+   /demo) — it&#x27;s expanding every day, and everything from their YouTube always
+   shows up here for inspiration.
+7) Show me the Finance tile&#x27;s Subscriptions tab at the bottom, and how the paid
+   /finance install (the subscription radar) drops in from the Lab.
+8) Then live-data keys, only if I want them: TikTok (keyless, just works),
+   YouTube and Finnhub (my own free key each — you write .env.local for me).
 
 The moment my dashboard is up, tell me plainly: this is the vision — I can
 detonate all of it (/detonate) or build off of it; it&#x27;s mine either way.
@@ -743,7 +756,9 @@ Then close with Rowan&#x27;s words, exactly:
 
 Then: if I came from one of their videos, send me back to it. If I didn&#x27;t,
 tell me the videos show this vision in motion (first one is linked at the top
-of README.md) and that I can watch whenever I want — you&#x27;ll be here either way.</pre>
+of README.md) and that I can watch whenever I want — you&#x27;ll be here either way.
+Then ask me one last thing: do I want you to open the Lab — the site where I
+can see everything I can add to this board? If yes, open it in my browser.</pre>
     <button type="button" id="seedcopy" class="seed-btn">Copy the seed</button>
     <p class="seed-foot">Free &middot; yours forever &middot; your mentor takes it from there</p>
   </section>
@@ -840,9 +855,9 @@ alter table workout_log add column if not exists rest_sec int not null default 1
         </div>
         <div class="bld-live">
           <span class="bld-cue"><span class="live"></span>Live &middot; play with it</span>
-          <a class="bld-full" href="/lab/logger.html" target="_blank" rel="noopener">Open full screen</a>
+          <a class="bld-full" href="/demo/lab/logger.html" target="_blank" rel="noopener">Open full screen</a>
         </div>
-        <iframe class="bld-frame" src="/lab/logger.html" loading="lazy" title="The workout logger, playable"></iframe>
+        <iframe class="bld-frame" src="/demo/lab/logger.html" loading="lazy" title="The workout logger, playable"></iframe>
       </article>
 
       <article class="bld">
@@ -859,9 +874,9 @@ alter table workout_log add column if not exists rest_sec int not null default 1
         </div>
         <div class="bld-live">
           <span class="bld-cue"><span class="live"></span>Live &middot; play with it</span>
-          <a class="bld-full" href="/lab/stack.html" target="_blank" rel="noopener">Open full screen</a>
+          <a class="bld-full" href="/demo/lab/stack.html" target="_blank" rel="noopener">Open full screen</a>
         </div>
-        <iframe class="bld-frame" src="/lab/stack.html" loading="lazy" title="The supplement stack, playable"></iframe>
+        <iframe class="bld-frame" src="/demo/lab/stack.html" loading="lazy" title="The supplement stack, playable"></iframe>
       </article>
 
       <article class="bld">
@@ -878,9 +893,9 @@ alter table workout_log add column if not exists rest_sec int not null default 1
         </div>
         <div class="bld-live">
           <span class="bld-cue"><span class="live"></span>Live &middot; play with it</span>
-          <a class="bld-full" href="/lab/subs.html" target="_blank" rel="noopener">Open full screen</a>
+          <a class="bld-full" href="/demo/lab/subs.html" target="_blank" rel="noopener">Open full screen</a>
         </div>
-        <iframe class="bld-frame" src="/lab/subs.html" loading="lazy" title="The finance radar, playable"></iframe>
+        <iframe class="bld-frame" src="/demo/lab/subs.html" loading="lazy" title="The finance radar, playable"></iframe>
       </article>
 
     </div>
@@ -1244,7 +1259,7 @@ YouTube Premium 13.99 monthly</div>
         <div class="fin-shim" id="fsShim"><i></i></div>
         <div class="fin-found" id="fsOut"></div>
         <span class="ars-cue" style="margin-top:10px">tap it · watch a statement resolve into rows</span>
-        <a class="deck-link" href="/lab/tesseract-deck.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>See how it reads it</a>
+        <a class="deck-link" href="/demo/lab/tesseract-deck.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>See how it reads it</a>
       </div>
       <div class="ars-actions"><button class="copy-btn" data-file="addscan"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>Install · free</button><button class="copy-btn" data-copy="/addscan"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy cmd</button></div>
     </div>
@@ -1596,7 +1611,7 @@ YouTube Premium 13.99 monthly</div>
         + '<p class="ol-alt">The download alone does not touch an already installed '+e.thing+'. <i>'+e.cmdWord+'</i> is what installs or refreshes it.</p>'
         + '<p class="ol-alt">Step 1: paste that in your project\'s terminal. Step 2: run <code>'+e.cmdWord+'</code> in Claude Code. Exactly like the episode.</p>'
         + '</div>'
-        + '<p class="zip-note"><a class="zip-alt" href="/lab/the-arsenal.zip" download>Want the raw files instead? Download the arsenal.</a></p>'
+        + '<p class="zip-note"><a class="zip-alt" href="/demo/lab/the-arsenal.zip" download>Want the raw files instead? Download the arsenal.</a></p>'
         + '</div>';
     }
     var cur = EPS.length - 1;
