@@ -595,14 +595,7 @@ git commit -m "Update tile-builder instructions and OAuth consent screen to the 
 - Modify: `code/the-living-logger.html`
 - Modify: `code/the-living-logger.tile.html`
 
-Both files share the same structure and line numbers (verified identical layout from the earlier grep pass). Apply the master substitution table throughout: every `#6EE7B7` → `#D97757`, `#5dd6a6` → `#E8916D`, every `rgba(110,231,183,X)` / `rgba(110, 231, 183, X)` → `rgba(217,119,87,X)` / `rgba(217, 119, 87, X)`, `#042a1c` → `#241505`, `#A7F3D0` (the `--mint-cool` value only, not unrelated uses of that hex elsewhere) → `#E8B5A0`. The line-19 (`.html`) / line-19 (`.tile.html`) token declaration:
-
-Old: `--mint:#6EE7B7; --mint-cool:#A7F3D0; --mint-hover:#5dd6a6; --amber:#F59E0B; --rose:#e0767b; --gold:#f1cf7a;`
-New: `--mint:#D97757; --mint-cool:#E8B5A0; --mint-hover:#E8916D; --amber:#F59E0B; --rose:#e0767b; --gold:#f1cf7a;`
-
-(identifiers `--mint`, `--mint-cool`, `--mint-hover` unchanged; `--amber`/`--rose`/`--gold` are distinct hues, untouched)
-
-Confirmed exact-value inventory for these 2 files (no other old-palette values are present in either): `#6EE7B7`, `#5dd6a6`, `rgba(110,231,183,X)` (no-space comma form throughout), `#042a1c`, and the `--mint-cool:#A7F3D0` declaration. This is a uniform substitution with no exceptions in these two files, so it's applied as a scripted replace rather than hand-transcribing ~170 individual lines per file.
+Both files share the same structure (verified identical layout from the earlier grep pass). Confirmed exact-value inventory for these 2 files (no other old-palette values are present in either): `#6EE7B7`, `#5dd6a6`, `rgba(110,231,183,X)` (no-space comma form throughout), `#042a1c`, and the `--mint-cool:#A7F3D0` declaration. This is a uniform substitution with no exceptions in these two files, so it's applied as a scripted replace rather than hand-transcribing ~170 individual lines per file.
 
 - [ ] **Step 1: Apply the substitution table to both files**
 
@@ -625,7 +618,7 @@ done
 Run: `grep -n "6EE7B7\|5dd6a6\|042a1c\|110,\s*231,\s*183\|A7F3D0" code/the-living-logger.html code/the-living-logger.tile.html`
 Expected: no output.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
 git add code/the-living-logger.html code/the-living-logger.tile.html
