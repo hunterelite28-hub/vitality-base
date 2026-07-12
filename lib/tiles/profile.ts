@@ -27,7 +27,13 @@ export interface Profile {
 }
 
 /** Blank until the mentor asks. Fallbacks live at the call sites. */
-export const DEFAULT_PROFILE: Profile = {}
+export const DEFAULT_PROFILE: Profile = {
+  name: 'Rame',
+  heightCm: 179,
+  weightKg: 71,
+  age: 20,
+  units: 'metric',
+}
 
 /** The profile: localStorage override ('vitality:profile') if valid, else defaults. */
 export function profile(): Profile {
