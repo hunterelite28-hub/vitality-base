@@ -426,7 +426,12 @@ function render(){
   document.getElementById('tLb').textContent = (DEMO_ON?'demo · ':'') + (total&&done===total ? 'stack complete' : 'taken today');
   document.getElementById('tally').classList.toggle('perfect', total>0&&done===total);
   document.getElementById('first').classList.toggle('on', total===0);
-  if(!DEMO_ON) save();
+  if(!DEMO_ON){
+    save();
+    if(window.Vitality&&typeof window.Vitality.report==='function'){
+      window.Vitality.report({key:'supplements',label:'Stack',value:done,date:todayKey(),kind:'count'});
+    }
+  }
 }
 
 /* row interactions (event delegation) */
