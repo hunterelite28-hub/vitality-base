@@ -198,24 +198,6 @@ input{font:inherit;color:inherit}
 
 .foot{margin-top:34px;text-align:center;font-family:var(--mono);font-size:.54rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.28)}
 
-/* ── water · merged in from the starter tile, own store key, own row ── */
-.water{margin-top:14px;border:1px solid var(--border);background:var(--card);border-radius:var(--r-card);padding:16px 18px}
-.water .w-top{display:flex;justify-content:space-between;align-items:baseline}
-.water .w-n{font-family:var(--serif);font-size:1.75rem;font-variant-numeric:tabular-nums}
-.water .w-n b{font-weight:400;color:var(--gold-cool)}
-.water .w-lb{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-.water .w-btnRow{display:flex;align-items:center;gap:10px;margin-top:12px}
-.water .w-minus{width:34px;height:34px;border-radius:50%;border:1px solid var(--border-strong);background:transparent;color:var(--muted);font-size:17px;transition:all .2s}
-.water .w-minus:hover{color:#fff;border-color:var(--muted-strong)}
-.water .w-glass{flex:1;padding:11px 16px;border-radius:99px;border:none;background:linear-gradient(180deg,var(--gold-cool),var(--gold));color:var(--gold-ink);font-weight:600;font-size:.85rem;transition:transform .15s var(--ease)}
-.water .w-glass:hover{transform:translateY(-1px)}
-.water .w-week{display:flex;justify-content:space-between;align-items:flex-end;gap:6px;margin-top:16px;height:36px}
-.water .w-day{display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end;flex:1}
-.water .w-bar{width:100%;max-width:14px;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,var(--gold),rgba(231,195,107,.22));min-height:3px;transition:height .5s var(--ease)}
-.water .w-bar.zero{background:var(--border)}
-.water .w-dLab{font-family:var(--mono);font-size:.5rem;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
-.water .w-dLab.today{color:var(--gold)}
-
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 
@@ -237,12 +219,6 @@ input{font:inherit;color:inherit}
     <div class="meter"><div class="fill" id="tFill"></div></div>
   </section>
   <!-- @episode-end:checklist -->
-
-  <section class="water" id="water">
-    <div class="w-top"><span class="w-n"><b id="wN">0</b> of <span id="wM">8</span></span><span class="w-lb">glasses today</span></div>
-    <div class="w-btnRow"><button class="w-minus" id="wMinus" aria-label="Remove one">−</button><button class="w-glass" id="wPlus">+ Log a glass</button></div>
-    <div class="w-week" id="wWeek"></div>
-  </section>
 
   <!-- @episode-start:search -->
   <div class="search">
@@ -618,31 +594,6 @@ document.getElementById('demoBtn').addEventListener('click', function(){
   render();
 });
 render();
-
-/* ── water · merged from the starter tile, own key on MEM, own render ── */
-var WATER_GOAL=8;
-if(!MEM.water||typeof MEM.water!=='object') MEM.water={};
-function waterDay(d){ return MEM.water[d]||0; }
-function renderWater(){
-  var n=waterDay(todayKey());
-  document.getElementById('wN').textContent=n;
-  var bars='';
-  for(var i=6;i>=0;i--){
-    var d=new Date(); d.setDate(d.getDate()-i);
-    var dk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    var c=waterDay(dk), h=Math.max(3,Math.min(36,(c/WATER_GOAL)*36));
-    var lab=i===0?'today':['SU','MO','TU','WE','TH','FR','SA'][d.getDay()];
-    bars+='<div class="w-day"><div class="w-bar'+(c?'':' zero')+'" style="height:'+h+'px" title="'+c+'"></div><span class="w-dLab'+(i===0?' today':'')+'">'+lab+'</span></div>';
-  }
-  document.getElementById('wWeek').innerHTML=bars;
-}
-document.getElementById('wPlus').addEventListener('click', function(){
-  var k=todayKey(); MEM.water[k]=waterDay(k)+1; __persist(); renderWater();
-});
-document.getElementById('wMinus').addEventListener('click', function(){
-  var k=todayKey(); MEM.water[k]=Math.max(0,waterDay(k)-1); __persist(); renderWater();
-});
-renderWater();
 
 }
 __loadMem().then(function(m){ MEM = m; __bootTile(); });

@@ -6,20 +6,21 @@
 <title>Finance</title>
 <!--
   FINANCE — three pages, one bottom tab bar: Net worth (accounts + stocks →
-  the trend), Stocks (holdings, live-priced via Finnhub), Subscriptions
-  (monthly burn). Each page carries its own base inputs; the mentor builds the
-  rest.
+  the trend), Stocks (holdings, live-priced via Finnhub), Subs (the radar:
+  monthly burn, upcoming renewals, trial/price-hike alerts, paste import).
+  Each page carries its own base inputs; the mentor builds the rest.
 
   Sealed: no network. Saves through window.Vitality. Stock prices via the host
   bridge: window.Vitality.stock(symbol) (server-routed Finnhub key; manual works
   keyless). Store: { accounts:[{id,name,balance}], holdings:[{id,symbol,shares,price}],
-  subs:[{id,name,amount}], history:[{t,value}] }
+  subs:[{id,name,amount,period,renewal,trialEnds,manageUrl,prevAmount,priceChangedAt}],
+  history:[{t,value}] }
 -->
 <style>
   :root{
     --bg:#050506;--fg:#ededf0;--brand:#6EE7B7;
     --muted:#84848c;--muted-strong:#a8a8b0;--border:#1d1d22;
-    --neg:#ff8b8b;
+    --neg:#ff8b8b;--alert:#E8C069;--alert-ink:#241a06;
     --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
     --serif:Georgia,'Times New Roman',serif;
     --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;
@@ -58,7 +59,7 @@
   @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
   .row .nmwrap{min-width:0}
   .row .nm{font-size:14px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .row .hsub{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--muted);margin-top:1px}
+  .row .hsub{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--muted);margin-top:1px;display:flex;gap:8px;flex-wrap:wrap}
   .row .bal{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;cursor:pointer;color:var(--muted-strong);padding:3px 7px;border-radius:6px;transition:background .12s,color .12s}
   .row .bal:hover{background:rgba(110,231,183,.09);color:var(--brand)}
   .row .bal.neg{color:var(--neg)}
@@ -67,6 +68,7 @@
   .balIn{width:118px;background:rgba(0,0,0,.45);border:1px solid var(--brand);border-radius:6px;padding:4px 8px;color:var(--fg);font-family:var(--mono);font-size:14px;text-align:right;outline:none}
   .addRow{display:grid;grid-template-columns:1fr 122px auto;gap:8px;margin-top:2px}
   .addRow.stock{grid-template-columns:1fr 100px auto}
+  .addRow2{display:grid;grid-template-columns:auto 1fr;gap:8px;margin-top:6px}
   .addRow input{background:rgba(14,14,17,.7);border:1px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--fg);font:inherit;outline:none;min-width:0}
   .addRow input:focus{border-color:var(--brand)}
   .addRow button{border:none;background:var(--brand);color:#04140d;font-weight:700;border-radius:10px;padding:0 17px;cursor:pointer}
@@ -81,6 +83,65 @@
   .tab.on{color:#04140d;background:var(--brand);border-color:var(--brand)}
   .starterTag{width:max-content;max-width:92%;margin:0 auto 20px;padding:6px 14px;border:1px solid rgba(110,231,183,.25);border-radius:999px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#84848c;text-align:center}
   .starterTag,.starterTag *{line-height:1.6}
+
+  /* ── the radar: ring, alerts, upcoming, richer add/edit, paste import ── */
+  .ring{margin:20px auto 0;width:104px;height:104px;position:relative}
+  .ring svg{width:100%;height:100%;display:block}
+  .ring .gc{fill:none;stroke:rgba(255,255,255,.07);stroke-width:1}
+  .ring .gx{stroke:rgba(255,255,255,.05);stroke-width:1}
+  .ring .blip{fill:var(--brand);filter:drop-shadow(0 0 3px rgba(110,231,183,.6))}
+  .ring .blip.hot{fill:var(--alert);filter:drop-shadow(0 0 5px rgba(232,192,105,.85))}
+  .ring .ctr{fill:#fff}
+  .ring-lb{display:block;margin-top:6px;text-align:center;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .alerts{margin-top:18px;display:flex;flex-direction:column;gap:7px;text-align:left;max-width:470px;margin-left:auto;margin-right:auto}
+  .al{display:flex;align-items:center;gap:10px;border:1px solid rgba(232,192,105,.28);background:rgba(232,192,105,.07);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--muted-strong)}
+  .al b{color:var(--fg)}
+  .al .tag{flex:none;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--alert-ink);background:var(--alert);border-radius:99px;padding:3px 8px}
+  .upcoming{margin-top:18px;text-align:left;max-width:470px;margin-left:auto;margin-right:auto;border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+  .upcoming .uk{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);display:flex;justify-content:space-between;margin-bottom:6px}
+  .urow{display:grid;grid-template-columns:10px 1fr auto;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+  .urow:last-child{border-bottom:0}
+  .udot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.22);justify-self:center}
+  .udot.soon{background:var(--brand)}
+  .udot.imminent{background:var(--alert);box-shadow:0 0 6px rgba(232,192,105,.7)}
+  .uwhen{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:1px}
+  .uwhen.imminent{color:var(--alert)}
+  .subRow .per{text-transform:uppercase}
+  .subRow .renew.soon{color:var(--brand)}
+  .subRow .renew.imminent{color:var(--alert)}
+  .subRow .trial{color:var(--alert)}
+  .subEdit{padding:12px 13px;border-radius:12px;border:1px solid var(--border);background:rgba(14,14,17,.5);margin-bottom:8px;display:grid;gap:8px}
+  .subEdit .eg1{display:grid;grid-template-columns:1fr 90px auto;gap:8px}
+  .subEdit .eg2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .subEdit input{background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:9px;padding:8px 10px;color:var(--fg);font:inherit;font-size:12.5px;outline:none;min-width:0;width:100%;color-scheme:dark}
+  .subEdit input:focus{border-color:var(--brand)}
+  .subEdit .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden}
+  .seg button{border:none;background:transparent;color:var(--muted);font:inherit;font-size:11px;padding:8px 10px;cursor:pointer}
+  .seg button.on{background:var(--brand);color:#04140d}
+  .subEdit .eacts{display:flex;gap:8px}
+  .subEdit .esave{border:none;background:var(--brand);color:#04140d;font-weight:700;border-radius:9px;padding:8px 16px;cursor:pointer}
+  .subEdit .ecancel{border:none;background:transparent;color:var(--muted);font-size:11.5px;cursor:pointer;padding:8px 6px}
+  .pasteVeil{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.7);opacity:0;pointer-events:none;transition:opacity .25s}
+  .pasteVeil.on{opacity:1;pointer-events:auto}
+  .pasteSheet{position:fixed;left:0;right:0;bottom:0;z-index:90;background:#0a0a0c;border:1px solid var(--border);border-bottom:0;border-radius:20px 20px 0 0;max-width:560px;margin:0 auto;padding:20px 20px calc(20px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .4s var(--ease);max-height:82vh;overflow-y:auto}
+  .pasteSheet.on{transform:none}
+  .pasteSheet .grab{width:36px;height:4px;border-radius:99px;background:var(--border);margin:0 auto 14px}
+  .pasteSheet h3{font-family:var(--serif);font-weight:400;font-style:italic;font-size:20px;margin-bottom:4px}
+  .pasteSheet .sub2{font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;text-align:left;text-transform:none;letter-spacing:normal;font-family:var(--font)}
+  .pasteIn{width:100%;min-height:110px;background:rgba(14,14,17,.7);border:1px solid var(--border);border-radius:10px;padding:11px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.6;color:var(--fg);outline:none;resize:vertical}
+  .pasteIn:focus{border-color:var(--brand)}
+  .pasteGo{display:block;width:100%;margin-top:10px;background:var(--brand);color:#04140d;font-weight:700;font-size:13.5px;border-radius:12px;padding:12px;border:none;cursor:pointer}
+  .pvList{margin-top:10px}
+  .pvRow{display:flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:12.5px}
+  .pvRow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pvRow .amt{font-family:var(--mono);color:var(--brand)}
+  .pvRow .per{font-family:var(--mono);font-size:9.5px;color:var(--muted);text-transform:uppercase}
+  .pvRow .rm{border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px;opacity:.5}
+  .pvNone{font-size:12.5px;color:var(--muted);font-style:italic}
+  .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(140%);z-index:120;background:#0a0a0c;border:1px solid var(--brand);border-radius:14px;padding:11px 16px;font-size:12.5px;color:var(--fg);transition:transform .4s var(--ease);max-width:90vw}
+  .toast.on{transform:translateX(-50%) translateY(0)}
+  .toast b{color:var(--brand)}
 </style>
 </head>
 <body>
@@ -89,22 +150,57 @@
   <h1>Finance</h1>
   <div class="well" id="app"></div>
 </div>
+<div class="pasteVeil" id="pasteVeil"></div>
+<div class="pasteSheet" id="pasteSheet" role="dialog" aria-label="Paste a bill">
+  <div class="grab"></div>
+  <h3>Bring a bill in</h3>
+  <p class="sub2">Paste the text from a receipt, statement or billing page. One subscription per line works best, like: Netflix $15.99/month. Nothing leaves this tile.</p>
+  <textarea class="pasteIn" id="pasteIn" placeholder="Netflix $15.99/month&#10;Spotify Premium 11.99 monthly&#10;Adobe CC - 263.88 per year"></textarea>
+  <button class="pasteGo" data-pastego>Read it</button>
+  <div id="pvWrap" style="display:none;margin-top:14px">
+    <div class="kick" id="pvK" style="text-align:left"></div>
+    <div class="pvList" id="pvList"></div>
+    <button class="pasteGo" id="pvAddBtn" data-pvadd>Add them all</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
 <script>
 let store={};let view='networth';
 let editingId=null;let editKind='bal';let adding=false;let addingStock=false;let addingSub=false;
+let addSubPeriod='monthly';let editingSubId=null;let pasteItems=[];let toastTimer;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fetchingS=new Set();let finNote=false;
-function persist(){window.Vitality.save(store)}
+function reportBurn(){
+  if(window.Vitality&&typeof window.Vitality.report==='function'){
+    window.Vitality.report({key:'subs',label:'Monthly burn',value:Math.round(monthlyBurn()),date:todayKey(),kind:'count'});
+  }
+}
+function persist(){window.Vitality.save(store);reportBurn();}
 function accts(){if(!Array.isArray(store.accounts))store.accounts=[];return store.accounts}
 function holds(){if(!Array.isArray(store.holdings))store.holdings=[];return store.holdings}
 function subs(){if(!Array.isArray(store.subs))store.subs=[];return store.subs}
 function hist(){if(!Array.isArray(store.history))store.history=[];return store.history}
+function ensureSubShape(sb){return Object.assign({period:'monthly',renewal:null,trialEnds:null,manageUrl:null,prevAmount:null,priceChangedAt:null},sb);}
 function holdValue(h){return (typeof h.shares==='number'?h.shares:0)*(typeof h.price==='number'?h.price:0)}
 function stockTotal(){return holds().reduce((s,h)=>s+holdValue(h),0)}
-function monthlyBurn(){return subs().reduce((s,x)=>s+(typeof x.amount==='number'?x.amount:0),0)}
+function monthlyEquiv(x){const a=typeof x.amount==='number'?x.amount:0;return x.period==='yearly'?a/12:x.period==='weekly'?a*52/12:a;}
+function monthlyBurn(){return subs().reduce((s,x)=>s+monthlyEquiv(x),0)}
 function netWorth(){let s=0;for(const a of accts())s+=(typeof a.balance==='number'?a.balance:0);for(const h of holds())s+=holdValue(h);return s;}
 function fmtMoney(n){if(n==null)return '—';const sign=n<0?'−':'';const a=Math.abs(n);
   return sign+'$'+(a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e4?Math.round(a).toLocaleString():a.toLocaleString(undefined,{maximumFractionDigits:0}));}
+
+/* ── the radar engine: ported from the-radar.tile.html, adapted to this store ── */
+const DAY=86400000;
+function startOfToday(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate());}
+function parseLocalDate(iso){if(!iso||!/^\d{4}-\d{2}-\d{2}$/.test(iso))return null;const p=iso.split('-').map(Number);const dt=new Date(p[0],p[1]-1,p[2]);return isNaN(dt)?null:dt;}
+function nextRenewal(iso,period){const d=parseLocalDate(iso);if(!d)return null;const today=startOfToday();let safety=0;
+  while(d<today&&safety++<600){if(period==='weekly')d.setDate(d.getDate()+7);else if(period==='yearly')d.setFullYear(d.getFullYear()+1);else d.setMonth(d.getMonth()+1);}
+  return d;}
+function daysTo(date){return Math.round((new Date(date.getFullYear(),date.getMonth(),date.getDate())-startOfToday())/DAY);}
+function whenLabel(n){return n===0?'today':n===1?'tomorrow':'in '+n+'d';}
+function dateLabel(d){return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}
+function normalizeUrl(raw){const t=(raw||'').trim();if(!t)return null;const w=/^https?:\/\//i.test(t)?t:'https://'+t;try{const u=new URL(w);return(u.protocol==='http:'||u.protocol==='https:')?u.toString():null}catch(e){return null}}
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
 function snapshot(){
   const v=netWorth(),h=hist(),now=Date.now(),prev=h[h.length-1];
@@ -174,16 +270,86 @@ function listStocks(){
   if(finNote)h+='<div class="keyNote">stocks need a free <b>Finnhub key</b> in .env.local — your mentor sets it up. Until then they hold at $0.</div>';
   return h;
 }
+
+/* ── subs: the radar ── */
+function subEditPanel(sb){
+  return '<div class="subEdit" data-eid="'+sb.id+'">'
+    +'<div class="eg1">'
+    +'<div><div class="lbl">service</div><input data-f="name" value="'+esc(sb.name)+'"/></div>'
+    +'<div><div class="lbl">amount</div><input data-f="amount" type="text" inputmode="decimal" value="'+sb.amount+'"/></div>'
+    +'<div><div class="lbl">billed</div><div class="seg" data-f="period">'+['monthly','yearly','weekly'].map(p=>'<button data-p="'+p+'"'+(sb.period===p?' class="on"':'')+'>'+p.slice(0,2)+'</button>').join('')+'</div></div>'
+    +'</div>'
+    +'<div class="eg2">'
+    +'<div><div class="lbl">next renewal</div><input data-f="renewal" type="date" value="'+(sb.renewal||'')+'"/></div>'
+    +'<div><div class="lbl">trial ends</div><input data-f="trialEnds" type="date" value="'+(sb.trialEnds||'')+'"/></div>'
+    +'<div><div class="lbl">billing link</div><input data-f="manageUrl" placeholder="netflix.com/account" value="'+esc(sb.manageUrl||'')+'"/></div>'
+    +'</div>'
+    +'<div class="eacts"><button class="esave" data-subsave="'+sb.id+'">Save</button><button class="ecancel" data-subcancel>Cancel</button></div>'
+    +'</div>';
+}
 function listSubs(){
   let h='';
   for(const sb of subs()){
-    h+='<div class="row"><div class="nmwrap"><span class="nm">'+esc(sb.name)+'</span><div class="hsub">subscription</div></div>'
-      +valCell(sb.id,'sub',(typeof sb.amount==='number'?sb.amount:''),false)+(editingId===sb.id?'':fmtMoney(typeof sb.amount==='number'?sb.amount:0)+'/mo</span>')
-      +'<button class="del" data-del="'+sb.id+'" title="Remove">&times;</button></div>';
+    if(editingSubId===sb.id){h+=subEditPanel(sb);continue;}
+    const nx=nextRenewal(sb.renewal,sb.period);
+    const n=nx?daysTo(nx):null;
+    const tone=n!=null&&n<=3?'imminent':n!=null&&n<=7?'soon':'';
+    const trialN=sb.trialEnds?daysTo(parseLocalDate(sb.trialEnds)):null;
+    h+='<div class="row subRow"><div class="nmwrap"><span class="nm">'+esc(sb.name)+'</span><div class="hsub">'
+      +'<span class="per">'+sb.period+'</span>'
+      +(nx?'<span class="renew '+tone+'">↻ '+(n<0?'past due':whenLabel(n))+'</span>':'')
+      +(trialN!=null&&trialN>=0?'<span class="trial">trial ends '+whenLabel(trialN)+'</span>':'')
+      +'</div></div>'
+      +'<span class="bal" data-subedit="'+sb.id+'" title="Tap to edit">'+fmtMoney(monthlyEquiv(sb))+'</span>'
+      +'<button class="del" data-subdel="'+sb.id+'" title="Cancel">&times;</button></div>';
   }
-  if(addingSub)h+='<div class="addRow"><input id="subNmIn" placeholder="subscription — e.g. Netflix" autocomplete="off"/><input id="subAmtIn" type="text" inputmode="decimal" placeholder="$ / month" autocomplete="off"/><button data-addsubgo>Add</button></div>';
-  else h+='<button class="addBtn" data-addsub>+ Add subscription</button>';
+  if(addingSub){
+    h+='<div class="addRow"><input id="subNmIn" placeholder="subscription — e.g. Netflix" autocomplete="off"/><input id="subAmtIn" type="text" inputmode="decimal" placeholder="$ amount" autocomplete="off"/><button data-addsubgo>Add</button></div>'
+     +'<div class="addRow2"><div class="seg" id="addSubSeg">'+['monthly','yearly','weekly'].map(p=>'<button data-addsubp="'+p+'"'+(addSubPeriod===p?' class="on"':'')+'>'+p.slice(0,2)+'</button>').join('')+'</div>'
+     +'<input id="subDateIn" type="date" title="Next renewal date" style="color-scheme:dark"/></div>';
+  } else h+='<button class="addBtn" data-addsub>+ Add subscription</button>';
+  if(subs().length)h+='<button class="addBtn" data-pasteopen>paste a bill instead</button>';
   return h;
+}
+function subsRing(){
+  const blips=[];
+  for(const sb of subs()){
+    const nx=nextRenewal(sb.renewal,sb.period);if(!nx)continue;
+    const n=daysTo(nx);if(n<0||n>30)continue;
+    let hh=0;for(let i=0;i<sb.name.length;i++)hh=(hh*31+sb.name.charCodeAt(i))>>>0;
+    const ang=(hh%360)*Math.PI/180;const r=8+(n/30)*36;
+    blips.push({x:52+Math.cos(ang)*r,y:52+Math.sin(ang)*r,hot:n<=3});
+  }
+  if(!blips.length)return '';
+  return '<div class="ring"><svg viewBox="0 0 104 104">'
+    +'<circle class="gc" cx="52" cy="52" r="16"/><circle class="gc" cx="52" cy="52" r="32"/><circle class="gc" cx="52" cy="52" r="46"/>'
+    +'<line class="gx" x1="52" y1="6" x2="52" y2="98"/><line class="gx" x1="6" y1="52" x2="98" y2="52"/>'
+    +blips.map(b=>'<circle class="blip'+(b.hot?' hot':'')+'" cx="'+b.x.toFixed(1)+'" cy="'+b.y.toFixed(1)+'" r="2.6"/>').join('')
+    +'<circle class="ctr" cx="52" cy="52" r="2"/></svg><span class="ring-lb">each dot = a renewal · closer = sooner</span></div>';
+}
+function subsAlerts(){
+  const als=[];
+  for(const sb of subs()){
+    const t=sb.trialEnds?parseLocalDate(sb.trialEnds):null;
+    if(t){const n=daysTo(t);if(n>=0&&n<=14)als.push({kind:'trial',sb,n});}
+    if(sb.prevAmount!=null&&sb.amount>sb.prevAmount+.005&&(!sb.priceChangedAt||Date.now()-sb.priceChangedAt<=60*DAY))als.push({kind:'hike',sb,n:0});
+  }
+  if(!als.length)return '';
+  als.sort((a,b)=>a.kind!==b.kind?(a.kind==='trial'?-1:1):a.n-b.n);
+  return '<div class="alerts">'+als.map(a=>a.kind==='trial'
+    ?'<div class="al"><span class="tag">trial ending</span><span><b>'+esc(a.sb.name)+'</b> free trial ends '+whenLabel(a.n)+' · cancel before it charges you</span></div>'
+    :'<div class="al"><span class="tag">price up</span><span><b>'+esc(a.sb.name)+'</b> went up '+fmtMoney(a.sb.prevAmount)+' to '+fmtMoney(a.sb.amount)+'</span></div>'
+  ).join('')+'</div>';
+}
+function subsUpcoming(){
+  const bills=subs().map(sb=>{const nx=nextRenewal(sb.renewal,sb.period);return nx?{sb:sb,nx:nx,n:daysTo(nx)}:null;})
+    .filter(b=>b&&b.n>=0&&b.n<=30).sort((a,b)=>a.n-b.n);
+  if(!bills.length)return '';
+  const tot=bills.reduce((s,b)=>s+(typeof b.sb.amount==='number'?b.sb.amount:0),0);
+  return '<div class="upcoming"><div class="uk"><span>next 30 days</span><span>'+fmtMoney(tot)+'</span></div>'
+    +bills.map(b=>{const tone=b.n<=3?'imminent':b.n<=7?'soon':'';
+      return '<div class="urow"><span class="udot '+tone+'"></span><div><div>'+esc(b.sb.name)+'</div><div class="uwhen '+tone+'">'+whenLabel(b.n)+' · '+dateLabel(b.nx)+'</div></div><span>'+fmtMoney(b.sb.amount)+'</span></div>';
+    }).join('')+'</div>';
 }
 
 function tabBar(){
@@ -204,8 +370,10 @@ function render(){
       +(holds().length?'<div class="delta">'+holds().length+' position'+(holds().length===1?'':'s')+' · live-priced</div>':'')
       +'<div class="list" style="margin-top:24px">'+listStocks()+'</div>';
   }else{
-    html='<div class="kick">✦ monthly burn</div><div class="worth">'+(subs().length?fmtMoney(monthlyBurn())+'<span class="u">/mo</span>':'—')+'</div>'
-      +(subs().length?'<div class="delta">'+subs().length+' renewal'+(subs().length===1?'':'s')+' a month</div>':'')
+    const burn=monthlyBurn();
+    html='<div class="kick">✦ monthly burn</div><div class="worth">'+(subs().length?fmtMoney(burn)+'<span class="u">/mo</span>':'—')+'</div>'
+      +(subs().length?'<div class="delta">'+subs().length+' renewal'+(subs().length===1?'':'s')+' a month · '+fmtMoney(burn*12)+'/yr</div>':'')
+      +subsRing()+subsAlerts()+subsUpcoming()
       +'<div class="list" style="margin-top:24px">'+listSubs()+'</div>';
   }
   html+=tabBar();
@@ -215,7 +383,8 @@ function render(){
     i.addEventListener('blur',commit);}}
   if(adding){const n=document.getElementById('nmIn');if(n)n.focus();const amt=document.getElementById('amtIn');if(amt)amt.addEventListener('keydown',e=>{if(e.key==='Enter')addAccount()});}
   if(addingStock){const s=document.getElementById('symIn');if(s)s.focus();const sh=document.getElementById('shIn');if(sh)sh.addEventListener('keydown',e=>{if(e.key==='Enter')addStock()});}
-  if(addingSub){const n=document.getElementById('subNmIn');if(n)n.focus();const amt=document.getElementById('subAmtIn');if(amt)amt.addEventListener('keydown',e=>{if(e.key==='Enter')addSub()});}
+  if(addingSub){const n=document.getElementById('subNmIn');if(n)n.focus();const amt=document.getElementById('subAmtIn');if(amt)amt.addEventListener('keydown',e=>{if(e.key==='Enter')addSub()});const dt=document.getElementById('subDateIn');if(dt)dt.addEventListener('keydown',e=>{if(e.key==='Enter')addSub()});}
+  if(editingSubId){const box=document.querySelector('[data-eid="'+editingSubId+'"]');if(box){const nm=box.querySelector('[data-f="name"]');if(nm)nm.focus();}}
 }
 
 function commit(){
@@ -224,8 +393,6 @@ function commit(){
   if(editKind==='sh'){
     const hd=holds().find(x=>x.id===editingId);editingId=null;
     if(hd&&raw!==''&&isFinite(n)&&n>=0){hd.shares=n;snapshot();persist();render();refreshStock(hd);return;}
-  }else if(editKind==='sub'){
-    const sb=subs().find(x=>x.id===editingId);if(sb&&raw!==''&&isFinite(n)&&n>=0){sb.amount=n;persist();}
   }else{
     const ac=accts().find(x=>x.id===editingId);if(ac&&raw!==''&&isFinite(n)){ac.balance=n;snapshot();persist();}
   }
@@ -246,36 +413,134 @@ function addStock(){
   holds().push(hd);addingStock=false;persist();render();refreshStock(hd);
 }
 function addSub(){
-  const n=document.getElementById('subNmIn'),amt=document.getElementById('subAmtIn');
+  const n=document.getElementById('subNmIn'),amt=document.getElementById('subAmtIn'),dt=document.getElementById('subDateIn');
   const name=(n?n.value:'').trim();if(!name){if(n)n.focus();return;}
   const raw=String(amt?amt.value:'').replace(/[$,\s]/g,'');const amount=Number(raw);
-  subs().push({id:'s'+Math.random().toString(36).slice(2,8),name,amount:(raw!==''&&isFinite(amount))?amount:0});
-  addingSub=false;persist();render();
+  if(!isFinite(amount)||amount<=0){if(amt)amt.focus();return;}
+  subs().push({id:'s'+Math.random().toString(36).slice(2,8),name,amount,period:addSubPeriod,renewal:(dt&&dt.value)?dt.value:null,trialEnds:null,manageUrl:null,prevAmount:null,priceChangedAt:null});
+  addingSub=false;addSubPeriod='monthly';persist();render();
+}
+function showToast(sb){
+  const m=monthlyEquiv(sb),t=document.getElementById('toast');
+  t.innerHTML='canceled <b>'+esc(sb.name)+'</b> · +'+fmtMoney(m)+'/mo back';
+  t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),3200);
+}
+
+/* ── paste importer: deterministic, no AI, nothing leaves this tile ── */
+const PERIOD_WORDS=[[/per\s*year|yearly|annual|\/\s*y(ea)?r|a\s*year/i,'yearly'],[/per\s*week|weekly|\/\s*w(ee)?k|a\s*week/i,'weekly'],[/per\s*month|monthly|\/\s*mo(nth)?|a\s*month/i,'monthly']];
+function parseBill(text){
+  const out=[];
+  for(const lineRaw of text.split(/\n+/)){
+    const line=lineRaw.trim();if(!line)continue;
+    const m=line.match(/(?:[$€£]|CHF|USD|EUR|GBP)?\s*(\d{1,3}(?:[ ,]\d{3})*(?:[.,]\d{1,2})?)(?!\d)/);
+    if(!m)continue;
+    const amount=parseFloat(m[1].replace(/[ ,](?=\d{3}\b)/g,'').replace(',','.'));
+    if(!isFinite(amount)||amount<=0)continue;
+    let period='monthly';for(const pw of PERIOD_WORDS){if(pw[0].test(line)){period=pw[1];break;}}
+    let name=line.slice(0,m.index).replace(/[-–—·:|]+\s*$/,'').trim();
+    if(!name)name=line.slice(m.index+m[0].length).replace(/^[-–—·:|]+\s*/,'').replace(/(per|a)\s*(year|month|week)|yearly|monthly|weekly|annual/ig,'').trim();
+    if(!name)continue;
+    if(name.length>42)name=name.slice(0,42).trim();
+    out.push({name,amount,period});
+  }
+  return out;
+}
+function openPasteSheet(){
+  document.getElementById('pasteVeil').classList.add('on');
+  document.getElementById('pasteSheet').classList.add('on');
+  document.getElementById('pvWrap').style.display='none';
+  const ta=document.getElementById('pasteIn');if(ta){ta.value='';setTimeout(()=>ta.focus(),300);}
+}
+function closePasteSheet(){document.getElementById('pasteVeil').classList.remove('on');document.getElementById('pasteSheet').classList.remove('on');}
+function renderPvList(){
+  const k=document.getElementById('pvK'),list=document.getElementById('pvList'),addBtn=document.getElementById('pvAddBtn');
+  k.textContent=pasteItems.length?('found '+pasteItems.length+(pasteItems.length===1?' subscription':' subscriptions')):'nothing found';
+  list.innerHTML=pasteItems.length?pasteItems.map((p,i)=>'<div class="pvRow"><span class="nm">'+esc(p.name)+'</span><span class="amt">'+fmtMoney(p.amount)+'</span><span class="per">'+p.period+'</span><button class="rm" data-pvrm="'+i+'">&times;</button></div>').join('')
+    :'<p class="pvNone">Could not read a price on any line. Try one subscription per line, like: Netflix $15.99/month</p>';
+  addBtn.style.display=pasteItems.length?'block':'none';
+}
+function runPasteParse(){
+  const ta=document.getElementById('pasteIn');
+  pasteItems=parseBill(ta?ta.value:'');
+  renderPvList();
+  document.getElementById('pvWrap').style.display='block';
+}
+function addPasteItems(){
+  for(const p of pasteItems){
+    const ex=subs().find(x=>x.name.trim().toLowerCase()===p.name.trim().toLowerCase());
+    if(ex){
+      if(p.amount>ex.amount+.005){ex.prevAmount=ex.amount;ex.priceChangedAt=Date.now();ex.amount=p.amount;}
+      else if(p.amount<ex.amount-.005){ex.amount=p.amount;}
+      continue;
+    }
+    subs().push({id:'s'+Math.random().toString(36).slice(2,8),name:p.name,amount:p.amount,period:p.period,renewal:null,trialEnds:null,manageUrl:null,prevAmount:null,priceChangedAt:null});
+  }
+  pasteItems=[];persist();render();closePasteSheet();
 }
 
 document.addEventListener('click',e=>{
   const tab=e.target.closest('[data-view]');
-  if(tab){view=tab.getAttribute('data-view');editingId=null;adding=addingStock=addingSub=false;render();return}
+  if(tab){view=tab.getAttribute('data-view');editingId=null;editingSubId=null;adding=addingStock=addingSub=false;render();return}
   const b=e.target.closest('[data-bal]');
-  if(b){editingId=b.getAttribute('data-bal');editKind='bal';adding=addingStock=addingSub=false;render();return}
+  if(b){editingId=b.getAttribute('data-bal');editKind='bal';adding=addingStock=addingSub=false;editingSubId=null;render();return}
   const sh=e.target.closest('[data-sh]');
-  if(sh){editingId=sh.getAttribute('data-sh');editKind='sh';adding=addingStock=addingSub=false;render();return}
-  const su=e.target.closest('[data-sub]');
-  if(su){editingId=su.getAttribute('data-sub');editKind='sub';adding=addingStock=addingSub=false;render();return}
+  if(sh){editingId=sh.getAttribute('data-sh');editKind='sh';adding=addingStock=addingSub=false;editingSubId=null;render();return}
   const d=e.target.closest('[data-del]');
-  if(d){const id=d.getAttribute('data-del');store.accounts=accts().filter(x=>x.id!==id);store.holdings=holds().filter(x=>x.id!==id);store.subs=subs().filter(x=>x.id!==id);snapshot();persist();render();return}
-  if(e.target.closest('[data-addtoggle]')){adding=true;editingId=null;render();return}
-  if(e.target.closest('[data-addstock]')){addingStock=true;editingId=null;render();return}
-  if(e.target.closest('[data-addsub]')){addingSub=true;editingId=null;render();return}
+  if(d){const id=d.getAttribute('data-del');store.accounts=accts().filter(x=>x.id!==id);store.holdings=holds().filter(x=>x.id!==id);snapshot();persist();render();return}
+  if(e.target.closest('[data-addtoggle]')){adding=true;editingId=null;editingSubId=null;render();return}
+  if(e.target.closest('[data-addstock]')){addingStock=true;editingId=null;editingSubId=null;render();return}
+  if(e.target.closest('[data-addsub]')){addingSub=true;editingId=null;editingSubId=null;render();return}
   if(e.target.closest('[data-add]')){addAccount();return}
   if(e.target.closest('[data-addstockgo]')){addStock();return}
   if(e.target.closest('[data-addsubgo]')){addSub();return}
+  const addSegBtn=e.target.closest('[data-addsubp]');
+  if(addSegBtn){addSubPeriod=addSegBtn.getAttribute('data-addsubp');addSegBtn.parentElement.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===addSegBtn));return}
+  const segBtn=e.target.closest('.subEdit .seg button');
+  if(segBtn){segBtn.parentElement.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===segBtn));return}
+  const edSub=e.target.closest('[data-subedit]');
+  if(edSub){editingSubId=edSub.getAttribute('data-subedit');editingId=null;adding=addingStock=addingSub=false;render();return}
+  if(e.target.closest('[data-subcancel]')){editingSubId=null;render();return}
+  const svSub=e.target.closest('[data-subsave]');
+  if(svSub){
+    const id=svSub.getAttribute('data-subsave');
+    const box=document.querySelector('[data-eid="'+id+'"]');
+    const sb=subs().find(x=>x.id===id);
+    if(!sb||!box){editingSubId=null;render();return}
+    const get=f=>box.querySelector('[data-f="'+f+'"]');
+    const name=(get('name').value||'').trim();
+    const rawAmt=String(get('amount').value||'').replace(/[$,\s]/g,'');
+    const amount=Number(rawAmt);
+    if(!name||!isFinite(amount)||amount<=0)return;
+    if(amount>sb.amount+.005){sb.prevAmount=sb.amount;sb.priceChangedAt=Date.now();}
+    sb.name=name;sb.amount=amount;
+    const perBtn=get('period').querySelector('.on');
+    sb.period=perBtn?perBtn.getAttribute('data-p'):sb.period;
+    sb.renewal=get('renewal').value||null;
+    sb.trialEnds=get('trialEnds').value||null;
+    sb.manageUrl=normalizeUrl(get('manageUrl').value);
+    editingSubId=null;persist();render();return
+  }
+  const delSub=e.target.closest('[data-subdel]');
+  if(delSub){
+    const id=delSub.getAttribute('data-subdel');
+    const sb=subs().find(x=>x.id===id);
+    store.subs=subs().filter(x=>x.id!==id);
+    editingSubId=null;persist();render();
+    if(sb)showToast(sb);
+    return
+  }
+  if(e.target.closest('#pasteVeil')){closePasteSheet();return}
+  if(e.target.closest('[data-pasteopen]')){openPasteSheet();return}
+  if(e.target.closest('[data-pastego]')){runPasteParse();return}
+  if(e.target.closest('[data-pvadd]')){addPasteItems();return}
+  const pvrm=e.target.closest('[data-pvrm]');
+  if(pvrm){pasteItems.splice(Number(pvrm.getAttribute('data-pvrm')),1);renderPvList();return}
 });
 
 /* standalone preview: opened as a raw file with no dashboard bridge? back it
    with localStorage so it still renders. In the real sealed dashboard the
    bridge is injected first, so this branch never runs there. */
-if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem('v:prev:finance',JSON.stringify(d));}catch(e){}return Promise.resolve(true);},load:function(){try{return Promise.resolve(JSON.parse(localStorage.getItem('v:prev:finance')||'{}'));}catch(e){return Promise.resolve({});}},read:function(){return Promise.resolve(null);},stock:function(){return Promise.reject(new Error('no_key'));}};}
+if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem('v:prev:finance',JSON.stringify(d));}catch(e){}return Promise.resolve(true);},load:function(){try{return Promise.resolve(JSON.parse(localStorage.getItem('v:prev:finance')||'{}'));}catch(e){return Promise.resolve({});}},read:function(){return Promise.resolve(null);},stock:function(){return Promise.reject(new Error('no_key'));},report:function(){}};}
 (async()=>{
   const d=await window.Vitality.load();
   store=(d&&typeof d==='object'&&!Array.isArray(d))?d:{};
@@ -283,6 +548,7 @@ if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem(
   if(!Array.isArray(store.holdings))store.holdings=[];
   if(!Array.isArray(store.subs))store.subs=[];
   if(!Array.isArray(store.history))store.history=[];
+  store.subs=store.subs.map(ensureSubShape);
   render();
   for(const hd of holds()){ if(!hd.symbol)continue; await refreshStock(hd); await new Promise(r=>setTimeout(r,1200)); }
 })();
