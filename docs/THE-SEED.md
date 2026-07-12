@@ -22,8 +22,11 @@ time. I might be a total beginner.
 Introduce yourself in three lines, then build my world in this empty folder:
 
 1) npx --yes degit RowanThistlebrooke/vitality-base . --force
-   (this hands you CLAUDE.md — your own instructions — plus your commands:
-   /vitality, /tile, /detonate)
+   (this hands you CLAUDE.md — your own instructions — plus ALL your commands
+   from the very first run: /vitality (reinstall the full board), /tile (build
+   any tile), /detonate (blank canvas), /sweep (file data on your rounds), and
+   /update (safely pull the newest version any time, data untouched). Episode
+   commands from the Lab (like /finance) drop in on top of these.)
 2) npm install — if node is missing or below 20, walk me through installing it
    first. While it installs (it takes a minute), put the wait to work: open the
    free signup pages for GitHub, Supabase and Vercel in my browser
@@ -37,20 +40,27 @@ Introduce yourself in three lines, then build my world in this empty folder:
    every tile an input feeding it.
 4) Tell me it's mine to reshape: keep it as is, change any tile, or /detonate
    down to a blank canvas and build my own from nothing — my call.
-   Then set the equation to ME: ask what my goal is — and whether I have more
-   than one (I can). Take every goal I give you, polish the wording of my main
-   one into a single sharp sentence (that's the gold overall goal), weigh how
-   much each tile moves each goal (ask me what you need; each goal's weights
-   sum to 100), and write them into lib/tiles/weights.ts so y is truly mine.
-   Then get to know me — my name, and when a tile needs it, my height, weight
-   and age (one question at a time, my units) — and file that away too.
-5) Then get me live, one step at a time — GitHub (you do all the git; my only
-   job is one browser sign-in), Vercel (import my repo, deploy), Supabase (my
-   memory: run supabase/sync.sql, add the two NEXT_PUBLIC keys), and my phone
-   (my live URL, Add to Home Screen). You handle everything that can be typed;
-   I only click exactly where you tell me. Keep a checklist (SETUP.md) ticking
-   as we go, and before each step tell me if it's optional and what it gives
-   me — I decide how far to take it.
+   Then get to know me, one question at a time, and NEVER force an answer — if
+   I skip one, move on: my NAME first (write it into content/site.ts so it
+   shows in my greeting), then my age, gender, my goal(s) and my MAIN goal, my
+   height and weight, and whether I want to bulk / cut / lean-bulk — from that,
+   set my calorie targets for Fuel. Take every goal, polish my main one into
+   one sharp sentence (the gold overall goal), weigh how much each tile moves
+   each goal, and write them into lib/tiles/weights.ts so y is truly mine.
+5) Then get me live — and START WITH GITHUB: make the GitHub account first,
+   then sign into Vercel and Supabase WITH GitHub (one login for all three).
+   GitHub (you do all the git; my only job is the browser sign-in), then Vercel
+   (import my repo, deploy to my own live URL, then Add to Home Screen so it's
+   an app on my phone), then Supabase (my memory: run supabase/sync.sql, add
+   the two NEXT_PUBLIC keys). Keep a checklist (SETUP.md) ticking; before each
+   step tell me if it's optional and what it gives me.
+6) Walk me through the Lab website (the Design Lab button on the board, or
+   /demo) — it's expanding every day, and everything from their YouTube always
+   shows up here for inspiration.
+7) Show me the Finance tile's Subscriptions tab at the bottom, and how the paid
+   /finance install (the subscription radar) drops in from the Lab.
+8) Then live-data keys, only if I want them: TikTok (keyless, just works),
+   YouTube and Finnhub (my own free key each — you write .env.local for me).
 
 The moment my dashboard is up, tell me plainly: this is the vision — I can
 detonate all of it (/detonate) or build off of it; it's mine either way.

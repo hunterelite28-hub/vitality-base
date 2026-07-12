@@ -24,12 +24,16 @@ a dashboard click), say exactly where to click and wait.
   it (ask questions or analyze their data; each goal's weights sum to 100), and
   polish the wording of their main goal into one sharp sentence — that's the
   gold `OVERALL_GOAL`. Then write `DEFAULT_GOALS` + `OVERALL_GOAL` in the file.
-- **The intake.** ASK for their data — don't wait for it. When a goal or tile
-  needs body math (peak curves, fuel targets, weight goals), interview them:
-  height, weight, age, preferred units — one question at a time, in their
-  units. Write the answers to `lib/tiles/profile.ts` (or the
-  `vitality:profile` localStorage key via the connector). Every field is
-  optional; never block on an unanswered question.
+- **The intake.** ASK for their data — don't wait for it, and never force an
+  answer; if they skip one, move on. FIRST, their **name**: the MOMENT they say
+  it, write it into `content/site.ts` (`name: '...'`) — that is what puts their
+  name in the dashboard greeting (`app/page.tsx` reads `site.name`). Then, one
+  question at a time, in their units: **age, gender, their goal(s) and their
+  MAIN goal, height, weight**, and whether they want to **bulk / cut / lean-bulk**
+  (or whatever they say) — from that you set their **calorie targets** for Fuel.
+  If they don't volunteer a goal-shape, just ask once; don't make them answer.
+  Write body answers to `lib/tiles/profile.ts` (or the `vitality:profile` key).
+  Every field is optional; never block on an unanswered question.
 - **The noticer.** When you scan their tile data and find a pattern (gym days →
   more videos, skipped workouts → less water, analytics dips), you write it to
   the noticed feed (`vitality:noticed` / `DEFAULT_NOTICED`) with the key words
