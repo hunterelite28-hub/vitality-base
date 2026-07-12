@@ -350,7 +350,9 @@ function ConnectorOverlay({ id, label, onClose }: { id: string; label: string; o
 }
 
 /** Rowan & Luke's Design Lab — every episode's /command lives here. */
-const DESIGN_LAB_URL = 'https://vitality-jade.vercel.app/lab'
+// The demo Lab ships INSIDE the dashboard (public/demo) — so this link always
+// works on every fork, at their own URL, with no external site to deploy.
+const DESIGN_LAB_URL = '/demo/index.html'
 
 /* ── the "+ New tile" panel: dead simple — start with /tile ── */
 function NewTileOverlay({ onClose }: { onClose: () => void; onSaved?: (slot: string, html: string) => void }) {
